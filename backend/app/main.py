@@ -90,6 +90,9 @@ def create_app() -> FastAPI:
     from app.catalog.router import router as catalog_router
     app.include_router(catalog_router)
 
+    from app.notifications.router import router as notifications_router
+    app.include_router(notifications_router)
+
     @app.get("/health")
     async def health():
         return {"status": "ok", "version": "0.1.0"}
