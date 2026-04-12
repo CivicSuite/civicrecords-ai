@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Routes, Route, Navigate } from "react-router-dom";
+import { Routes, Route, Navigate, Link, useLocation } from "react-router-dom";
 import Login from "./pages/Login";
 import Dashboard from "./pages/Dashboard";
 import Users from "./pages/Users";
@@ -10,35 +10,73 @@ import Requests from "./pages/Requests";
 import RequestDetail from "./pages/RequestDetail";
 import Exemptions from "./pages/Exemptions";
 
+const NAV_ITEMS = [
+  { path: "/search", label: "Search" },
+  { path: "/requests", label: "Requests" },
+  { path: "/exemptions", label: "Exemptions" },
+  { path: "/", label: "Dashboard" },
+  { path: "/sources", label: "Sources" },
+  { path: "/ingestion", label: "Ingestion" },
+  { path: "/users", label: "Users" },
+];
+
+function NavLink({ to, label }: { to: string; label: string }) {
+  const location = useLocation();
+  const isActive = to === "/" ? location.pathname === "/" : location.pathname.startsWith(to);
+  return (
+    <Link
+      to={to}
+      className={`text-sm transition-colors ${
+        isActive
+          ? "text-blue-700 font-medium"
+          : "text-gray-600 hover:text-gray-900"
+      }`}
+      aria-current={isActive ? "page" : undefined}
+    >
+      {label}
+    </Link>
+  );
+}
+
 export default function App() {
   const [token, setToken] = useState<string | null>(localStorage.getItem("token"));
-  useEffect(() => { if (token) localStorage.setItem("token", token); else localStorage.removeItem("token"); }, [token]);
+
+  useEffect(() => {
+    if (token) localStorage.setItem("token", token);
+    else localStorage.removeItem("token");
+  }, [token]);
+
   if (!token) return <Login onLogin={setToken} />;
+
   return (
     <div className="min-h-screen bg-gray-50">
-      <nav className="bg-white border-b border-gray-200 px-6 py-3 flex items-center justify-between">
-        <div className="flex items-center gap-6">
-          <h1 className="text-lg font-semibold text-gray-900">CivicRecords AI</h1>
-          <a href="/search" className="text-sm text-gray-600 hover:text-gray-900">Search</a>
-          <a href="/requests" className="text-sm text-gray-600 hover:text-gray-900">Requests</a>
-          <a href="/exemptions" className="text-sm text-gray-600 hover:text-gray-900">Exemptions</a>
-          <a href="/" className="text-sm text-gray-600 hover:text-gray-900">Dashboard</a>
-          <a href="/sources" className="text-sm text-gray-600 hover:text-gray-900">Sources</a>
-          <a href="/ingestion" className="text-sm text-gray-600 hover:text-gray-900">Ingestion</a>
-          <a href="/users" className="text-sm text-gray-600 hover:text-gray-900">Users</a>
+      <nav className="bg-white border-b border-gray-200 px-4 sm:px-6 py-3 flex items-center justify-between" role="navigation" aria-label="Main navigation">
+        <div className="flex items-center gap-3 sm:gap-6 overflow-x-auto">
+          <Link to="/" className="text-lg font-semibold text-gray-900 whitespace-nowrap">
+            CivicRecords AI
+          </Link>
+          {NAV_ITEMS.map((item) => (
+            <NavLink key={item.path} to={item.path} label={item.label} />
+          ))}
         </div>
-        <button onClick={() => setToken(null)} className="text-sm text-gray-500 hover:text-gray-700">Sign out</button>
+        <button
+          onClick={() => setToken(null)}
+          className="text-sm text-gray-500 hover:text-gray-700 whitespace-nowrap ml-4"
+          aria-label="Sign out of your account"
+        >
+          Sign out
+        </button>
       </nav>
-      <main className="p-6 max-w-7xl mx-auto">
+      <main className="p-4 sm:p-6 max-w-7xl mx-auto" role="main">
         <Routes>
           <Route path="/" element={<Dashboard token={token} />} />
-          <Route path="/sources" element={<DataSources token={token} />} />
-          <Route path="/ingestion" element={<Ingestion token={token} />} />
-          <Route path="/users" element={<Users token={token} />} />
           <Route path="/search" element={<Search token={token} />} />
           <Route path="/requests" element={<Requests token={token} />} />
           <Route path="/requests/:id" element={<RequestDetail token={token} />} />
           <Route path="/exemptions" element={<Exemptions token={token} />} />
+          <Route path="/sources" element={<DataSources token={token} />} />
+          <Route path="/ingestion" element={<Ingestion token={token} />} />
+          <Route path="/users" element={<Users token={token} />} />
           <Route path="*" element={<Navigate to="/" />} />
         </Routes>
       </main>
