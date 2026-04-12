@@ -33,6 +33,14 @@ def setup_db():
         conn.execute(sa.text("CREATE EXTENSION IF NOT EXISTS vector"))
         conn.commit()
     Base.metadata.create_all(sync_engine)
+    # Add generated tsvector column (migration 004 adds this, but create_all doesn't)
+    with sync_engine.connect() as conn:
+        conn.execute(sa.text("""
+            ALTER TABLE document_chunks
+            ADD COLUMN IF NOT EXISTS content_tsvector tsvector
+            GENERATED ALWAYS AS (to_tsvector('english', content_text)) STORED
+        """))
+        conn.commit()
     yield
     Base.metadata.drop_all(sync_engine)
     sync_engine.dispose()

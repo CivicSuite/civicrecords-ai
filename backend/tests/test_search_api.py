@@ -1,4 +1,6 @@
 import uuid
+from unittest.mock import AsyncMock, patch
+
 import pytest
 from httpx import AsyncClient
 
@@ -15,11 +17,13 @@ async def test_search_requires_auth(client: AsyncClient):
 @pytest.mark.asyncio
 async def test_search_empty_db(client: AsyncClient, admin_token: str):
     """Search on empty DB should return 0 results, not error."""
-    resp = await client.post(
-        "/search/query",
-        json={"query": "water quality report", "limit": 5},
-        headers={"Authorization": f"Bearer {admin_token}"},
-    )
+    with patch("app.search.engine.embed_text", new_callable=AsyncMock) as mock_embed:
+        mock_embed.return_value = [0.1] * 768
+        resp = await client.post(
+            "/search/query",
+            json={"query": "water quality report", "limit": 5},
+            headers={"Authorization": f"Bearer {admin_token}"},
+        )
     assert resp.status_code == 200
     data = resp.json()
     assert data["results_count"] == 0
@@ -30,11 +34,13 @@ async def test_search_empty_db(client: AsyncClient, admin_token: str):
 @pytest.mark.asyncio
 async def test_search_creates_session(client: AsyncClient, admin_token: str):
     """First search should create a session."""
-    resp = await client.post(
-        "/search/query",
-        json={"query": "test query", "limit": 5},
-        headers={"Authorization": f"Bearer {admin_token}"},
-    )
+    with patch("app.search.engine.embed_text", new_callable=AsyncMock) as mock_embed:
+        mock_embed.return_value = [0.1] * 768
+        resp = await client.post(
+            "/search/query",
+            json={"query": "test query", "limit": 5},
+            headers={"Authorization": f"Bearer {admin_token}"},
+        )
     assert resp.status_code == 200
     session_id = resp.json()["session_id"]
     assert session_id is not None

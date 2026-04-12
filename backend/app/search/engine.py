@@ -42,11 +42,11 @@ async def semantic_search(
             params["source_id"] = filters["source_id"]
 
     sql = text(f"""
-        SELECT c.id, c.embedding <=> :embedding::vector AS distance
+        SELECT c.id, c.embedding <=> CAST(:embedding AS vector) AS distance
         FROM document_chunks c
         JOIN documents d ON c.document_id = d.id
         WHERE c.embedding IS NOT NULL {filter_clause}
-        ORDER BY c.embedding <=> :embedding::vector
+        ORDER BY c.embedding <=> CAST(:embedding AS vector)
         LIMIT :limit
     """)
 
