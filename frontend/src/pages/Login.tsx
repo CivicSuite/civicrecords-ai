@@ -19,45 +19,73 @@ export default function Login({ onLogin }: Props) {
       const token = await login(email, password);
       onLogin(token);
     } catch {
-      setError("Invalid email or password");
+      setError("Invalid email or password. Please try again.");
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+    <div className="min-h-screen bg-gray-50 flex items-center justify-center px-4">
       <div className="bg-white p-8 rounded-lg shadow-sm border border-gray-200 w-full max-w-sm">
         <h1 className="text-xl font-semibold text-gray-900 mb-1">CivicRecords AI</h1>
         <p className="text-sm text-gray-500 mb-6">Sign in to the admin panel</p>
-        <form onSubmit={handleSubmit} className="space-y-4">
+
+        {error && (
+          <div
+            className="error-banner mb-4"
+            role="alert"
+            aria-live="assertive"
+          >
+            {error}
+          </div>
+        )}
+
+        <form onSubmit={handleSubmit} className="space-y-4" noValidate>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
+            <label htmlFor="email" className="form-label">
+              Email
+            </label>
             <input
+              id="email"
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="form-input"
+              aria-label="Email address"
+              autoComplete="email"
               required
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Password</label>
+            <label htmlFor="password" className="form-label">
+              Password
+            </label>
             <input
+              id="password"
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="form-input"
+              aria-label="Password"
+              autoComplete="current-password"
               required
             />
           </div>
-          {error && <p className="text-sm text-red-600">{error}</p>}
           <button
             type="submit"
             disabled={loading}
-            className="w-full bg-blue-600 text-white py-2 px-4 rounded-md text-sm font-medium hover:bg-blue-700 disabled:opacity-50"
+            className="btn btn-primary w-full"
+            aria-busy={loading}
           >
-            {loading ? "Signing in..." : "Sign in"}
+            {loading ? (
+              <span className="flex items-center justify-center gap-2">
+                <span className="spinner" aria-hidden="true" />
+                Signing in…
+              </span>
+            ) : (
+              "Sign in"
+            )}
           </button>
         </form>
       </div>
