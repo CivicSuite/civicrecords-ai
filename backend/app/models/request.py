@@ -11,11 +11,16 @@ from app.models.user import Base
 
 class RequestStatus(str, enum.Enum):
     RECEIVED = "received"
+    CLARIFICATION_NEEDED = "clarification_needed"
+    ASSIGNED = "assigned"
     SEARCHING = "searching"
     IN_REVIEW = "in_review"
+    READY_FOR_RELEASE = "ready_for_release"
     DRAFTED = "drafted"
     APPROVED = "approved"
-    SENT = "sent"
+    FULFILLED = "fulfilled"
+    SENT = "sent"  # legacy alias for fulfilled
+    CLOSED = "closed"
 
 
 class InclusionStatus(str, enum.Enum):

@@ -22,11 +22,16 @@ router = APIRouter(prefix="/requests", tags=["requests"])
 
 # Valid status transitions
 VALID_TRANSITIONS = {
-    RequestStatus.RECEIVED: {RequestStatus.SEARCHING},
-    RequestStatus.SEARCHING: {RequestStatus.IN_REVIEW, RequestStatus.DRAFTED},
-    RequestStatus.IN_REVIEW: {RequestStatus.DRAFTED},
+    RequestStatus.RECEIVED: {RequestStatus.CLARIFICATION_NEEDED, RequestStatus.ASSIGNED, RequestStatus.SEARCHING},
+    RequestStatus.CLARIFICATION_NEEDED: {RequestStatus.RECEIVED, RequestStatus.ASSIGNED, RequestStatus.SEARCHING},
+    RequestStatus.ASSIGNED: {RequestStatus.SEARCHING, RequestStatus.CLARIFICATION_NEEDED},
+    RequestStatus.SEARCHING: {RequestStatus.IN_REVIEW, RequestStatus.DRAFTED, RequestStatus.CLARIFICATION_NEEDED},
+    RequestStatus.IN_REVIEW: {RequestStatus.DRAFTED, RequestStatus.READY_FOR_RELEASE, RequestStatus.SEARCHING},
+    RequestStatus.READY_FOR_RELEASE: {RequestStatus.DRAFTED, RequestStatus.IN_REVIEW},
     RequestStatus.DRAFTED: {RequestStatus.IN_REVIEW, RequestStatus.APPROVED},
-    RequestStatus.APPROVED: {RequestStatus.SENT},
+    RequestStatus.APPROVED: {RequestStatus.FULFILLED, RequestStatus.SENT},
+    RequestStatus.FULFILLED: {RequestStatus.CLOSED},
+    RequestStatus.SENT: {RequestStatus.CLOSED},
 }
 
 
