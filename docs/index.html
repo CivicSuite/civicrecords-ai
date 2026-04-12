@@ -1,0 +1,674 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="CivicRecords AI — Open-source, locally-hosted AI for municipal open records request processing. No cloud. No vendor lock-in. Your data stays yours.">
+  <meta name="keywords" content="FOIA, open records, municipal software, AI, local government, open source">
+  <meta property="og:title" content="CivicRecords AI">
+  <meta property="og:description" content="Open-source AI for municipal open records. Runs locally. No cloud. No vendor lock-in.">
+  <meta property="og:type" content="website">
+  <title>CivicRecords AI — Open-Source AI for Municipal Open Records</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --blue-dark:   #1a3a5c;
+      --blue-mid:    #2563eb;
+      --blue-light:  #3b82f6;
+      --blue-pale:   #eff6ff;
+      --gray-900:    #111827;
+      --gray-700:    #374151;
+      --gray-500:    #6b7280;
+      --gray-300:    #d1d5db;
+      --gray-100:    #f3f4f6;
+      --white:       #ffffff;
+      --green:       #16a34a;
+      --font-sans:   -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      --font-mono:   "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      font-family: var(--font-sans);
+      color: var(--gray-700);
+      background: var(--white);
+      line-height: 1.6;
+      font-size: 16px;
+    }
+
+    /* ── NAV ─────────────────────────────────────────── */
+    nav {
+      background: var(--blue-dark);
+      padding: 0 1.5rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      height: 56px;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      box-shadow: 0 1px 4px rgba(0,0,0,.25);
+    }
+    .nav-brand {
+      color: var(--white);
+      font-size: 1.1rem;
+      font-weight: 700;
+      letter-spacing: -.01em;
+      text-decoration: none;
+    }
+    .nav-brand span { color: #93c5fd; }
+    .nav-links { display: flex; gap: 1.5rem; list-style: none; }
+    .nav-links a {
+      color: #cbd5e1;
+      text-decoration: none;
+      font-size: .875rem;
+      transition: color .15s;
+    }
+    .nav-links a:hover { color: var(--white); }
+    @media (max-width: 600px) { .nav-links { display: none; } }
+
+    /* ── HERO ────────────────────────────────────────── */
+    .hero {
+      background: linear-gradient(160deg, var(--blue-dark) 0%, #1e4d8c 60%, #2563eb 100%);
+      color: var(--white);
+      padding: 5rem 1.5rem 4rem;
+      text-align: center;
+    }
+    .hero-badge {
+      display: inline-block;
+      background: rgba(255,255,255,.12);
+      border: 1px solid rgba(255,255,255,.25);
+      border-radius: 20px;
+      padding: .25rem .85rem;
+      font-size: .8rem;
+      letter-spacing: .06em;
+      text-transform: uppercase;
+      margin-bottom: 1.25rem;
+      color: #bfdbfe;
+    }
+    .hero h1 {
+      font-size: clamp(2.4rem, 6vw, 3.8rem);
+      font-weight: 800;
+      letter-spacing: -.03em;
+      line-height: 1.1;
+      margin-bottom: .6rem;
+    }
+    .hero h1 span { color: #93c5fd; }
+    .hero-tagline {
+      font-size: clamp(1.1rem, 2.5vw, 1.4rem);
+      color: #bfdbfe;
+      margin-bottom: 2rem;
+      font-weight: 400;
+    }
+    .hero-value {
+      max-width: 680px;
+      margin: 0 auto 2.5rem;
+      font-size: 1.05rem;
+      color: #dbeafe;
+      line-height: 1.75;
+    }
+    .hero-value strong { color: var(--white); }
+
+    /* ── QUICK START ─────────────────────────────────── */
+    .quickstart {
+      display: flex;
+      align-items: flex-start;
+      gap: 1rem;
+      max-width: 560px;
+      margin: 0 auto 2.5rem;
+      text-align: left;
+    }
+    .qs-step {
+      flex: 1;
+      background: rgba(255,255,255,.09);
+      border: 1px solid rgba(255,255,255,.18);
+      border-radius: 10px;
+      padding: 1rem;
+    }
+    .qs-num {
+      font-size: .7rem;
+      font-weight: 700;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+      color: #93c5fd;
+      margin-bottom: .3rem;
+    }
+    .qs-step p { font-size: .85rem; color: #dbeafe; line-height: 1.5; }
+    .qs-step code {
+      display: block;
+      margin-top: .4rem;
+      font-family: var(--font-mono);
+      font-size: .78rem;
+      color: #f0f9ff;
+      background: rgba(0,0,0,.25);
+      padding: .3rem .5rem;
+      border-radius: 5px;
+    }
+    @media (max-width: 600px) {
+      .quickstart { flex-direction: column; }
+      .qs-step { width: 100%; }
+    }
+
+    .btn {
+      display: inline-block;
+      padding: .75rem 1.75rem;
+      border-radius: 8px;
+      font-size: .95rem;
+      font-weight: 600;
+      text-decoration: none;
+      transition: all .15s;
+      cursor: pointer;
+    }
+    .btn-primary {
+      background: var(--white);
+      color: var(--blue-dark);
+    }
+    .btn-primary:hover { background: #e0f2fe; }
+    .btn-outline {
+      background: transparent;
+      color: var(--white);
+      border: 1.5px solid rgba(255,255,255,.45);
+      margin-left: .75rem;
+    }
+    .btn-outline:hover { background: rgba(255,255,255,.1); }
+
+    /* ── ARCHITECTURE ────────────────────────────────── */
+    .arch {
+      background: var(--gray-900);
+      padding: 3rem 1.5rem;
+      text-align: center;
+    }
+    .arch h2 {
+      color: #93c5fd;
+      font-size: 1rem;
+      letter-spacing: .1em;
+      text-transform: uppercase;
+      margin-bottom: 1.5rem;
+    }
+    .arch pre {
+      font-family: var(--font-mono);
+      font-size: clamp(.65rem, 1.8vw, .85rem);
+      color: #e2e8f0;
+      line-height: 1.6;
+      text-align: left;
+      display: inline-block;
+      background: rgba(255,255,255,.04);
+      border: 1px solid rgba(255,255,255,.1);
+      border-radius: 10px;
+      padding: 1.5rem 2rem;
+      overflow-x: auto;
+      max-width: 100%;
+    }
+
+    /* ── STATS BAR ───────────────────────────────────── */
+    .stats-bar {
+      background: var(--blue-pale);
+      border-top: 1px solid #bfdbfe;
+      border-bottom: 1px solid #bfdbfe;
+      padding: 1.75rem 1.5rem;
+      display: flex;
+      justify-content: center;
+      gap: 3rem;
+      flex-wrap: wrap;
+    }
+    .stat { text-align: center; }
+    .stat-num {
+      font-size: 2rem;
+      font-weight: 800;
+      color: var(--blue-mid);
+      line-height: 1;
+    }
+    .stat-label {
+      font-size: .8rem;
+      color: var(--gray-500);
+      text-transform: uppercase;
+      letter-spacing: .06em;
+      margin-top: .25rem;
+    }
+
+    /* ── SECTIONS ────────────────────────────────────── */
+    section { padding: 4rem 1.5rem; }
+    .container { max-width: 1060px; margin: 0 auto; }
+    .section-title {
+      font-size: 1.75rem;
+      font-weight: 700;
+      color: var(--gray-900);
+      letter-spacing: -.02em;
+      margin-bottom: .5rem;
+    }
+    .section-sub {
+      color: var(--gray-500);
+      margin-bottom: 2.5rem;
+      font-size: 1rem;
+    }
+
+    /* ── FEATURES GRID ───────────────────────────────── */
+    .features { background: var(--white); }
+    .grid-6 {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(290px, 1fr));
+      gap: 1.25rem;
+    }
+    .card {
+      border: 1px solid var(--gray-300);
+      border-radius: 12px;
+      padding: 1.5rem;
+      transition: box-shadow .2s, border-color .2s;
+    }
+    .card:hover {
+      box-shadow: 0 4px 18px rgba(37,99,235,.1);
+      border-color: #93c5fd;
+    }
+    .card-icon {
+      width: 40px;
+      height: 40px;
+      border-radius: 9px;
+      background: var(--blue-pale);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.25rem;
+      margin-bottom: 1rem;
+    }
+    .card h3 {
+      font-size: 1rem;
+      font-weight: 700;
+      color: var(--gray-900);
+      margin-bottom: .4rem;
+    }
+    .card p { font-size: .875rem; color: var(--gray-500); line-height: 1.6; }
+
+    /* ── TECH SPECS ──────────────────────────────────── */
+    .tech { background: var(--gray-100); }
+    .tech-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+      gap: 1rem;
+    }
+    .tech-card {
+      background: var(--white);
+      border: 1px solid var(--gray-300);
+      border-radius: 10px;
+      padding: 1.1rem 1.25rem;
+    }
+    .tech-card .label {
+      font-size: .7rem;
+      font-weight: 700;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+      color: var(--blue-mid);
+      margin-bottom: .3rem;
+    }
+    .tech-card .value {
+      font-size: .9rem;
+      font-weight: 600;
+      color: var(--gray-900);
+    }
+    .tech-card .detail {
+      font-size: .78rem;
+      color: var(--gray-500);
+      margin-top: .15rem;
+    }
+
+    /* ── PLATFORMS ───────────────────────────────────── */
+    .platforms { background: var(--white); }
+    .platform-list {
+      display: flex;
+      gap: 1rem;
+      flex-wrap: wrap;
+    }
+    .platform-chip {
+      background: var(--blue-pale);
+      border: 1px solid #bfdbfe;
+      border-radius: 8px;
+      padding: .6rem 1.1rem;
+      font-size: .9rem;
+      font-weight: 600;
+      color: var(--blue-dark);
+    }
+    .platform-note {
+      margin-top: 1rem;
+      font-size: .875rem;
+      color: var(--gray-500);
+    }
+
+    /* ── LINKS ───────────────────────────────────────── */
+    .links { background: var(--gray-100); }
+    .links-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+      gap: .75rem;
+    }
+    .link-card {
+      display: flex;
+      align-items: center;
+      gap: .6rem;
+      background: var(--white);
+      border: 1px solid var(--gray-300);
+      border-radius: 9px;
+      padding: .85rem 1rem;
+      text-decoration: none;
+      color: var(--gray-700);
+      font-size: .9rem;
+      font-weight: 500;
+      transition: all .15s;
+    }
+    .link-card:hover {
+      border-color: var(--blue-light);
+      color: var(--blue-mid);
+      box-shadow: 0 2px 8px rgba(37,99,235,.1);
+    }
+    .link-card .arrow { margin-left: auto; color: var(--gray-300); font-size: .8rem; }
+
+    /* ── LICENSE ─────────────────────────────────────── */
+    .license-block {
+      background: var(--white);
+      border: 1px solid var(--gray-300);
+      border-radius: 10px;
+      padding: 1.25rem 1.5rem;
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      max-width: 540px;
+    }
+    .license-badge {
+      background: var(--green);
+      color: var(--white);
+      font-size: .75rem;
+      font-weight: 700;
+      padding: .3rem .7rem;
+      border-radius: 6px;
+      white-space: nowrap;
+    }
+    .license-block p { font-size: .875rem; color: var(--gray-500); }
+    .license-block strong { color: var(--gray-700); }
+
+    /* ── FOOTER ──────────────────────────────────────── */
+    footer {
+      background: var(--blue-dark);
+      color: #94a3b8;
+      padding: 2.5rem 1.5rem;
+      text-align: center;
+    }
+    footer .tagline {
+      font-size: 1rem;
+      color: var(--white);
+      font-weight: 600;
+      margin-bottom: .5rem;
+    }
+    footer .sub {
+      font-size: .825rem;
+      margin-bottom: 1.25rem;
+    }
+    footer a { color: #93c5fd; text-decoration: none; }
+    footer a:hover { text-decoration: underline; }
+    footer .copy { font-size: .775rem; color: #475569; margin-top: 1rem; }
+
+    /* ── DIVIDER ─────────────────────────────────────── */
+    .divider {
+      border: none;
+      border-top: 1px solid var(--gray-300);
+      margin: 0;
+    }
+  </style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav>
+  <a class="nav-brand" href="#">Civic<span>Records AI</span></a>
+  <ul class="nav-links">
+    <li><a href="#features">Features</a></li>
+    <li><a href="#tech">Tech Stack</a></li>
+    <li><a href="#links">Docs</a></li>
+    <li><a href="https://github.com/scottconverse/civicrecords-ai">GitHub</a></li>
+  </ul>
+</nav>
+
+<!-- HERO -->
+<header class="hero">
+  <div class="hero-badge">v0.1.0 &nbsp;·&nbsp; Apache 2.0 &nbsp;·&nbsp; Open Source</div>
+  <h1>Civic<span>Records AI</span></h1>
+  <p class="hero-tagline">Open-source AI for municipal open records</p>
+
+  <p class="hero-value">
+    Every city in America processes public records requests — and most staff still search file shares
+    manually, review hundreds of pages by hand, and track deadlines in spreadsheets.
+    <strong>CivicRecords AI changes that.</strong> It runs entirely inside your city's network,
+    ingesting your documents and making them searchable with natural language AI queries, flagging
+    potential exemptions, and managing the full request lifecycle from intake to response.
+    No cloud subscription. No vendor lock-in. <strong>Your data never leaves the building.</strong>
+  </p>
+
+  <div class="quickstart">
+    <div class="qs-step">
+      <div class="qs-num">Step 1</div>
+      <p>Clone the repo</p>
+      <code>git clone github.com/scottconverse/civicrecords-ai</code>
+    </div>
+    <div class="qs-step">
+      <div class="qs-num">Step 2</div>
+      <p>Run the installer</p>
+      <code>bash install.sh</code>
+    </div>
+    <div class="qs-step">
+      <div class="qs-num">Step 3</div>
+      <p>Open your browser</p>
+      <code>http://localhost:8080</code>
+    </div>
+  </div>
+
+  <a href="https://github.com/scottconverse/civicrecords-ai" class="btn btn-primary">View on GitHub</a>
+  <a href="https://github.com/scottconverse/civicrecords-ai/blob/main/README.md" class="btn btn-outline">Read the Docs</a>
+</header>
+
+<!-- ARCHITECTURE -->
+<div class="arch">
+  <h2>Architecture</h2>
+  <pre>
+┌─────────────┐     ┌─────────────┐     ┌─────────────┐
+│  Browser     │────▶│    nginx    │────▶│   FastAPI   │
+│ (React UI)  │     │  (frontend) │     │    (API)    │
+└─────────────┘     └─────────────┘     └──────┬──────┘
+                                               │
+                    ┌──────────────────────────┤
+                    │              │            │
+              ┌─────▼─────┐ ┌────▼────┐ ┌─────▼─────┐
+              │ PostgreSQL │ │  Redis  │ │  Ollama   │
+              │ + pgvector │ │ (queue) │ │  (LLM)    │
+              └───────────┘ └────┬────┘ └───────────┘
+                                 │
+                           ┌─────▼─────┐
+                           │  Celery   │
+                           │ (worker)  │
+                           └───────────┘
+
+  Everything runs in Docker on a single machine inside your network.
+  All LLM inference is local via Ollama. Zero outbound data transmission.
+  </pre>
+</div>
+
+<!-- STATS BAR -->
+<div class="stats-bar">
+  <div class="stat">
+    <div class="stat-num">80</div>
+    <div class="stat-label">Automated Tests</div>
+  </div>
+  <div class="stat">
+    <div class="stat-num">7</div>
+    <div class="stat-label">Docker Services</div>
+  </div>
+  <div class="stat">
+    <div class="stat-num">10</div>
+    <div class="stat-label">Database Tables</div>
+  </div>
+  <div class="stat">
+    <div class="stat-num">50</div>
+    <div class="stat-label">States Supported</div>
+  </div>
+</div>
+
+<!-- FEATURES -->
+<section class="features" id="features">
+  <div class="container">
+    <h2 class="section-title">What it does</h2>
+    <p class="section-sub">Six integrated capabilities — all running locally, all under your control.</p>
+    <div class="grid-6">
+
+      <div class="card">
+        <div class="card-icon">&#128269;</div>
+        <h3>AI-Powered Search</h3>
+        <p>Natural language hybrid search combining pgvector semantic similarity and PostgreSQL full-text search via Reciprocal Rank Fusion. Results include source attribution and confidence scores. Optional LLM-synthesized answer summaries, clearly labeled as AI drafts.</p>
+      </div>
+
+      <div class="card">
+        <div class="card-icon">&#128196;</div>
+        <h3>Document Ingestion</h3>
+        <p>Two-track pipeline handles PDF, DOCX, XLSX, CSV, email (.eml), HTML, and plain text. Scanned documents use Gemma 4 multimodal AI with Tesseract OCR fallback. Sentence-aware chunking with configurable overlap ensures context is never lost at chunk boundaries.</p>
+      </div>
+
+      <div class="card">
+        <div class="card-icon">&#128274;</div>
+        <h3>Exemption Detection</h3>
+        <p>Rules-primary engine with built-in PII patterns — SSN, phone, email, credit card, date of birth — plus per-state statutory keyword matching. Optional secondary review via Ollama (confidence capped at 0.7). All flags require explicit human confirmation before any redaction.</p>
+      </div>
+
+      <div class="card">
+        <div class="card-icon">&#128203;</div>
+        <h3>Request Workflow</h3>
+        <p>Full lifecycle tracking across six statuses: received, searching, in review, drafted, approved, sent. Deadline alerts surface approaching and overdue requests. Document caching at attachment time creates a legally defensible record of exactly what was reviewed.</p>
+      </div>
+
+      <div class="card">
+        <div class="card-icon">&#9878;</div>
+        <h3>Compliance by Design</h3>
+        <p>Hash-chained audit logs with SHA-256 tamper evidence. Human-in-the-loop enforced at the API layer — no auto-redaction, no auto-approval. Configurable disclosure templates for AI-generated content. Verification script confirms zero outbound data transmission.</p>
+      </div>
+
+      <div class="card">
+        <div class="card-icon">&#128279;</div>
+        <h3>Federation-Ready</h3>
+        <p>Service account API keys (hashed before storage) enable authenticated REST access between CivicRecords AI instances. The foundation for cross-jurisdiction record discovery — a single staff member can query cooperating cities without leaving their own system.</p>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<hr class="divider">
+
+<!-- TECH SPECS -->
+<section class="tech" id="tech">
+  <div class="container">
+    <h2 class="section-title">Tech stack</h2>
+    <p class="section-sub">Standard, well-supported open-source components. No proprietary runtimes. No licensing surprises.</p>
+    <div class="tech-grid">
+      <div class="tech-card">
+        <div class="label">Backend</div>
+        <div class="value">Python 3.12 + FastAPI</div>
+        <div class="detail">SQLAlchemy 2.0, Alembic, Celery, fastapi-users</div>
+      </div>
+      <div class="tech-card">
+        <div class="label">Frontend</div>
+        <div class="value">React 18</div>
+        <div class="detail">Tailwind CSS, shadcn/ui — 8 admin pages</div>
+      </div>
+      <div class="tech-card">
+        <div class="label">Database</div>
+        <div class="value">PostgreSQL 17 + pgvector</div>
+        <div class="detail">Hybrid semantic + full-text search in one store</div>
+      </div>
+      <div class="tech-card">
+        <div class="label">LLM Runtime</div>
+        <div class="value">Ollama</div>
+        <div class="detail">Gemma 4 recommended; nomic-embed-text for embeddings</div>
+      </div>
+      <div class="tech-card">
+        <div class="label">Queue / Cache</div>
+        <div class="value">Redis 7.2 + Celery</div>
+        <div class="detail">Async ingestion and scheduled tasks</div>
+      </div>
+      <div class="tech-card">
+        <div class="label">Deployment</div>
+        <div class="value">Docker Compose</div>
+        <div class="detail">7 services, single-command install, no internet required</div>
+      </div>
+      <div class="tech-card">
+        <div class="label">Licenses</div>
+        <div class="value">All permissive</div>
+        <div class="detail">MIT, Apache 2.0, BSD, LGPL, MPL — no AGPL or SSPL</div>
+      </div>
+      <div class="tech-card">
+        <div class="label">Hardware</div>
+        <div class="value">8+ cores / 32 GB RAM</div>
+        <div class="detail">50 GB disk · runs on existing city hardware</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- PLATFORMS -->
+<section class="platforms">
+  <div class="container">
+    <h2 class="section-title">Supported platforms</h2>
+    <p class="section-sub">Identical Docker containers on every OS. Install scripts included for each platform.</p>
+    <div class="platform-list">
+      <div class="platform-chip">Windows 10 / 11 &nbsp;(Docker Desktop)</div>
+      <div class="platform-chip">macOS 13+ &nbsp;(Docker Desktop)</div>
+      <div class="platform-chip">Ubuntu 22.04+ &nbsp;(Docker Engine)</div>
+      <div class="platform-chip">Debian 12+ &nbsp;(Docker Engine)</div>
+    </div>
+    <p class="platform-note">All platforms run identical Linux containers. Windows users get <code>install.ps1</code>; macOS and Linux users get <code>install.sh</code>.</p>
+  </div>
+</section>
+
+<hr class="divider">
+
+<!-- LINKS -->
+<section class="links" id="links">
+  <div class="container">
+    <h2 class="section-title">Documentation</h2>
+    <p class="section-sub">Everything you need to evaluate, install, and contribute.</p>
+    <div class="links-grid">
+      <a class="link-card" href="https://github.com/scottconverse/civicrecords-ai">
+        &#128008; GitHub Repo <span class="arrow">&#8594;</span>
+      </a>
+      <a class="link-card" href="https://github.com/scottconverse/civicrecords-ai/blob/main/README.md">
+        &#128196; README <span class="arrow">&#8594;</span>
+      </a>
+      <a class="link-card" href="https://github.com/scottconverse/civicrecords-ai/blob/main/CHANGELOG.md">
+        &#128221; CHANGELOG <span class="arrow">&#8594;</span>
+      </a>
+      <a class="link-card" href="https://github.com/scottconverse/civicrecords-ai/blob/main/CONTRIBUTING.md">
+        &#129309; Contributing <span class="arrow">&#8594;</span>
+      </a>
+      <a class="link-card" href="https://github.com/scottconverse/civicrecords-ai/blob/main/docs/superpowers/specs/2026-04-11-civicrecords-ai-master-design.md">
+        &#128195; Master Spec <span class="arrow">&#8594;</span>
+      </a>
+      <a class="link-card" href="https://github.com/scottconverse/civicrecords-ai/blob/main/LICENSE">
+        &#9878; Apache 2.0 License <span class="arrow">&#8594;</span>
+      </a>
+    </div>
+
+    <div style="margin-top: 2rem;">
+      <div class="license-block">
+        <span class="license-badge">Apache 2.0</span>
+        <p><strong>Free to use, modify, and distribute.</strong> All dependencies use permissive or weak-copyleft licenses — MIT, Apache 2.0, BSD, LGPL, MPL. No AGPL, SSPL, or BSL.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer>
+  <p class="tagline">Built for American cities. Open source. Locally hosted. Your data stays yours.</p>
+  <p class="sub">
+    <a href="https://github.com/scottconverse/civicrecords-ai">github.com/scottconverse/civicrecords-ai</a>
+  </p>
+  <p class="copy">Copyright &copy; 2026 CivicRecords AI Contributors &nbsp;&middot;&nbsp; Apache License 2.0</p>
+</footer>
+
+</body>
+</html>
