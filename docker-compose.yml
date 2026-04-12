@@ -68,6 +68,16 @@ services:
       timeout: 10s
       retries: 3
 
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile.frontend
+    ports:
+      - "8080:80"
+    depends_on:
+      api:
+        condition: service_healthy
+
 volumes:
   pgdata:
   redisdata:
