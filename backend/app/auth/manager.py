@@ -11,8 +11,9 @@ from app.models.user import User
 
 
 class UserManager(UUIDIDMixin, BaseUserManager[User, uuid.UUID]):
-    reset_password_token_secret = "reset-secret"
-    verification_token_secret = "verify-secret"
+    from app.config import settings as _settings
+    reset_password_token_secret = _settings.jwt_secret
+    verification_token_secret = _settings.jwt_secret
 
     def __init__(self, session: AsyncSession, *args, **kwargs):
         super().__init__(*args, **kwargs)
