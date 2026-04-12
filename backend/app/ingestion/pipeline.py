@@ -39,10 +39,17 @@ async def ingest_file(
     if existing_doc:
         return existing_doc
 
+    # Strip UUID prefix if present (uploads use {uuid}_{original_name} pattern)
+    raw_name = file_path.name
+    if len(raw_name) > 33 and raw_name[32] == '_':
+        display_name = raw_name[33:]
+    else:
+        display_name = raw_name
+
     doc = Document(
         source_id=source_id,
         source_path=str(file_path),
-        filename=file_path.name,
+        filename=display_name,
         file_type=file_path.suffix.lower().lstrip("."),
         file_hash=file_hash,
         file_size=file_size,

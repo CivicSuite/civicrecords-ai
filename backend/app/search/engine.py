@@ -128,13 +128,14 @@ async def hybrid_search(
         keyword_weight=1.0 - semantic_weight,
     )
 
-    # Step 4: Fetch chunk + document details for top results
-    top_chunk_ids = [cid for cid, _ in fused[:limit]]
-    if not top_chunk_ids:
+    # Step 4: Normalize scores to 0.0-1.0 range
+    top_fused = fused[:limit]
+    if not top_fused:
         return []
 
-    # Build score lookup and rank
-    score_map = {cid: score for cid, score in fused[:limit]}
+    max_score = top_fused[0][1] if top_fused else 1.0
+    score_map = {cid: score / max_score if max_score > 0 else 0.0 for cid, score in top_fused}
+    top_chunk_ids = [cid for cid, _ in top_fused]
 
     hits = []
     for rank, chunk_id in enumerate(top_chunk_ids):

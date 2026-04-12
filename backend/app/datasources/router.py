@@ -61,7 +61,9 @@ async def upload_file(file: UploadFile = File(...), session: AsyncSession = Depe
     upload_dir = Path("/tmp/civicrecords-uploads")
     upload_dir.mkdir(parents=True, exist_ok=True)
     import uuid as _uuid
-    dest = upload_dir / f"{_uuid.uuid4().hex}_{file.filename}"
+    # UUID prefix on disk for uniqueness; original name preserved in DB via pipeline
+    safe_name = file.filename or "upload"
+    dest = upload_dir / f"{_uuid.uuid4().hex}_{safe_name}"
     content = await file.read()
     dest.write_bytes(content)
     tmp_path = str(dest)

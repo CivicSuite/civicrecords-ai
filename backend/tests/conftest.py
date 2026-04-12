@@ -7,6 +7,10 @@ from httpx import ASGITransport, AsyncClient
 from sqlalchemy import create_engine
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 
+import os
+# Set a proper-length JWT secret before importing settings to suppress warnings
+os.environ.setdefault("JWT_SECRET", "a" * 64)
+
 import app.database
 from app.config import settings
 from app.database import get_async_session
