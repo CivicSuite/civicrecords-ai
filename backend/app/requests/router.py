@@ -12,10 +12,14 @@ from app.models.document import Document
 from app.models.request import (
     DocumentCache, InclusionStatus, RecordsRequest, RequestDocument, RequestStatus,
 )
+from app.models.request_workflow import RequestTimeline, RequestMessage
 from app.models.user import User, UserRole
 from app.schemas.request import (
+    FeeLineItemCreate, FeeLineItemRead,
+    MessageCreate, MessageRead,
     RequestCreate, RequestDocumentAdd, RequestDocumentRead,
     RequestRead, RequestStats, RequestUpdate,
+    TimelineEventCreate, TimelineEventRead,
 )
 
 router = APIRouter(prefix="/requests", tags=["requests"])
@@ -348,3 +352,48 @@ async def reject_request(
         details={"reason": reason},
     )
     return req
+
+
+@router.get("/{request_id}/timeline", response_model=list[TimelineEventRead])
+async def get_timeline(
+    request_id: uuid.UUID,
+    session: AsyncSession = Depends(get_async_session),
+    user: User = Depends(require_role(UserRole.STAFF)),
+):
+    result = await session.execute(
+        select(RequestTimeline)
+        .where(RequestTimeline.request_id == request_id)
+        .order_by(RequestTimeline.created_at.desc())
+    )
+    return result.scalars().all()
+
+
+@router.post("/{request_id}/timeline", response_model=TimelineEventRead, status_code=201)
+async def add_timeline_event(
+    request_id: uuid.UUID,
+    event: TimelineEventCreate,
+    session: AsyncSession = Depends(get_async_session),
+    user: User = Depends(require_role(UserRole.STAFF)),
+):
+    req = await session.get(RecordsRequest, request_id)
+    if not req:
+        raise HTTPException(status_code=404, detail="Request not found")
+
+    entry = RequestTimeline(
+        request_id=request_id,
+        event_type=event.event_type,
+        actor_id=user.id,
+        actor_role=user.role,
+        description=event.description,
+        internal_note=event.internal_note,
+    )
+    session.add(entry)
+    await session.commit()
+    await session.refresh(entry)
+
+    await write_audit_log(
+        session=session, action="timeline_event_added", resource_type="request",
+        resource_id=str(request_id), user_id=user.id,
+        details={"event_type": event.event_type},
+    )
+    return entry
