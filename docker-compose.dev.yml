@@ -1,0 +1,29 @@
+# Development overrides: hot reload, source mounting, debug ports
+services:
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile.backend
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+    volumes:
+      - ./backend/app:/app/app
+      - ./backend/tests:/app/tests
+      - ./backend/alembic:/app/alembic
+    ports:
+      - "8000:8000"
+
+  worker:
+    volumes:
+      - ./backend/app:/app/app
+
+  postgres:
+    ports:
+      - "5432:5432"
+
+  redis:
+    ports:
+      - "6379:6379"
+
+  ollama:
+    ports:
+      - "11434:11434"
