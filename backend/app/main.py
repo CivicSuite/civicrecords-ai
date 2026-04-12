@@ -6,6 +6,7 @@ from app.auth import auth_router, register_router, users_router
 from app.config import settings
 from app.database import engine
 from app.models.user import User, UserRole
+from app.schemas.user import UserCreate
 
 
 @asynccontextmanager
@@ -21,21 +22,16 @@ async def lifespan(app: FastAPI):
         if result.scalar_one_or_none() is None:
             user_db = SQLAlchemyUserDatabase(session, User)
             manager = UserManager(session=session, user_db=user_db)
-            await manager.create(
-                type(
-                    "UserCreate",
-                    (),
-                    {
-                        "email": settings.first_admin_email,
-                        "password": settings.first_admin_password,
-                        "full_name": "System Administrator",
-                        "role": UserRole.ADMIN,
-                        "is_superuser": True,
-                        "is_active": True,
-                        "is_verified": True,
-                    },
-                )()
+            user_create = UserCreate(
+                email=settings.first_admin_email,
+                password=settings.first_admin_password,
+                full_name="System Administrator",
+                role=UserRole.ADMIN,
+                is_superuser=True,
+                is_active=True,
+                is_verified=True,
             )
+            await manager.create(user_create)
     yield
     await engine.dispose()
 

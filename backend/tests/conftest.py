@@ -1,4 +1,3 @@
-import asyncio
 import uuid
 from collections.abc import AsyncGenerator
 
@@ -6,6 +5,7 @@ import pytest
 from httpx import ASGITransport, AsyncClient
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 
+import app.database
 from app.config import settings
 from app.database import get_async_session
 from app.main import create_app
@@ -15,13 +15,6 @@ TEST_DATABASE_URL = settings.database_url.replace("/civicrecords", "/civicrecord
 
 test_engine = create_async_engine(TEST_DATABASE_URL, echo=False)
 test_session_maker = async_sessionmaker(test_engine, class_=AsyncSession, expire_on_commit=False)
-
-
-@pytest.fixture(scope="session")
-def event_loop():
-    loop = asyncio.new_event_loop()
-    yield loop
-    loop.close()
 
 
 @pytest.fixture(autouse=True)
@@ -40,12 +33,17 @@ async def override_get_session() -> AsyncGenerator[AsyncSession, None]:
 
 @pytest.fixture
 async def client() -> AsyncGenerator[AsyncClient, None]:
-    app = create_app()
-    app.dependency_overrides[get_async_session] = override_get_session
+    original_session_maker = app.database.async_session_maker
+    app.database.async_session_maker = test_session_maker
+
+    _app = create_app()
+    _app.dependency_overrides[get_async_session] = override_get_session
     async with AsyncClient(
-        transport=ASGITransport(app=app), base_url="http://test"
+        transport=ASGITransport(app=_app), base_url="http://test"
     ) as ac:
         yield ac
+
+    app.database.async_session_maker = original_session_maker
 
 
 @pytest.fixture
