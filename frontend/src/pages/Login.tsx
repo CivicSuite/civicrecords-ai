@@ -1,11 +1,14 @@
 import { useState } from "react";
 import { login } from "@/lib/api";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
 
-interface Props {
+interface LoginProps {
   onLogin: (token: string) => void;
 }
 
-export default function Login({ onLogin }: Props) {
+export default function Login({ onLogin }: LoginProps) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
@@ -13,82 +16,63 @@ export default function Login({ onLogin }: Props) {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError("");
     setLoading(true);
+    setError("");
     try {
       const token = await login(email, password);
       onLogin(token);
-    } catch {
-      setError("Invalid email or password. Please try again.");
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Login failed. Check your credentials.");
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 flex items-center justify-center px-4">
-      <div className="bg-white p-8 rounded-lg shadow-sm border border-gray-200 w-full max-w-sm">
-        <h1 className="text-xl font-semibold text-gray-900 mb-1">CivicRecords AI</h1>
-        <p className="text-sm text-gray-500 mb-6">Sign in to the admin panel</p>
-
-        {error && (
-          <div
-            className="error-banner mb-4"
-            role="alert"
-            aria-live="assertive"
-          >
-            {error}
+    <div className="min-h-screen flex items-center justify-center bg-background p-4">
+      <Card className="w-full max-w-sm shadow-md">
+        <CardHeader className="text-center pb-2">
+          <div className="mx-auto mb-4 h-12 w-12 rounded-xl bg-primary flex items-center justify-center">
+            <span className="text-lg font-bold text-primary-foreground">CR</span>
           </div>
-        )}
-
-        <form onSubmit={handleSubmit} className="space-y-4" noValidate>
-          <div>
-            <label htmlFor="email" className="form-label">
-              Email
-            </label>
-            <input
-              id="email"
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              className="form-input"
-              aria-label="Email address"
-              autoComplete="email"
-              required
-            />
-          </div>
-          <div>
-            <label htmlFor="password" className="form-label">
-              Password
-            </label>
-            <input
-              id="password"
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              className="form-input"
-              aria-label="Password"
-              autoComplete="current-password"
-              required
-            />
-          </div>
-          <button
-            type="submit"
-            disabled={loading}
-            className="btn btn-primary w-full"
-            aria-busy={loading}
-          >
-            {loading ? (
-              <span className="flex items-center justify-center gap-2">
-                <span className="spinner" aria-hidden="true" />
-                Signing in…
-              </span>
-            ) : (
-              "Sign in"
+          <h1 className="text-section-head text-foreground">CivicRecords AI</h1>
+          <p className="text-sm text-muted-foreground">Sign in to the admin panel</p>
+        </CardHeader>
+        <CardContent>
+          <form onSubmit={handleSubmit} className="space-y-4">
+            {error && (
+              <div className="p-3 rounded-md bg-destructive/10 border border-destructive/20">
+                <p className="text-sm text-destructive">{error}</p>
+              </div>
             )}
-          </button>
-        </form>
-      </div>
+            <div>
+              <label htmlFor="email" className="text-sm font-medium text-foreground">Email</label>
+              <Input
+                id="email"
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="admin@example.gov"
+                required
+                autoFocus
+              />
+            </div>
+            <div>
+              <label htmlFor="password" className="text-sm font-medium text-foreground">Password</label>
+              <Input
+                id="password"
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+              />
+            </div>
+            <Button type="submit" className="w-full" disabled={loading}>
+              {loading ? "Signing in..." : "Sign in"}
+            </Button>
+          </form>
+        </CardContent>
+      </Card>
     </div>
   );
 }
