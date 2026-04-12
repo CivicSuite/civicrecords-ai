@@ -39,6 +39,26 @@ VALID_TRANSITIONS = {
 }
 
 
+async def log_timeline(
+    session: AsyncSession,
+    request_id: uuid.UUID,
+    event_type: str,
+    description: str,
+    actor_id: uuid.UUID,
+    actor_role: str,
+    internal_note: str | None = None,
+):
+    entry = RequestTimeline(
+        request_id=request_id,
+        event_type=event_type,
+        actor_id=actor_id,
+        actor_role=actor_role,
+        description=description,
+        internal_note=internal_note,
+    )
+    session.add(entry)
+
+
 @router.post("/", response_model=RequestRead, status_code=201)
 async def create_request(
     data: RequestCreate,
@@ -155,6 +175,8 @@ async def update_request(
                 detail=f"Cannot transition from {req.status.value} to {data.status.value}",
             )
         req.status = data.status
+        await log_timeline(session, request_id, "status_change",
+                          f"Status changed to {data.status.value}", user.id, user.role)
 
     if data.description is not None:
         req.description = data.description
@@ -293,6 +315,8 @@ async def submit_for_review(
         raise HTTPException(status_code=400, detail=f"Cannot submit for review from status {req.status.value}")
 
     req.status = RequestStatus.IN_REVIEW
+    await log_timeline(session, request_id, "status_change",
+                      "Submitted for review", user.id, user.role)
     await session.commit()
     await session.refresh(req)
 
@@ -317,6 +341,8 @@ async def approve_request(
         raise HTTPException(status_code=400, detail=f"Can only approve from 'drafted' status, current: {req.status.value}")
 
     req.status = RequestStatus.APPROVED
+    await log_timeline(session, request_id, "response_approved",
+                      "Request approved", user.id, user.role)
     await session.commit()
     await session.refresh(req)
 
@@ -343,6 +369,9 @@ async def reject_request(
 
     req.status = RequestStatus.DRAFTED
     req.review_notes = reason if reason else None
+    await log_timeline(session, request_id, "status_change",
+                      "Request rejected — returned for revision", user.id, user.role,
+                      internal_note=reason if reason else None)
     await session.commit()
     await session.refresh(req)
 
