@@ -104,23 +104,25 @@ export default function Search({ token }: Props) {
       <h2 className="text-lg font-semibold text-gray-900 mb-4">Search Records</h2>
 
       <form onSubmit={handleSearch} className="mb-6">
-        <div className="flex gap-3">
+        <div className="flex flex-col sm:flex-row gap-3">
           <input
             type="text"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder="Search documents... e.g. 'water quality reports 2025'"
+            aria-label="Search query"
             className="flex-1 px-4 py-3 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
           <button
             type="submit"
             disabled={loading || !query.trim()}
-            className="bg-blue-600 text-white px-6 py-3 rounded-lg text-sm font-medium hover:bg-blue-700 disabled:opacity-50"
+            aria-label="Submit search"
+            className="bg-blue-600 text-white px-6 py-3 rounded-lg text-sm font-medium hover:bg-blue-700 disabled:opacity-50 sm:w-auto w-full"
           >
             {loading ? "Searching..." : "Search"}
           </button>
         </div>
-        <div className="flex items-center gap-4 mt-3">
+        <div className="flex flex-wrap items-center gap-4 mt-3">
           {filters && filters.file_types.length > 0 && (
             <select
               value={selectedFileType}
@@ -154,7 +156,14 @@ export default function Search({ token }: Props) {
         </div>
       </form>
 
-      {error && <p className="text-red-600 mb-4">{error}</p>}
+      {error && <p className="text-red-600 mb-4" role="alert">{error}</p>}
+
+      {loading && (
+        <div className="flex items-center gap-2 text-gray-500 mb-4" aria-live="polite">
+          <span className="spinner" aria-hidden="true" />
+          <span>Searching records...</span>
+        </div>
+      )}
 
       {queryHistory.length > 1 && (
         <div className="mb-4 flex gap-2 flex-wrap">
@@ -176,22 +185,22 @@ export default function Search({ token }: Props) {
       )}
 
       {results && (
-        <div>
+        <div aria-label="Search results">
           <p className="text-sm text-gray-500 mb-3">
             {results.results_count} result{results.results_count !== 1 ? "s" : ""} for "{results.query_text}"
           </p>
           <div className="space-y-3">
             {results.results.map((r) => (
               <div key={r.chunk_id} className="bg-white rounded-lg border border-gray-200 p-4">
-                <div className="flex items-center justify-between mb-2">
-                  <div className="flex items-center gap-2">
-                    <span className="text-sm font-medium text-gray-900">{r.filename}</span>
+                <div className="flex flex-wrap items-center justify-between gap-2 mb-2">
+                  <div className="flex flex-wrap items-center gap-2 min-w-0">
+                    <span className="text-sm font-medium text-gray-900 truncate max-w-xs">{r.filename}</span>
                     <span className="text-xs bg-gray-100 text-gray-500 px-1.5 py-0.5 rounded">{r.file_type}</span>
                     {r.page_number && (
                       <span className="text-xs text-gray-400">Page {r.page_number}</span>
                     )}
                   </div>
-                  <span className="text-xs text-gray-400">
+                  <span className="text-xs text-gray-400 shrink-0">
                     Score: {(r.similarity_score * 100).toFixed(1)}%
                   </span>
                 </div>

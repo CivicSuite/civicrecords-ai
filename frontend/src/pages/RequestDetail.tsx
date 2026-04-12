@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useParams } from "react-router-dom";
+import { useParams, Link } from "react-router-dom";
 import { apiFetch } from "@/lib/api";
 
 interface RequestData {
@@ -39,11 +39,15 @@ export default function RequestDetail({ token }: Props) {
   const [docs, setDocs] = useState<AttachedDoc[]>([]);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [loadingDetail, setLoadingDetail] = useState(true);
 
   const load = () => {
     if (!id) return;
-    apiFetch<RequestData>(`/requests/${id}`, { token }).then(setReq).catch((e: unknown) => setError(e instanceof Error ? e.message : String(e)));
-    apiFetch<AttachedDoc[]>(`/requests/${id}/documents`, { token }).then(setDocs).catch(() => {});
+    setLoadingDetail(true);
+    Promise.all([
+      apiFetch<RequestData>(`/requests/${id}`, { token }).then(setReq).catch((e: unknown) => setError(e instanceof Error ? e.message : String(e))),
+      apiFetch<AttachedDoc[]>(`/requests/${id}/documents`, { token }).then(setDocs).catch(() => {}),
+    ]).finally(() => setLoadingDetail(false));
   };
 
   useEffect(load, [id, token]);
@@ -66,17 +70,24 @@ export default function RequestDetail({ token }: Props) {
     setLoading(false);
   };
 
-  if (!req) return <p className="text-gray-500">Loading...</p>;
+  if (loadingDetail) return (
+    <div className="flex items-center gap-2 text-gray-500 py-8" aria-live="polite">
+      <span className="spinner" aria-hidden="true" />
+      <span>Loading request...</span>
+    </div>
+  );
+
+  if (!req) return <p className="text-gray-500">Request not found.</p>;
 
   return (
     <div>
       <div className="flex items-center gap-3 mb-6">
-        <a href="/requests" className="text-sm text-gray-500 hover:text-gray-700">&larr; Back</a>
+        <Link to="/requests" className="text-sm text-gray-500 hover:text-gray-700" aria-label="Back to requests list">&larr; Back</Link>
         <h2 className="text-lg font-semibold text-gray-900">Request from {req.requester_name}</h2>
         <span className={`inline-block px-2 py-0.5 rounded text-xs font-medium ${STATUS_COLORS[req.status] || ""}`}>{req.status.replace("_", " ")}</span>
       </div>
 
-      {error && <p className="text-red-600 mb-4">{error}</p>}
+      {error && <p className="text-red-600 mb-4" role="alert">{error}</p>}
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
         <div className="md:col-span-2 bg-white rounded-lg border border-gray-200 p-4">
@@ -120,7 +131,7 @@ export default function RequestDetail({ token }: Props) {
             )}
           </div>
           <div className="mt-4">
-            <a href="/search" className="block text-center text-blue-600 hover:text-blue-800 text-sm font-medium py-2 border border-blue-200 rounded-md hover:bg-blue-50">Search &amp; Attach Documents</a>
+            <Link to="/search" className="block text-center text-blue-600 hover:text-blue-800 text-sm font-medium py-2 border border-blue-200 rounded-md hover:bg-blue-50" aria-label="Go to search to find and attach documents">Search &amp; Attach Documents</Link>
           </div>
         </div>
       </div>
@@ -128,7 +139,7 @@ export default function RequestDetail({ token }: Props) {
       <div className="bg-white rounded-lg border border-gray-200 p-4">
         <h3 className="text-sm font-medium text-gray-600 mb-3">Attached Documents ({docs.length})</h3>
         {docs.length > 0 ? (
-          <table className="w-full text-sm">
+          <table className="w-full text-sm" aria-label="Attached documents">
             <thead><tr className="border-b border-gray-200">
               <th className="text-left px-3 py-2 font-medium text-gray-600">Document ID</th>
               <th className="text-left px-3 py-2 font-medium text-gray-600">Note</th>

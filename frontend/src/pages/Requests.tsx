@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { Link } from "react-router-dom";
 import { apiFetch } from "@/lib/api";
 
 interface Request {
@@ -34,6 +35,7 @@ export default function Requests({ token }: Props) {
   const [requests, setRequests] = useState<Request[]>([]);
   const [stats, setStats] = useState<Stats | null>(null);
   const [error, setError] = useState("");
+  const [loadingData, setLoadingData] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
@@ -41,8 +43,11 @@ export default function Requests({ token }: Props) {
   const [deadline, setDeadline] = useState("");
 
   const load = () => {
-    apiFetch<Request[]>("/requests/", { token }).then(setRequests).catch((e: unknown) => setError(e instanceof Error ? e.message : String(e)));
-    apiFetch<Stats>("/requests/stats", { token }).then(setStats).catch(() => {});
+    setLoadingData(true);
+    Promise.all([
+      apiFetch<Request[]>("/requests/", { token }).then(setRequests).catch((e: unknown) => setError(e instanceof Error ? e.message : String(e))),
+      apiFetch<Stats>("/requests/stats", { token }).then(setStats).catch(() => {}),
+    ]).finally(() => setLoadingData(false));
   };
 
   useEffect(load, [token]);
@@ -76,10 +81,17 @@ export default function Requests({ token }: Props) {
         </button>
       </div>
 
-      {error && <p className="text-red-600 mb-4">{error}</p>}
+      {error && <p className="text-red-600 mb-4" role="alert">{error}</p>}
+
+      {loadingData && (
+        <div className="flex items-center gap-2 text-gray-500 mb-4" aria-live="polite">
+          <span className="spinner" aria-hidden="true" />
+          <span>Loading requests...</span>
+        </div>
+      )}
 
       {stats && (
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-6">
           <div className="bg-white p-4 rounded-lg border border-gray-200">
             <p className="text-sm text-gray-500">Total</p>
             <p className="text-2xl font-semibold text-gray-900">{stats.total_requests}</p>
@@ -112,7 +124,7 @@ export default function Requests({ token }: Props) {
       )}
 
       <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
-        <table className="w-full text-sm">
+        <table className="w-full text-sm" aria-label="Records requests">
           <thead><tr className="border-b border-gray-200 bg-gray-50">
             <th className="text-left px-4 py-3 font-medium text-gray-600">Requester</th>
             <th className="text-left px-4 py-3 font-medium text-gray-600">Description</th>
@@ -135,11 +147,16 @@ export default function Requests({ token }: Props) {
                 ) : <span className="text-xs text-gray-400">None</span>}
               </td>
               <td className="px-4 py-3 text-gray-500 text-xs">{new Date(r.created_at).toLocaleDateString()}</td>
-              <td className="px-4 py-3"><a href={`/requests/${r.id}`} className="text-blue-600 hover:text-blue-800 text-sm font-medium">View</a></td>
+              <td className="px-4 py-3"><Link to={`/requests/${r.id}`} className="text-blue-600 hover:text-blue-800 text-sm font-medium" aria-label={`View request from ${r.requester_name}`}>View</Link></td>
             </tr>
           ))}</tbody>
         </table>
-        {requests.length === 0 && <p className="text-center py-8 text-gray-400">No requests yet</p>}
+        {!loadingData && requests.length === 0 && (
+          <div className="text-center py-12 text-gray-400">
+            <p className="font-medium">No requests yet</p>
+            <p className="text-sm mt-1">Use the "New Request" button above to create your first open records request.</p>
+          </div>
+        )}
       </div>
     </div>
   );
