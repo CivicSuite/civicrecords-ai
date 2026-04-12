@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { apiFetch } from "@/lib/api";
 import { PageHeader } from "@/components/page-header";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -78,9 +79,11 @@ function loadSavedProfile(): CityProfile {
   };
 }
 
-export default function Onboarding({ token: _token }: { token: string }) {
+export default function Onboarding({ token }: { token: string }) {
   const [step, setStep] = useState(1);
   const [profile, setProfile] = useState<CityProfile>(loadSavedProfile);
+  const [submitting, setSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState<string | null>(null);
   const navigate = useNavigate();
 
   const updateProfile = (updates: Partial<CityProfile>) => {
@@ -94,13 +97,38 @@ export default function Onboarding({ token: _token }: { token: string }) {
     }));
   };
 
-  const saveAndContinue = () => {
+  const saveAndContinue = async () => {
+    // Always persist draft to localStorage between steps
     localStorage.setItem("civicrecords_city_profile", JSON.stringify(profile));
+
     if (step < 3) {
       setStep(step + 1);
-    } else {
+      return;
+    }
+
+    // Final step: POST to API
+    setSubmitting(true);
+    setSubmitError(null);
+    try {
+      await apiFetch("/city-profile", {
+        token,
+        method: "POST",
+        body: JSON.stringify({
+          city_name: profile.cityName,
+          state: profile.state,
+          county: profile.county || undefined,
+          population_band: profile.populationBand || undefined,
+          email_platform: profile.emailPlatform || undefined,
+          has_dedicated_it: profile.hasDedicatedIT === "yes" ? true : profile.hasDedicatedIT === "no" ? false : undefined,
+          monthly_request_volume: profile.monthlyRequestVolume || undefined,
+          gap_map: profile.systems,
+        }),
+      });
       localStorage.setItem("civicrecords_onboarding_complete", "true");
       navigate("/city-profile");
+    } catch (err) {
+      setSubmitError(err instanceof Error ? err.message : "Failed to save profile. Please try again.");
+      setSubmitting(false);
     }
   };
 
@@ -322,17 +350,20 @@ export default function Onboarding({ token: _token }: { token: string }) {
       )}
 
       {/* Navigation */}
+      {submitError && (
+        <p className="text-sm text-destructive text-right">{submitError}</p>
+      )}
       <div className="flex items-center justify-between">
         <Button
           variant="outline"
           onClick={() => setStep(step - 1)}
-          disabled={step === 1}
+          disabled={step === 1 || submitting}
         >
           <ChevronLeft className="h-4 w-4 mr-1" />
           Back
         </Button>
-        <Button onClick={saveAndContinue}>
-          {step === 3 ? "Complete Setup" : "Continue"}
+        <Button onClick={saveAndContinue} disabled={submitting}>
+          {step === 3 ? (submitting ? "Saving…" : "Complete Setup") : "Continue"}
           {step < 3 && <ChevronRight className="h-4 w-4 ml-1" />}
         </Button>
       </div>

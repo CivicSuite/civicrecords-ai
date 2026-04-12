@@ -16,6 +16,10 @@ import {
   Zap,
   CheckCircle,
   XCircle,
+  Inbox,
+  AlertTriangle,
+  Clock,
+  CalendarCheck,
 } from "lucide-react";
 
 interface SystemStatus {
@@ -25,6 +29,19 @@ interface SystemStatus {
   redis: { status: string };
   user_count: number;
   audit_log_count: number;
+}
+
+interface OperationalMetrics {
+  average_response_time_days: number | null;
+  median_response_time_days: number | null;
+  requests_by_status: Record<string, number>;
+  requests_by_department: Record<string, number>;
+  deadline_compliance_rate: number;
+  total_open: number;
+  total_closed: number;
+  total_overdue: number;
+  clarification_frequency: number;
+  top_request_topics: string[];
 }
 
 function ServiceIndicator({ name, status, icon: Icon }: { name: string; status: string; icon: React.ElementType }) {
@@ -46,12 +63,20 @@ export default function Dashboard({ token }: { token: string }) {
   const [status, setStatus] = useState<SystemStatus | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [analytics, setAnalytics] = useState<OperationalMetrics | null>(null);
 
   useEffect(() => {
     apiFetch<SystemStatus>("/admin/status", { token })
       .then(setStatus)
       .catch((e) => setError(e.message))
       .finally(() => setLoading(false));
+
+    apiFetch<OperationalMetrics>("/analytics/operational", { token })
+      .then(setAnalytics)
+      .catch(() => {
+        // Analytics are non-critical — silently suppress errors
+        setAnalytics(null);
+      });
   }, [token]);
 
   if (loading) {
@@ -95,6 +120,37 @@ export default function Dashboard({ token }: { token: string }) {
         <StatCard label="Audit Log Entries" value={status.audit_log_count} icon={FileText} />
         <StatCard label="System Version" value={status.version} icon={Shield} />
       </div>
+
+      {/* Operational analytics — shown only when the call succeeds */}
+      {analytics && (
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <StatCard
+            label="Open Requests"
+            value={analytics.total_open}
+            icon={Inbox}
+          />
+          <StatCard
+            label="Overdue Requests"
+            value={analytics.total_overdue}
+            icon={AlertTriangle}
+            variant={analytics.total_overdue > 0 ? "danger" : undefined}
+          />
+          <StatCard
+            label="Avg Response Time"
+            value={
+              analytics.average_response_time_days != null
+                ? `${analytics.average_response_time_days.toFixed(1)} days`
+                : "N/A"
+            }
+            icon={Clock}
+          />
+          <StatCard
+            label="Deadline Compliance"
+            value={`${(analytics.deadline_compliance_rate * 100).toFixed(1)}%`}
+            icon={CalendarCheck}
+          />
+        </div>
+      )}
 
       {/* Service health — compact inline */}
       <Card className="shadow-none">
