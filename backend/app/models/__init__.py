@@ -1,5 +1,6 @@
 from app.models.audit import AuditLog
 from app.models.document import DataSource, Document, DocumentChunk, IngestionStatus, ModelRegistry, SourceType
+from app.models.exemption import DisclosureTemplate, ExemptionFlag, ExemptionRule, FlagStatus, RuleType
 from app.models.request import DocumentCache, InclusionStatus, RecordsRequest, RequestDocument, RequestStatus
 from app.models.search import SearchQuery, SearchResult, SearchSession
 from app.models.service_account import ServiceAccount
@@ -11,4 +12,5 @@ __all__ = [
     "ModelRegistry",
     "SearchSession", "SearchQuery", "SearchResult",
     "RecordsRequest", "RequestDocument", "DocumentCache", "RequestStatus", "InclusionStatus",
+    "ExemptionRule", "ExemptionFlag", "DisclosureTemplate", "RuleType", "FlagStatus",
 ]
