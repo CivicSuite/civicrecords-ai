@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { Routes, Route, Navigate } from "react-router-dom";
-import { isTokenValid } from "@/lib/api";
+import { isTokenValid, apiFetch } from "@/lib/api";
 import { AppShell } from "@/components/app-shell";
 import Login from "@/pages/Login";
 import Dashboard from "@/pages/Dashboard";
@@ -26,7 +26,12 @@ export default function App() {
     return stored;
   });
 
-  const logout = useCallback(() => setToken(null), []);
+  const [userEmail, setUserEmail] = useState("");
+
+  const logout = useCallback(() => {
+    setToken(null);
+    setUserEmail("");
+  }, []);
 
   useEffect(() => {
     if (token) localStorage.setItem("token", token);
@@ -44,15 +49,24 @@ export default function App() {
     return () => clearInterval(interval);
   }, [token]);
 
-  if (!token) return <Login onLogin={setToken} />;
+  // Fetch real user info from API instead of decoding JWT sub (which is a UUID)
+  useEffect(() => {
+    if (token) {
+      apiFetch<{ email: string; full_name: string | null }>("/users/me", { token })
+        .then(data => setUserEmail(data.full_name || data.email))
+        .catch(() => {
+          // Fallback to JWT decode
+          try {
+            const payload = JSON.parse(atob(token.split(".")[1]));
+            setUserEmail(payload.email || payload.sub || "");
+          } catch { setUserEmail(""); }
+        });
+    } else {
+      setUserEmail("");
+    }
+  }, [token]);
 
-  let userEmail = "";
-  try {
-    const payload = JSON.parse(atob(token.split(".")[1]));
-    userEmail = payload.email || payload.sub || "";
-  } catch {
-    userEmail = "";
-  }
+  if (!token) return <Login onLogin={setToken} />;
 
   return (
     <AppShell onSignOut={logout} userEmail={userEmail}>
