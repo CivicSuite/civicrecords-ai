@@ -1,7 +1,7 @@
 # CivicRecords AI — User Manual
 
 **For Municipal Records Staff**
-Version 1.0 · April 2026
+Version 1.0.0 · April 2026
 
 ---
 
@@ -13,14 +13,17 @@ Version 1.0 · April 2026
 
 1. [What is CivicRecords AI?](#1-what-is-civicrecords-ai)
 2. [Getting Started](#2-getting-started)
-3. [Searching Documents](#3-searching-documents)
-4. [Managing Records Requests](#4-managing-records-requests)
-5. [Reviewing and Approving Requests](#5-reviewing-and-approving-requests)
-6. [Exemption Detection](#6-exemption-detection)
-7. [Managing Data Sources](#7-managing-data-sources)
-8. [User Management](#8-user-management)
-9. [Troubleshooting](#9-troubleshooting)
-10. [Glossary](#10-glossary)
+3. [Onboarding Your City](#3-onboarding-your-city)
+4. [City Profile](#4-city-profile)
+5. [Searching Documents](#5-searching-documents)
+6. [Managing Records Requests](#6-managing-records-requests)
+7. [Reviewing and Approving Requests](#7-reviewing-and-approving-requests)
+8. [Exemption Detection](#8-exemption-detection)
+9. [Managing Data Sources](#9-managing-data-sources)
+10. [User Management](#10-user-management)
+11. [Discovery Dashboard (Preview)](#11-discovery-dashboard-preview)
+12. [Troubleshooting](#12-troubleshooting)
+13. [Glossary](#13-glossary)
 
 ---
 
@@ -35,7 +38,8 @@ Here is what it does in plain terms:
 - It reads and indexes your city's documents — PDFs, Word files, spreadsheets, emails, and more — so you can search through all of them at once using plain English.
 - When you get a records request, it helps you find the relevant documents quickly.
 - It flags documents that might contain sensitive information (like Social Security numbers or personal data) that could be exempt from disclosure.
-- It helps you track each request from the moment it arrives until the day you send the response.
+- It helps you track each request from the moment it arrives until the day you send the response, including any fees involved.
+- It can generate a draft response letter for staff review before it goes out.
 - It keeps a complete record of everything that happened — who searched for what, who made what decisions — so your office is protected if anyone ever questions your process.
 
 **What it does not do:**
@@ -71,30 +75,93 @@ Ask your IT department if you are not sure what address to use.
 
 ### Logging In
 
-When you arrive at the login page, you will see two fields:
+When you arrive at the login page, you will see the CivicRecords AI logo badge and two fields:
 
 - **Email** — the email address your administrator set up for your account
 - **Password** — the password you were given (you should change this to something personal on your first login)
 
 Type your email and password, then click **Log In**.
 
-If you see a message saying your credentials are incorrect, double-check that Caps Lock is not on. If you still cannot log in, see [Troubleshooting](#9-troubleshooting) or contact your administrator.
+If you see a message saying your credentials are incorrect, double-check that Caps Lock is not on. If you still cannot log in, see [Troubleshooting](#12-troubleshooting) or contact your administrator.
 
-### What You See After Logging In
+### Navigating the Application
 
-After you log in, you will land on the **Dashboard**. Think of this as your home screen. You will see:
+After you log in, you will see the **sidebar** on the left side of every screen. This is your main navigation menu. It is organized into three groups:
 
-- **Navigation menu** on the left side (or top, depending on your screen size) with links to: Search, Requests, Exemptions, Data Sources, Users, and Settings.
-- **Summary cards** showing things like how many open requests are in progress, how many are approaching their deadline, and any items waiting for your attention.
-- **Recent activity** — a list of recent actions in the system.
+**Workflow** — The day-to-day tools you use to process records requests:
+- **Search** — Find documents across your city's indexed files
+- **Requests** — Track and manage open records requests
+- **Exemptions** — Review flagged content across all requests
 
-The exact items you see depend on your role. If you are a standard staff member, you may not see the Users or Settings menus — those are for administrators.
+**Setup** — Tools for connecting your city's data:
+- **Data Sources** — Connect document folders and other integrations
+- **Ingestion** — Monitor the document indexing process
+
+**Administration** — Tools for managing the system (administrators only):
+- **Users** — Create and manage user accounts
+- **Settings** — Configure system-wide options
+
+When you first land after logging in, the sidebar also shows summary cards with how many open requests are in progress, how many are approaching their deadline, and any items waiting for your attention.
+
+The exact items you see in the sidebar depend on your role. If you are a standard staff member, you will not see the Administration group — those items are for administrators only.
 
 ---
 
-## 3. Searching Documents
+## 3. Onboarding Your City
 
-The search screen is where you go to find documents. Click **Search** in the navigation menu.
+When CivicRecords AI is first set up for your city, an administrator will be guided through a brief onboarding wizard before anything else is available. If you are that administrator, this section explains what to expect.
+
+### The Onboarding Wizard
+
+The onboarding wizard walks you through three phases. Think of it as a short setup interview that helps the system understand your city before you start processing requests.
+
+**Phase 1: City Profile**
+
+You will enter basic information about your city:
+
+- City name, state, and county
+- Primary contact name and email for the records office
+- The open records law your city operates under (for example, CORA for Colorado)
+- Your statutory response deadline (for example, 7 business days)
+
+This information appears on your City Profile page (see Section 4) and is used to calculate deadlines automatically.
+
+**Phase 2: Systems**
+
+You will identify what kinds of document systems your city uses:
+
+- File servers or shared drives
+- Email systems (Exchange, Gmail, etc.)
+- Databases or case management software
+- Any other places city records are stored
+
+You do not connect these systems during this phase — you are just telling the system what exists. Connections are set up later in Data Sources (see Section 9).
+
+**Phase 3: Gap Map**
+
+Based on what you told the system in Phase 2, the wizard will generate a **Gap Map** — a visual summary of which systems are connected, which are not yet connected, and which are on the roadmap. This helps your office know at a glance whether your searches are comprehensive or whether certain document repositories are still missing from the system.
+
+Once you complete all three phases, the wizard closes and you land on your City Profile page.
+
+---
+
+## 4. City Profile
+
+The **City Profile** page is a permanent home for your city's key information. You can access it from the sidebar at any time. Administrators can edit it; staff members can view it.
+
+### What the City Profile Shows
+
+**City Details** — The basic information entered during onboarding: city name, state, county, contact, applicable open records law, and response deadline.
+
+**Connected Systems** — A list of every document system that has been set up in Data Sources, with its current connection status (connected, error, not yet configured).
+
+**Gap Map** — The same visual summary from onboarding, kept up to date as you add or remove data sources. Green items are connected. Gray items are identified but not yet connected. This is a quick reference for your records officers to understand what the system can and cannot search.
+
+---
+
+## 5. Searching Documents
+
+The search screen is where you go to find documents. Click **Search** in the sidebar.
 
 ### How to Type a Query
 
@@ -114,7 +181,7 @@ Type your query in the search box and press **Enter** or click the **Search** bu
 After a moment, you will see a list of results. Each result shows:
 
 - **Document name** — the filename and where it came from
-- **A excerpt** — a short passage from the document showing the part that matched your search, with the relevant words highlighted
+- **An excerpt** — a short passage from the document showing the part that matched your search, with the relevant words highlighted
 - **A confidence score** — a number from 0 to 100 (sometimes shown as a percentage)
 - **Source information** — the file path or folder where the document lives
 
@@ -164,9 +231,9 @@ You can also ask follow-up questions in the search box to refine results within 
 
 ---
 
-## 4. Managing Records Requests
+## 6. Managing Records Requests
 
-The **Requests** screen is where you track every open records request your office receives. Click **Requests** in the navigation menu.
+The **Requests** screen is where you track every open records request your office receives. Click **Requests** in the sidebar.
 
 ### Creating a New Request
 
@@ -203,6 +270,10 @@ Every request moves through a series of stages. You can see the current status o
 
 **Received** — You have logged the request but have not started searching yet. The clock is running.
 
+**Clarification Needed** — The request is unclear or too broad to search effectively. You need more information from the requester before you can proceed. Use this status when you are waiting on a reply from them.
+
+**Assigned** — The request has been assigned to a specific staff member who will handle it.
+
 **Searching** — You are actively searching for responsive documents. Change the status to this when you start your search work.
 
 **In Review** — You have found documents and are reviewing them to decide what to include, what to exclude, and whether any exemptions apply.
@@ -211,11 +282,27 @@ Every request moves through a series of stages. You can see the current status o
 
 **Approved** — A supervisor has reviewed and approved the response.
 
-**Sent** — The response has been sent to the requester. The request is complete.
+**Ready for Release** — The response has been approved and is queued to go out.
+
+**Sent** — The response has been sent to the requester.
+
+**Fulfilled** — The requester has confirmed they received everything they needed. The request is complete.
+
+**Closed** — The request has been closed without fulfillment (for example, the requester withdrew it, or the request was denied and the appeal period has passed).
 
 To move a request from one status to the next, open the request and look for the **Update Status** button or a dropdown menu showing the current status. Select the next status and click **Save**.
 
 Moving a request backward (for example, from "Drafted" back to "In Review") is also possible if you need to make changes.
+
+### The Request Detail View
+
+When you open a request, you will see the main details at the top, followed by three tabbed sections:
+
+**Timeline** — A chronological log of every action taken on this request: when it was created, when the status changed, when documents were attached, when flags were reviewed, and any notes added along the way. This is your complete audit trail for this request.
+
+**Messages** — A running log of communications related to this request. If you sent a clarification question to the requester, or a note to your supervisor, it is recorded here. Messages are internal unless explicitly marked otherwise.
+
+**Fees** — A record of any fees assessed for this request. Many states allow governments to charge for the cost of searching and copying records. You can log fee amounts here, note whether they have been collected, and attach receipts or fee waiver decisions.
 
 ### Attaching Documents from Search
 
@@ -225,7 +312,7 @@ When you find a document in your search that is responsive to a specific request
 
 1. Open the request you are working on.
 2. Click **Search for Documents** (inside the request screen). This opens a search panel connected to this request.
-3. Run your search the same way as described in Section 3.
+3. Run your search the same way as described in Section 5.
 4. When you find a relevant document, click **Attach to Request** next to that result.
 5. You will be asked to enter a short note about why this document is relevant (for example: "This is the contract referenced in the requester's description"). Enter your note and click **Attach**.
 
@@ -235,9 +322,35 @@ The document now appears in the **Attached Documents** list on the request. You 
 - **Excluded** — You are not releasing this document (and you should note why)
 - **Pending** — You have not decided yet
 
+### Generating a Response Letter
+
+When you are ready to prepare your formal response, click **Generate Response Letter** on the request. The system will draft a letter based on:
+
+- The requester's name and contact information
+- What they asked for
+- Which documents you are including or excluding
+- Any exemptions that were accepted
+
+**This is a draft. Review it carefully before submitting.**
+
+The letter will be labeled as AI-generated and must be reviewed by a staff member before the request can advance to supervisor review. You can edit the letter directly on screen. Common things to check: make sure the tone is professional, confirm that exclusions are explained correctly, and verify the deadline language is accurate for your state.
+
+### Tracking Fees
+
+If your city charges for records requests, use the **Fees** tab on each request to track what was assessed and what was collected.
+
+To add a fee:
+
+1. Open the request and click the **Fees** tab.
+2. Click **Add Fee**.
+3. Enter the amount, the reason (for example, "Search time: 2 hours at $15/hr" or "Copying: 47 pages at $0.25/page"), and the date assessed.
+4. Click **Save**.
+
+You can also record fee waivers here if the requester qualified for one (for example, media exemptions or indigency waivers). Log the reason for the waiver so it is part of the permanent record.
+
 ### Submitting for Review
 
-When you are satisfied with the documents you have gathered and any exemption decisions are made (see Section 6), you are ready to submit the request for supervisor review.
+When you are satisfied with the documents you have gathered, the fees are logged, the response letter is drafted, and any exemption decisions are made (see Section 8), you are ready to submit the request for supervisor review.
 
 1. Make sure the request status is **In Review** or **Drafted**.
 2. Open the request.
@@ -249,13 +362,13 @@ The request will move to **Drafted** status and appear in your supervisor's revi
 
 ---
 
-## 5. Reviewing and Approving Requests
+## 7. Reviewing and Approving Requests
 
 This section is for supervisors, department heads, and city attorneys who review staff work before responses go out.
 
 ### How to See Requests Awaiting Review
 
-When you log in, your dashboard will show a count of requests waiting for your review. You can also click **Requests** in the navigation menu and filter by status: select **Drafted** from the status filter to see only requests that need your attention.
+When you log in, your dashboard will show a count of requests waiting for your review. You can also click **Requests** in the sidebar and filter by status: select **Drafted** from the status filter to see only requests that need your attention.
 
 Each request card shows:
 - The requester's name
@@ -270,9 +383,11 @@ Click on a request to open it. You will see:
 
 - The full description of what was requested
 - All attached documents, marked as included, excluded, or pending
-- Any exemption flags that were reviewed (see Section 6)
+- Any exemption flags that were reviewed (see Section 8)
 - The draft response letter (if one was generated)
 - Notes from the staff member who prepared it
+- The Timeline showing the full history of the request
+- Any fees assessed on the Fees tab
 
 Take your time reviewing each attached document. You can click on a document to view it or the relevant excerpt. Check that:
 
@@ -280,12 +395,13 @@ Take your time reviewing each attached document. You can click on a document to 
 - Anything excluded has a valid reason
 - Exemption flags were reviewed properly
 - The response letter (if any) is accurate
+- Fees (if any) are correctly documented
 
 ### How to Approve
 
 If everything looks correct, click the **Approve** button. You may be asked to enter a brief note confirming your approval (for example, "Reviewed and approved — all exemptions properly noted"). Click **Confirm Approval**.
 
-The request status will change to **Approved**. The staff member will be notified. The final step — marking it as **Sent** — happens after the response is actually sent to the requester.
+The request status will change to **Approved**, then to **Ready for Release**. The staff member will be notified. The final step — marking it as **Sent** — happens after the response is actually delivered to the requester.
 
 ### How to Reject (Send Back for Revision)
 
@@ -308,7 +424,7 @@ Think of them as the sticky note you would leave on a paper file — except this
 
 ---
 
-## 6. Exemption Detection
+## 8. Exemption Detection
 
 ### What Exemptions Are
 
@@ -332,7 +448,7 @@ Flags are not decisions. They are the system's way of saying: *"Hey, you should 
 You will see flags appear:
 - On the document view (highlighted passages)
 - On the request page, in an "Exemption Flags" section
-- In the Exemptions menu in the navigation
+- In the **Exemptions** section of the sidebar
 
 Each flag shows:
 - What triggered it (for example, "SSN pattern detected" or "personnel file keyword")
@@ -340,9 +456,17 @@ Each flag shows:
 - A confidence level
 - The document and page where it was found
 
+### The Exemptions Screen: Two Tabs
+
+When you click **Exemptions** in the sidebar, you will see a tabbed interface with two views:
+
+**Rules** — A list of all the exemption detection rules configured in your system. Each rule shows its name, category, description, and how many flags it has generated. Administrators can edit or add rules from this tab.
+
+**Flags for Review** — All exemption flags that currently need a human decision, across all requests. You can filter this list by request, by flag category, or by flag status. This is the queue you work through when reviewing exemptions.
+
 ### How to Review Flags
 
-To review a flag, open the request or go to the **Exemptions** screen. For each flag, you have two choices:
+To review a flag, open the request or go to the **Exemptions** screen and click the **Flags for Review** tab. For each flag, you have two choices:
 
 **Accept** — You agree that this content is potentially exempt and you will take that into account (redact it, withhold the document, or note it in your response). Click **Accept Flag**.
 
@@ -373,7 +497,7 @@ The LLM (AI language model) also does a secondary pass to catch things the rules
 
 ### What the Acceptance Rate Dashboard Shows
 
-In the **Exemptions** section of the navigation, administrators and supervisors can see a dashboard that shows how exemption flags are being handled across all requests.
+In the **Exemptions** section of the sidebar, administrators and supervisors can see a dashboard that shows how exemption flags are being handled across all requests.
 
 It shows:
 - How many flags were generated vs. how many were accepted or rejected
@@ -385,17 +509,28 @@ This helps your office understand whether the detection rules are well-calibrate
 
 ---
 
-## 7. Managing Data Sources
+## 9. Managing Data Sources
 
 This section is primarily for administrators and IT staff, but records officers may also use it to connect new document folders.
 
 ### What a Data Source Is
 
-A data source is any collection of documents you want CivicRecords AI to search through. In Phase 1, this means folders or directories on your city's file server that contain documents. When you add a data source, you are telling the system: "Please read everything in this folder and make it searchable."
+A data source is any collection of documents you want CivicRecords AI to search through. Each data source is shown as a **card** on the Data Sources page, making it easy to see everything at a glance and check the status of each connection.
+
+### Types of Data Sources
+
+The system supports connecting different types of document repositories. Each source card shows its type and integration status:
+
+- **File Directory** — Folders or shared drives on your city's file server. This is the most common source type and is available now.
+- **Email** — City email systems (Exchange, Google Workspace, etc.). On the integration roadmap for a future release.
+- **Database** — Structured databases or case management systems. On the integration roadmap for a future release.
+- **API** — External systems that provide a data API. On the integration roadmap for a future release.
+
+Cards for future integrations will show a "Coming Soon" or "Roadmap" badge so you can see what is planned without being able to accidentally configure something that is not yet available.
 
 ### How to Add a Document Directory
 
-1. Click **Data Sources** in the navigation menu.
+1. Click **Data Sources** in the sidebar.
 2. Click **Add Data Source**.
 3. Fill in the form:
    - **Name** — A friendly name for this source (for example: "City Clerk Archives 2015–2023")
@@ -411,20 +546,22 @@ The system will add this source to its list. The first time it runs, it will rea
 Normally, ingestion (the process of reading and indexing documents) runs on the schedule you set. But if you just added new documents and want the system to pick them up right away, you can trigger it manually:
 
 1. Go to **Data Sources**.
-2. Find the source you want to update.
-3. Click **Run Now** (or **Trigger Ingestion**).
+2. Find the source card you want to update.
+3. Click **Run Now** (or **Trigger Ingestion**) on that card.
 
 The system will start processing in the background. You do not need to wait on the page — you can navigate away and check back later.
 
 ### What the Ingestion Dashboard Shows
 
-On the Data Sources page, each source shows a status panel:
+Click **Ingestion** in the sidebar to see the ingestion monitor. For each source, you will see:
 
 - **Status** — Running, Completed, Queued, or Error
-- **Last run** — When the most recent ingestion finished
+- **Last run** — Shown as a relative timestamp (for example, "2 hours ago" or "Yesterday at 11:45 PM")
 - **Documents processed** — How many files were read
 - **New documents** — How many new files were found since last run
 - **Errors** — Any files the system could not read, and why
+
+Document filenames in the ingestion log are shown as their original, readable names — you will not see technical IDs or system-generated prefixes in the file list.
 
 If you see errors, note the file names and pass them to your IT department. Common causes are password-protected files, corrupted files, or file types the system cannot read.
 
@@ -432,15 +569,15 @@ The dashboard also shows the overall health of your knowledge base: how many doc
 
 ---
 
-## 8. User Management
+## 10. User Management
 
 This section is for administrators only.
 
 ### How to Create New Users
 
-1. Click **Users** in the navigation menu (only visible to administrators).
+1. Click **Users** in the sidebar (only visible to administrators).
 2. Click **Add User**.
-3. Fill in:
+3. A dialog will appear. Fill in:
    - **Full Name**
    - **Email Address** — This is their login username
    - **Role** — Choose from the four roles described below
@@ -476,7 +613,17 @@ For people who need to be able to look at the system but should not be able to c
 
 ---
 
-## 9. Troubleshooting
+## 11. Discovery Dashboard (Preview)
+
+The **Discovery Dashboard** is a feature coming in v1.1. When it arrives, it will give records officers a proactive intelligence view of your document collection — surfacing patterns, flagging topics that frequently appear in requests, and helping your office get ahead of records issues before requests arrive.
+
+In v1.0.0, you may see a preview card or placeholder for this section. No data is displayed yet — this is a look at what is coming.
+
+If you have ideas for what you would like to see in the Discovery Dashboard, share them with your CivicRecords AI administrator. The development team welcomes feedback from the people who use the system every day.
+
+---
+
+## 12. Troubleshooting
 
 ### "I can't log in"
 
@@ -534,7 +681,7 @@ IT will need to check whether the backend services are running. The fix usually 
 
 ---
 
-## 10. Glossary
+## 13. Glossary
 
 **Open Records Request**
 A formal written request from a member of the public asking your government office to provide copies of specific records. State laws require governments to respond within a set time period and to release records unless a specific exemption applies.
@@ -569,8 +716,14 @@ Any information that can identify a specific person. Examples: a person's name c
 **Audit Log**
 A permanent, tamper-evident record of everything that has happened in the system. Every search, every request update, every exemption decision, every login — all of it is recorded with a timestamp and the name of the person who did it. The audit log exists because open records laws require governments to be accountable for how they process records requests. You may be asked to produce the audit log if your office's process is ever questioned.
 
+**Gap Map**
+A visual summary of which document systems your city has connected to CivicRecords AI and which are not yet connected. The Gap Map helps records officers understand whether their searches are comprehensive and shows what is on the roadmap for future integration.
+
+**Response Letter**
+A formal letter generated by the system as a draft for staff review. The letter summarizes what the requester asked for, what is being provided, what (if anything) is being withheld, and the legal basis for any withholding. Staff must review and approve the letter before it is sent.
+
 ---
 
 *CivicRecords AI is open-source software licensed under Apache 2.0. For technical documentation, installation instructions, and developer guides, see the project repository.*
 
-*This manual covers version 1.0 of the system. If you are using a newer version and something does not match what you see on screen, check with your administrator for an updated manual.*
+*This manual covers version 1.0.0 of the system. If you are using a newer version and something does not match what you see on screen, check with your administrator for an updated manual.*
