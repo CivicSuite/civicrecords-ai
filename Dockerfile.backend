@@ -12,6 +12,7 @@ RUN pip install --no-cache-dir .
 COPY backend/app ./app
 COPY backend/alembic.ini .
 COPY backend/alembic ./alembic
+COPY backend/data ./data
 
 EXPOSE 8000
 

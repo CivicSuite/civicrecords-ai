@@ -11,7 +11,11 @@ CATALOG_PATH = Path(__file__).parent.parent.parent / "data" / "systems_catalog.j
 
 async def load_catalog(session: AsyncSession) -> int:
     """Load or refresh the systems catalog from the bundled JSON file.
-    Returns count of entries loaded."""
+    Returns count of entries loaded. Returns 0 gracefully if file not found."""
+    if not CATALOG_PATH.exists():
+        print(f"Warning: Systems catalog not found at {CATALOG_PATH}, skipping load")
+        return 0
+
     with open(CATALOG_PATH) as f:
         data = json.load(f)
 
