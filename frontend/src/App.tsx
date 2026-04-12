@@ -8,6 +8,7 @@ import Ingestion from "./pages/Ingestion";
 import Search from "./pages/Search";
 import Requests from "./pages/Requests";
 import RequestDetail from "./pages/RequestDetail";
+import Exemptions from "./pages/Exemptions";
 
 export default function App() {
   const [token, setToken] = useState<string | null>(localStorage.getItem("token"));
@@ -20,6 +21,7 @@ export default function App() {
           <h1 className="text-lg font-semibold text-gray-900">CivicRecords AI</h1>
           <a href="/search" className="text-sm text-gray-600 hover:text-gray-900">Search</a>
           <a href="/requests" className="text-sm text-gray-600 hover:text-gray-900">Requests</a>
+          <a href="/exemptions" className="text-sm text-gray-600 hover:text-gray-900">Exemptions</a>
           <a href="/" className="text-sm text-gray-600 hover:text-gray-900">Dashboard</a>
           <a href="/sources" className="text-sm text-gray-600 hover:text-gray-900">Sources</a>
           <a href="/ingestion" className="text-sm text-gray-600 hover:text-gray-900">Ingestion</a>
@@ -36,6 +38,7 @@ export default function App() {
           <Route path="/search" element={<Search token={token} />} />
           <Route path="/requests" element={<Requests token={token} />} />
           <Route path="/requests/:id" element={<RequestDetail token={token} />} />
+          <Route path="/exemptions" element={<Exemptions token={token} />} />
           <Route path="*" element={<Navigate to="/" />} />
         </Routes>
       </main>
