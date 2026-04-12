@@ -3,9 +3,23 @@ import uuid
 from pathlib import Path
 
 from app.worker import celery_app
-from app.database import async_session_maker
 from app.ingestion.pipeline import ingest_file, ingest_directory
 from app.audit.logger import write_audit_log
+
+
+def _make_session():
+    """Create a fresh async engine and session for use in Celery worker processes.
+
+    The module-level async_session_maker is bound to the event loop that existed
+    at import time. Celery forks workers into separate processes with their own
+    event loops, so we need a fresh engine per task execution.
+    """
+    from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
+    from app.config import settings
+
+    engine = create_async_engine(settings.database_url, echo=False)
+    session_maker = async_sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
+    return engine, session_maker
 
 
 def _run_async(coro):
@@ -17,12 +31,43 @@ def _run_async(coro):
 
 
 @celery_app.task(name="civicrecords.ingest_file", bind=True, max_retries=2)
-def task_ingest_file(self, file_path: str, source_id: str, chunk_size: int = 500, chunk_overlap: int = 50, embed_model: str = "nomic-embed-text", user_id: str | None = None):
+def task_ingest_file(
+    self,
+    file_path: str,
+    source_id: str,
+    chunk_size: int = 500,
+    chunk_overlap: int = 50,
+    embed_model: str = "nomic-embed-text",
+    user_id: str | None = None,
+):
     async def _ingest():
-        async with async_session_maker() as session:
-            doc = await ingest_file(session=session, file_path=Path(file_path), source_id=uuid.UUID(source_id), chunk_size=chunk_size, chunk_overlap=chunk_overlap, embed_model=embed_model)
-            await write_audit_log(session=session, action="ingest_file", resource_type="document", resource_id=str(doc.id), user_id=uuid.UUID(user_id) if user_id else None, details={"filename": doc.filename, "status": doc.ingestion_status.value, "chunks": doc.chunk_count})
-            return {"document_id": str(doc.id), "status": doc.ingestion_status.value}
+        engine, session_maker = _make_session()
+        try:
+            async with session_maker() as session:
+                doc = await ingest_file(
+                    session=session,
+                    file_path=Path(file_path),
+                    source_id=uuid.UUID(source_id),
+                    chunk_size=chunk_size,
+                    chunk_overlap=chunk_overlap,
+                    embed_model=embed_model,
+                )
+                await write_audit_log(
+                    session=session,
+                    action="ingest_file",
+                    resource_type="document",
+                    resource_id=str(doc.id),
+                    user_id=uuid.UUID(user_id) if user_id else None,
+                    details={
+                        "filename": doc.filename,
+                        "status": doc.ingestion_status.value,
+                        "chunks": doc.chunk_count,
+                    },
+                )
+                return {"document_id": str(doc.id), "status": doc.ingestion_status.value}
+        finally:
+            await engine.dispose()
+
     try:
         return _run_async(_ingest())
     except Exception as exc:
@@ -32,20 +77,40 @@ def task_ingest_file(self, file_path: str, source_id: str, chunk_size: int = 500
 @celery_app.task(name="civicrecords.ingest_source", bind=True)
 def task_ingest_source(self, source_id: str, user_id: str | None = None):
     async def _ingest():
-        async with async_session_maker() as session:
-            from sqlalchemy import select
-            from app.models.document import DataSource
-            from datetime import datetime, timezone
-            source = await session.get(DataSource, uuid.UUID(source_id))
-            if not source:
-                return {"error": "Source not found"}
-            config = source.connection_config
-            directory = Path(config.get("path", ""))
-            if not directory.is_dir():
-                return {"error": f"Directory not found: {directory}"}
-            stats = await ingest_directory(session=session, directory=directory, source_id=source.id)
-            source.last_ingestion_at = datetime.now(timezone.utc)
-            await session.commit()
-            await write_audit_log(session=session, action="ingest_source", resource_type="data_source", resource_id=source_id, user_id=uuid.UUID(user_id) if user_id else None, details=stats)
-            return stats
+        engine, session_maker = _make_session()
+        try:
+            async with session_maker() as session:
+                from sqlalchemy import select
+                from app.models.document import DataSource
+                from datetime import datetime, timezone
+
+                source = await session.get(DataSource, uuid.UUID(source_id))
+                if not source:
+                    return {"error": "Source not found"}
+
+                config = source.connection_config
+                directory = Path(config.get("path", ""))
+                if not directory.is_dir():
+                    return {"error": f"Directory not found: {directory}"}
+
+                stats = await ingest_directory(
+                    session=session,
+                    directory=directory,
+                    source_id=source.id,
+                )
+                source.last_ingestion_at = datetime.now(timezone.utc)
+                await session.commit()
+
+                await write_audit_log(
+                    session=session,
+                    action="ingest_source",
+                    resource_type="data_source",
+                    resource_id=source_id,
+                    user_id=uuid.UUID(user_id) if user_id else None,
+                    details=stats,
+                )
+                return stats
+        finally:
+            await engine.dispose()
+
     return _run_async(_ingest())

@@ -40,6 +40,9 @@ services:
     env_file: .env
     ports:
       - "8000:8000"
+    volumes:
+      - uploads:/tmp/civicrecords-uploads
+      - cache:/data/cache
     depends_on:
       postgres:
         condition: service_healthy
@@ -58,6 +61,9 @@ services:
       dockerfile: Dockerfile.backend
     env_file: .env
     command: celery -A app.worker worker --loglevel=info
+    volumes:
+      - uploads:/tmp/civicrecords-uploads
+      - cache:/data/cache
     depends_on:
       postgres:
         condition: service_healthy
@@ -93,3 +99,5 @@ volumes:
   pgdata:
   redisdata:
   ollamadata:
+  uploads:
+  cache:

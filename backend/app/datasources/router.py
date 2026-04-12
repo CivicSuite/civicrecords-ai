@@ -58,16 +58,20 @@ async def trigger_ingestion(source_id: uuid.UUID, session: AsyncSession = Depend
 async def upload_file(file: UploadFile = File(...), session: AsyncSession = Depends(get_async_session), user: User = Depends(require_role(UserRole.STAFF))):
     import tempfile
     from pathlib import Path
-    with tempfile.NamedTemporaryFile(delete=False, suffix=f"_{file.filename}") as tmp:
-        content = await file.read()
-        tmp.write(content)
-        tmp_path = tmp.name
+    upload_dir = Path("/tmp/civicrecords-uploads")
+    upload_dir.mkdir(parents=True, exist_ok=True)
+    import uuid as _uuid
+    dest = upload_dir / f"{_uuid.uuid4().hex}_{file.filename}"
+    content = await file.read()
+    dest.write_bytes(content)
+    tmp_path = str(dest)
     result = await session.execute(select(DataSource).where(DataSource.name == "_uploads", DataSource.source_type == SourceType.UPLOAD))
     upload_source = result.scalar_one_or_none()
     if not upload_source:
         upload_source = DataSource(name="_uploads", source_type=SourceType.UPLOAD, created_by=user.id)
         session.add(upload_source)
-        await session.flush()
+        await session.commit()
+        await session.refresh(upload_source)
     from app.ingestion.tasks import task_ingest_file
     task = task_ingest_file.delay(file_path=tmp_path, source_id=str(upload_source.id), user_id=str(user.id))
     return {"task_id": task.id, "filename": file.filename, "status": "queued"}
