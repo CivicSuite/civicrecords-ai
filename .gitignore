@@ -29,3 +29,4 @@ Thumbs.db
 
 # Superpowers
 .superpowers/
+.~lock.*
