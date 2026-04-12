@@ -1,213 +1,222 @@
 import { useState, useEffect } from "react";
 import { apiFetch } from "@/lib/api";
+import { PageHeader } from "@/components/page-header";
+import { DataTable, type Column } from "@/components/data-table";
+import { EmptyState } from "@/components/empty-state";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Badge } from "@/components/ui/badge";
+import { Card, CardContent } from "@/components/ui/card";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Plus, Users as UsersIcon } from "lucide-react";
 
 interface User {
   id: string;
   email: string;
-  full_name: string;
+  full_name: string | null;
   role: string;
   is_active: boolean;
   created_at: string;
   last_login: string | null;
 }
 
-interface Props {
-  token: string;
+const ROLE_COLORS: Record<string, string> = {
+  admin: "bg-purple-100 text-purple-800",
+  staff: "bg-green-100 text-green-800",
+  reviewer: "bg-blue-100 text-blue-800",
+  read_only: "bg-gray-100 text-gray-600",
+};
+
+function formatLastLogin(dateStr: string | null): string {
+  if (!dateStr) return "Never logged in";
+  const days = Math.floor((Date.now() - new Date(dateStr).getTime()) / (1000 * 60 * 60 * 24));
+  if (days === 0) return "Today";
+  if (days === 1) return "Yesterday";
+  return new Date(dateStr).toLocaleDateString();
 }
 
-const ROLES = ["admin", "staff", "reviewer", "read_only"] as const;
-type Role = typeof ROLES[number];
-
-export default function Users({ token }: Props) {
+export default function Users({ token }: { token: string }) {
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-
-  // Create user form state
   const [showForm, setShowForm] = useState(false);
-  const [formEmail, setFormEmail] = useState("");
-  const [formPassword, setFormPassword] = useState("");
-  const [formFullName, setFormFullName] = useState("");
-  const [formRole, setFormRole] = useState<Role>("read_only");
+  const [formData, setFormData] = useState({ email: "", password: "", fullName: "", role: "read_only" });
   const [formError, setFormError] = useState("");
-  const [formSubmitting, setFormSubmitting] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
 
-  const loadUsers = () => {
-    setLoading(true);
-    setError("");
-    apiFetch<User[]>("/admin/users", { token })
-      .then(setUsers)
-      .catch((e: unknown) => setError(e instanceof Error ? e.message : String(e)))
-      .finally(() => setLoading(false));
+  const loadData = async () => {
+    try {
+      const data = await apiFetch<User[]>("/admin/users", { token });
+      setUsers(data);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Failed to load");
+    } finally {
+      setLoading(false);
+    }
   };
 
-  useEffect(() => {
-    loadUsers();
-  }, [token]);
+  useEffect(() => { loadData(); }, [token]);
 
-  const handleCreateUser = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setSubmitting(true);
     setFormError("");
-    setFormSubmitting(true);
     try {
       await apiFetch("/auth/register", {
         token,
         method: "POST",
         body: JSON.stringify({
-          email: formEmail,
-          password: formPassword,
-          full_name: formFullName,
-          role: formRole,
+          email: formData.email,
+          password: formData.password,
+          full_name: formData.fullName,
+          role: formData.role,
         }),
       });
-      setFormEmail("");
-      setFormPassword("");
-      setFormFullName("");
-      setFormRole("read_only");
       setShowForm(false);
-      loadUsers();
-    } catch (e: unknown) {
-      setFormError(e instanceof Error ? e.message : "Failed to create user");
+      setFormData({ email: "", password: "", fullName: "", role: "read_only" });
+      await loadData();
+    } catch (e) {
+      setFormError(e instanceof Error ? e.message : "Failed to create");
     } finally {
-      setFormSubmitting(false);
+      setSubmitting(false);
     }
   };
 
-  return (
-    <div>
-      <div className="flex items-center justify-between mb-4">
-        <h2 className="text-lg font-semibold text-gray-900">Users</h2>
-        <button
-          onClick={() => { setShowForm(!showForm); setFormError(""); }}
-          className="btn btn-primary"
-        >
-          {showForm ? "Cancel" : "+ Create User"}
-        </button>
+  const columns: Column<User & Record<string, unknown>>[] = [
+    {
+      key: "full_name",
+      header: "Name",
+      render: (u) => <span className="font-medium">{u.full_name || u.email}</span>,
+    },
+    {
+      key: "email",
+      header: "Email",
+      render: (u) => <span className="text-sm text-muted-foreground">{u.email}</span>,
+    },
+    {
+      key: "role",
+      header: "Role",
+      render: (u) => (
+        <Badge variant="outline" className={`text-xs border-0 ${ROLE_COLORS[u.role] || ROLE_COLORS.read_only}`}>
+          {u.role}
+        </Badge>
+      ),
+    },
+    {
+      key: "is_active",
+      header: "Status",
+      render: (u) => (
+        <span className={`text-sm ${u.is_active ? "text-success" : "text-muted-foreground"}`}>
+          {u.is_active ? "Active" : "Inactive"}
+        </span>
+      ),
+    },
+    {
+      key: "last_login",
+      header: "Last Active",
+      render: (u) => (
+        <span className="text-sm text-muted-foreground">{formatLastLogin(u.last_login)}</span>
+      ),
+    },
+  ];
+
+  if (loading) {
+    return (
+      <div className="space-y-6">
+        <Skeleton className="h-10 w-64" />
+        <Skeleton className="h-64" />
       </div>
+    );
+  }
+
+  return (
+    <div className="space-y-6">
+      <PageHeader
+        title="Users"
+        actions={
+          <Dialog open={showForm} onOpenChange={setShowForm}>
+            <DialogTrigger render={<Button />}>
+              <Plus className="h-4 w-4 mr-2" />
+              Create User
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Create User</DialogTitle>
+              </DialogHeader>
+              <form onSubmit={handleSubmit} className="space-y-4">
+                {formError && (
+                  <Card className="border-destructive">
+                    <CardContent className="p-3"><p className="text-destructive text-sm">{formError}</p></CardContent>
+                  </Card>
+                )}
+                <div>
+                  <label className="text-sm font-medium">Full Name</label>
+                  <Input value={formData.fullName} onChange={(e) => setFormData({ ...formData, fullName: e.target.value })} required />
+                </div>
+                <div>
+                  <label className="text-sm font-medium">Email</label>
+                  <Input type="email" value={formData.email} onChange={(e) => setFormData({ ...formData, email: e.target.value })} required />
+                </div>
+                <div>
+                  <label className="text-sm font-medium">Password</label>
+                  <Input type="password" value={formData.password} onChange={(e) => setFormData({ ...formData, password: e.target.value })} required minLength={8} />
+                </div>
+                <div>
+                  <label className="text-sm font-medium">Role</label>
+                  <Select value={formData.role} onValueChange={(v) => setFormData({ ...formData, role: v ?? "read_only" })}>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="read_only">Read Only</SelectItem>
+                      <SelectItem value="staff">Staff</SelectItem>
+                      <SelectItem value="reviewer">Reviewer</SelectItem>
+                      <SelectItem value="admin">Admin</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="flex justify-end gap-3">
+                  <Button type="button" variant="outline" onClick={() => setShowForm(false)}>Cancel</Button>
+                  <Button type="submit" disabled={submitting}>{submitting ? "Creating..." : "Create User"}</Button>
+                </div>
+              </form>
+            </DialogContent>
+          </Dialog>
+        }
+      />
 
       {error && (
-        <p role="alert" className="error-banner mb-4">
-          {error}
-        </p>
+        <Card className="border-destructive">
+          <CardContent className="p-4"><p className="text-destructive text-sm">{error}</p></CardContent>
+        </Card>
       )}
 
-      {showForm && (
-        <div className="bg-white border border-gray-200 rounded-lg p-4 mb-4">
-          <h3 className="text-sm font-semibold text-gray-800 mb-3">Create User</h3>
-          {formError && (
-            <p role="alert" className="error-banner mb-3">
-              {formError}
-            </p>
-          )}
-          <form onSubmit={handleCreateUser} className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-            <div>
-              <label className="form-label">Email *</label>
-              <input
-                type="email"
-                required
-                value={formEmail}
-                onChange={(e) => setFormEmail(e.target.value)}
-                className="form-input"
-                placeholder="user@example.com"
-                aria-label="Email address"
-              />
-            </div>
-            <div>
-              <label className="form-label">Password *</label>
-              <input
-                type="password"
-                required
-                value={formPassword}
-                onChange={(e) => setFormPassword(e.target.value)}
-                className="form-input"
-                placeholder="Min 8 characters"
-                aria-label="Password"
-              />
-            </div>
-            <div>
-              <label className="form-label">Full Name</label>
-              <input
-                type="text"
-                value={formFullName}
-                onChange={(e) => setFormFullName(e.target.value)}
-                className="form-input"
-                placeholder="Jane Smith"
-                aria-label="Full name"
-              />
-            </div>
-            <div>
-              <label className="form-label">Role *</label>
-              <select
-                value={formRole}
-                onChange={(e) => setFormRole(e.target.value as Role)}
-                className="form-input"
-                aria-label="User role"
-              >
-                {ROLES.map((r) => (
-                  <option key={r} value={r}>{r}</option>
-                ))}
-              </select>
-            </div>
-            <div className="sm:col-span-2 flex justify-end">
-              <button
-                type="submit"
-                disabled={formSubmitting}
-                className="btn btn-primary disabled:opacity-50"
-              >
-                {formSubmitting ? "Creating..." : "Create User"}
-              </button>
-            </div>
-          </form>
-        </div>
-      )}
-
-      {loading ? (
-        <div className="flex items-center justify-center py-12">
-          <span className="spinner" aria-label="Loading users" />
-        </div>
+      {users.length === 0 ? (
+        <EmptyState
+          icon={UsersIcon}
+          title="No users found"
+          description="Create user accounts for staff members who need access to the system."
+          action={<Button onClick={() => setShowForm(true)}><Plus className="h-4 w-4 mr-2" /> Create First User</Button>}
+        />
       ) : (
-        <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
-          <table className="w-full text-sm" aria-label="User accounts">
-            <thead>
-              <tr className="border-b border-gray-200 bg-gray-50">
-                <th className="text-left px-4 py-3 font-medium text-gray-600">Name</th>
-                <th className="text-left px-4 py-3 font-medium text-gray-600">Email</th>
-                <th className="text-left px-4 py-3 font-medium text-gray-600">Role</th>
-                <th className="text-left px-4 py-3 font-medium text-gray-600">Status</th>
-                <th className="text-left px-4 py-3 font-medium text-gray-600">Last Login</th>
-              </tr>
-            </thead>
-            <tbody>
-              {users.map((u) => (
-                <tr key={u.id} className="border-b border-gray-100">
-                  <td className="px-4 py-3 text-gray-900">{u.full_name || "—"}</td>
-                  <td className="px-4 py-3 text-gray-600">{u.email}</td>
-                  <td className="px-4 py-3">
-                    <span className={`badge ${
-                      u.role === "admin" ? "bg-purple-100 text-purple-700" :
-                      u.role === "reviewer" ? "bg-blue-100 text-blue-700" :
-                      u.role === "staff" ? "bg-green-100 text-green-700" :
-                      "bg-gray-100 text-gray-700"
-                    }`}>
-                      {u.role}
-                    </span>
-                  </td>
-                  <td className="px-4 py-3">
-                    <span className={`text-xs ${u.is_active ? "text-green-600" : "text-red-600"}`}>
-                      {u.is_active ? "Active" : "Inactive"}
-                    </span>
-                  </td>
-                  <td className="px-4 py-3 text-gray-500">
-                    {u.last_login ? new Date(u.last_login).toLocaleDateString() : "Never"}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-          {users.length === 0 && (
-            <p className="text-center py-8 text-gray-400">No users found.</p>
-          )}
-        </div>
+        <DataTable
+          columns={columns}
+          data={users as (User & Record<string, unknown>)[]}
+          rowKey={(u) => u.id as string}
+          ariaLabel="System users"
+        />
       )}
     </div>
   );
