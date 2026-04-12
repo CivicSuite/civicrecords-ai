@@ -4,6 +4,20 @@ interface ApiOptions extends RequestInit {
   token?: string;
 }
 
+/**
+ * Decode a JWT and check if it's expired.
+ * Returns true if the token is valid (not expired), false otherwise.
+ */
+export function isTokenValid(token: string): boolean {
+  try {
+    const payload = JSON.parse(atob(token.split(".")[1]));
+    // exp is in seconds, Date.now() in ms
+    return payload.exp * 1000 > Date.now();
+  } catch {
+    return false;
+  }
+}
+
 export async function apiFetch<T>(path: string, options: ApiOptions = {}): Promise<T> {
   const { token, ...fetchOptions } = options;
   const headers: Record<string, string> = {

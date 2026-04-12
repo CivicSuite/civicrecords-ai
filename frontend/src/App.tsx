@@ -1,5 +1,6 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Routes, Route, Navigate, Link, useLocation } from "react-router-dom";
+import { isTokenValid } from "./lib/api";
 import Login from "./pages/Login";
 import Dashboard from "./pages/Dashboard";
 import Users from "./pages/Users";
@@ -39,11 +40,32 @@ function NavLink({ to, label }: { to: string; label: string }) {
 }
 
 export default function App() {
-  const [token, setToken] = useState<string | null>(localStorage.getItem("token"));
+  const [token, setToken] = useState<string | null>(() => {
+    const stored = localStorage.getItem("token");
+    // Clear expired tokens on load
+    if (stored && !isTokenValid(stored)) {
+      localStorage.removeItem("token");
+      return null;
+    }
+    return stored;
+  });
+
+  const logout = useCallback(() => setToken(null), []);
 
   useEffect(() => {
     if (token) localStorage.setItem("token", token);
     else localStorage.removeItem("token");
+  }, [token]);
+
+  // Check token expiration every 30 seconds
+  useEffect(() => {
+    if (!token) return;
+    const interval = setInterval(() => {
+      if (!isTokenValid(token)) {
+        setToken(null);
+      }
+    }, 30000);
+    return () => clearInterval(interval);
   }, [token]);
 
   if (!token) return <Login onLogin={setToken} />;
@@ -60,7 +82,7 @@ export default function App() {
           ))}
         </div>
         <button
-          onClick={() => setToken(null)}
+          onClick={logout}
           className="text-sm text-gray-500 hover:text-gray-700 whitespace-nowrap ml-4"
           aria-label="Sign out of your account"
         >
