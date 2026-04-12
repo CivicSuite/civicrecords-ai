@@ -55,6 +55,9 @@ def create_app() -> FastAPI:
     from app.service_accounts import service_accounts_router
     app.include_router(service_accounts_router)
 
+    from app.admin import admin_router
+    app.include_router(admin_router)
+
     @app.get("/health")
     async def health():
         return {"status": "ok", "version": "0.1.0"}
