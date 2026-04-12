@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { apiFetch } from "@/lib/api";
+import FileUpload from "@/components/FileUpload";
 
 interface DataSource {
   id: string;
@@ -138,6 +139,11 @@ export default function DataSources({ token }: Props) {
           </button>
         </form>
       )}
+
+      <div className="bg-white rounded-lg border border-gray-200 p-4 mb-4">
+        <h3 className="text-sm font-medium text-gray-700 mb-3">Upload a Document</h3>
+        <FileUpload token={token} onUploadComplete={loadSources} />
+      </div>
 
       <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
         {loading ? (
