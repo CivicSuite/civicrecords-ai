@@ -21,5 +21,8 @@ celery_app.conf.update(
 
 @celery_app.task(name="civicrecords.health")
 def health_check():
-    """Simple health check task."""
     return {"status": "ok"}
+
+
+# Import tasks so Celery discovers them
+import app.ingestion.tasks  # noqa: F401, E402
