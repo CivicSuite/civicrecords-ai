@@ -158,7 +158,7 @@ Service accounts with hashed API keys enable instance-to-instance federation acc
 - 50-state + DC exemption rule coverage (180 rules across 51 jurisdictions)
 - 5 compliance template documents (AI Use Disclosure, Response Letter Disclosure, CAIA Impact Assessment, AI Governance Policy, Data Residency Attestation)
 - Template render endpoint with city profile variable substitution
-- Exemption auditability dashboard with acceptance/rejection rates and CSV/JSON export
+- Exemption auditability dashboard with acceptance/rejection rates and CSV/JSON export (time-period filtering not yet implemented)
 - Model registry CRUD endpoints (spec 6.7 compliance metadata)
 
 **Carried from v1.0.x:**
