@@ -288,6 +288,6 @@ Applied to all document chunks and exemption rules in `assemble_context()`. Syst
 
 9. ~~**P1 — scope_assessment endpoint coverage:** COMPLETED 2026-04-13. Added to RequestCreate (with pattern validation), RequestRead, RequestUpdate. Router wired through on create and update.~~
 
-10. **P2 — Manual/Export Drop Connector:** Implement `app/connectors/manual_drop.py` for manual file upload ingestion pathway.
+10. ~~**P2 — Manual/Export Drop Connector:** COMPLETED 2026-04-13. ManualDropConnector (`app/connectors/manual_drop.py`) with extension allowlist, 100MB size limit, archive to _processed/, recursive scan option. 17 tests.~~
 
-11. **P2 — WCAG touch targets:** Audit and enforce minimum 44px touch targets on interactive elements.
+11. ~~**P2 — WCAG touch targets:** COMPLETED 2026-04-13. Added `min-height: 44px` to all interactive elements (button, input, select, textarea, [role="button"]) in globals.css. Verified in browser — 0 violations (skip-to-content link is intentionally 1x1px per WCAG pattern).~~
