@@ -131,27 +131,16 @@ async def _ingest_email_source(session, source, user_id: str | None) -> dict:
     """Ingest documents from an IMAP email source via the connector protocol."""
     import logging
     from datetime import datetime, timezone
-    from app.connectors.imap_email import ImapEmailConnector
+    from app.connectors import imap_email as _imap_mod
 
     logger = logging.getLogger(__name__)
 
-    connector = ImapEmailConnector(source.connection_config)
+    connector = _imap_mod.ImapEmailConnector(source.connection_config)
 
-    # authenticate() and discover() use blocking imaplib — run in thread
-    authenticated = await asyncio.to_thread(
-        asyncio.get_event_loop().run_until_complete,
-        connector.authenticate()
-    )
+    authenticated = await connector.authenticate()
     if not authenticated:
         return {"error": "IMAP authentication failed"}
 
-    # Wrap blocking IMAP calls in thread
-    import functools
-
-    loop = asyncio.get_event_loop()
-
-    # discover and fetch are async but use blocking imaplib internally
-    # Run them via to_thread since they block
     discovered = await connector.discover()
 
     ingested = 0
