@@ -4,7 +4,7 @@ from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.auth.dependencies import require_role
-from app.config import settings
+from app.config import APP_VERSION, settings
 from app.database import get_async_session
 from app.models.audit import AuditLog
 from app.models.user import User, UserRole
@@ -69,7 +69,7 @@ async def system_status(
         redis_status = "unreachable"
 
     return SystemStatus(
-        version="1.0.0",
+        version=APP_VERSION,
         database=db_status,
         ollama=ollama_status,
         redis=redis_status,

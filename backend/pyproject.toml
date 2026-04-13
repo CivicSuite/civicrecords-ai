@@ -26,6 +26,7 @@ dependencies = [
     "Pillow>=11.0.0",
     "pytesseract>=0.3.10",
     "aiofiles>=24.1.0",
+    "PyJWT>=2.8.0",
 ]
 
 [project.optional-dependencies]

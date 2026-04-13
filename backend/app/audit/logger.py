@@ -14,10 +14,11 @@ def _compute_hash(prev_hash: str, timestamp: str, user_id: str, action: str, det
     return hashlib.sha256(payload.encode("utf-8")).hexdigest()
 
 
-async def get_last_hash(session: AsyncSession) -> str:
-    result = await session.execute(
-        select(AuditLog.entry_hash).order_by(AuditLog.id.desc()).limit(1)
-    )
+async def get_last_hash(session: AsyncSession, *, lock: bool = False) -> str:
+    stmt = select(AuditLog.entry_hash).order_by(AuditLog.id.desc()).limit(1)
+    if lock:
+        stmt = stmt.with_for_update()
+    result = await session.execute(stmt)
     last = result.scalar_one_or_none()
     return last if last else "0" * 64
 
@@ -31,7 +32,7 @@ async def write_audit_log(
     details: dict | None = None,
     ai_generated: bool = False,
 ) -> AuditLog:
-    prev_hash = await get_last_hash(session)
+    prev_hash = await get_last_hash(session, lock=True)
     now = datetime.now(timezone.utc)
     timestamp_str = now.isoformat()
     user_str = str(user_id) if user_id else "system"

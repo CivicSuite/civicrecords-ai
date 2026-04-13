@@ -4,11 +4,14 @@ Connects to local or mounted file directories to discover and fetch documents.
 Supports: PDF, DOCX, XLSX, CSV, TXT, HTML, EML
 """
 
+import logging
 import os
 import hashlib
 import time
 from datetime import datetime
 from pathlib import Path
+
+logger = logging.getLogger(__name__)
 
 from app.connectors.base import (
     BaseConnector,
@@ -67,6 +70,12 @@ class FileSystemConnector(BaseConnector):
 
             stat = file_path.stat()
             if stat.st_size > self.max_file_size:
+                logger.warning(
+                    "Skipping large file (%.1f MB > limit %.1f MB): %s",
+                    stat.st_size / 1024 / 1024,
+                    self.max_file_size / 1024 / 1024,
+                    file_path,
+                )
                 continue
 
             records.append(DiscoveredRecord(

@@ -3,7 +3,9 @@
 # Detects AMD GPU/NPU capabilities and writes configuration to .env.hardware
 # Called by install.sh before docker compose up
 
-set -euo pipefail
+
+# NOTE: No set -euo pipefail — this is a detection script where partial results
+# are acceptable. Individual probes use defensive fallbacks rather than aborting.
 
 HARDWARE_ENV_FILE=".env.hardware"
 echo "# CivicRecords AI — Auto-detected hardware configuration" > "$HARDWARE_ENV_FILE"
@@ -14,7 +16,7 @@ echo "=== CivicRecords AI Hardware Detection ==="
 echo ""
 
 # ─── CPU Detection ───────────────────────────────────────────────────────────
-CPU_MODEL=$(grep -m1 "model name" /proc/cpuinfo | cut -d: -f2 | xargs)
+CPU_MODEL=$(grep -m1 "model name" /proc/cpuinfo 2>/dev/null | cut -d: -f2 | xargs 2>/dev/null || sysctl -n machdep.cpu.brand_string 2>/dev/null || echo "Unknown CPU")
 echo "CPU: $CPU_MODEL"
 echo "CIVICRECORDS_CPU_MODEL=\"$CPU_MODEL\"" >> "$HARDWARE_ENV_FILE"
 
@@ -127,7 +129,7 @@ echo "CIVICRECORDS_HSA_OVERRIDE=\"$HSA_OVERRIDE\"" >> "$HARDWARE_ENV_FILE"
 # ─── NPU Detection ────────────────────────────────────────────────────────────
 NPU_AVAILABLE=false
 
-if [ -e /dev/accel/accel0 ] || lsmod 2>/dev/null | grep -q "amdxdna"; then
+if [ -e /dev/accel/accel0 ] || (lsmod 2>/dev/null | grep -q "amdxdna" 2>/dev/null); then
     NPU_AVAILABLE=true
     echo "NPU: XDNA driver detected — $NPU_TOPS TOPS available"
     echo "NOTE: Ollama does not currently use the NPU; reserved for future ONNX integration"
@@ -138,14 +140,20 @@ fi
 echo "CIVICRECORDS_NPU_AVAILABLE=$NPU_AVAILABLE" >> "$HARDWARE_ENV_FILE"
 
 # ─── Memory Detection ─────────────────────────────────────────────────────────
-TOTAL_RAM_KB=$(grep MemTotal /proc/meminfo | awk '{print $2}')
-TOTAL_RAM_GB=$((TOTAL_RAM_KB / 1024 / 1024))
+TOTAL_RAM_KB=$(grep MemTotal /proc/meminfo 2>/dev/null | awk '{print $2}' || echo "0")
+if [ "$TOTAL_RAM_KB" -eq 0 ] 2>/dev/null; then
+    # macOS fallback
+    TOTAL_RAM_BYTES=$(sysctl -n hw.memsize 2>/dev/null || echo "0")
+    TOTAL_RAM_GB=$((TOTAL_RAM_BYTES / 1024 / 1024 / 1024))
+else
+    TOTAL_RAM_GB=$((TOTAL_RAM_KB / 1024 / 1024))
+fi
 echo ""
 echo "RAM: ${TOTAL_RAM_GB} GB total"
 
 if [ "$TOTAL_RAM_GB" -lt 32 ]; then
-    echo "ERROR: CivicRecords AI requires a minimum of 32 GB RAM. Found: ${TOTAL_RAM_GB} GB"
-    exit 1
+    echo "WARNING: CivicRecords AI recommends a minimum of 32 GB RAM. Found: ${TOTAL_RAM_GB} GB"
+    echo "Installation will continue, but performance may be limited."
 fi
 
 RECOMMENDED_MODEL="gemma4:12b"
@@ -157,7 +165,7 @@ echo "CIVICRECORDS_TOTAL_RAM_GB=$TOTAL_RAM_GB" >> "$HARDWARE_ENV_FILE"
 echo "CIVICRECORDS_RECOMMENDED_MODEL=\"$RECOMMENDED_MODEL\"" >> "$HARDWARE_ENV_FILE"
 
 # ─── Disk Detection ───────────────────────────────────────────────────────────
-DISK_FREE_GB=$(df -BG . | tail -1 | awk '{print $4}' | tr -d 'G')
+DISK_FREE_GB=$(df -BG . 2>/dev/null | tail -1 | awk '{print $4}' | tr -d 'G' || df -g . 2>/dev/null | tail -1 | awk '{print $4}' || echo "0")
 echo "Disk free: ${DISK_FREE_GB} GB on current volume"
 
 if [ "$DISK_FREE_GB" -lt 50 ]; then

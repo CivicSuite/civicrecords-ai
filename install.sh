@@ -64,7 +64,7 @@ fi
 # ─── Hardware Detection ───────────────────────────────────────────────────────
 echo ""
 echo "Detecting hardware capabilities..."
-bash scripts/detect_hardware.sh
+bash scripts/detect_hardware.sh || echo "[WARN] Hardware detection failed — defaulting to CPU mode"
 echo ""
 
 # Source the hardware config
@@ -151,7 +151,7 @@ echo ""
 echo ">>> Waiting for Ollama to be ready..."
 for i in $(seq 1 30); do
     # shellcheck disable=SC2086
-    if docker compose $COMPOSE_FILES exec -T ollama curl -sf http://localhost:11434/api/tags &>/dev/null; then
+    if docker compose $COMPOSE_FILES exec -T ollama ollama list &>/dev/null; then
         echo "[OK] Ollama is ready"
         break
     fi

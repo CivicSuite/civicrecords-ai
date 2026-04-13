@@ -240,6 +240,7 @@ async def attach_document(
 
     # Cache document for legal defensibility
     if doc.source_path:
+        import asyncio
         import shutil
         from pathlib import Path
 
@@ -247,8 +248,8 @@ async def attach_document(
         cache_dir.mkdir(parents=True, exist_ok=True)
         source = Path(doc.source_path)
         if source.exists():
-            dest = cache_dir / source.name
-            shutil.copy2(str(source), str(dest))
+            dest = cache_dir / f"{doc.id}_{source.name}"
+            await asyncio.to_thread(shutil.copy2, str(source), str(dest))
             cache_entry = DocumentCache(
                 document_id=doc.id,
                 request_id=request_id,

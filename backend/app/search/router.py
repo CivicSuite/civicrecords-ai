@@ -139,14 +139,24 @@ async def list_sessions(
     )
     sessions = result.scalars().all()
 
-    output = []
-    for s in sessions:
-        queries_result = await session.execute(
+    # Batch-load all queries for these sessions (avoids N+1)
+    if sessions:
+        from collections import defaultdict
+        session_ids = [s.id for s in sessions]
+        all_queries_result = await session.execute(
             select(SearchQuery)
-            .where(SearchQuery.session_id == s.id)
+            .where(SearchQuery.session_id.in_(session_ids))
             .order_by(SearchQuery.created_at.asc())
         )
-        queries = queries_result.scalars().all()
+        queries_by_session: dict[uuid.UUID, list] = defaultdict(list)
+        for q in all_queries_result.scalars().all():
+            queries_by_session[q.session_id].append(q)
+    else:
+        queries_by_session = {}
+
+    output = []
+    for s in sessions:
+        queries = queries_by_session.get(s.id, [])
         output.append(SearchSessionRead(
             id=s.id,
             user_id=s.user_id,

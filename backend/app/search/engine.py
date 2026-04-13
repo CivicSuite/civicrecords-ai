@@ -30,6 +30,7 @@ async def semantic_search(
     """Search by vector similarity. Returns (chunk_id, distance) pairs."""
     embedding_str = "[" + ",".join(str(v) for v in query_embedding) + "]"
 
+    # filter_clause is built from hardcoded strings only — values always use :params
     filter_clause = ""
     params = {"embedding": embedding_str, "limit": limit}
 
@@ -61,6 +62,7 @@ async def keyword_search(
     filters: dict | None = None,
 ) -> list[tuple[uuid.UUID, float]]:
     """Search by full-text. Returns (chunk_id, rank_score) pairs."""
+    # filter_clause is built from hardcoded strings only — values always use :params
     filter_clause = ""
     params = {"query": query_text, "limit": limit}
 

@@ -5,7 +5,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app.audit import AuditMiddleware, audit_router
 from app.auth import auth_router, users_router
-from app.config import settings
+from app.config import APP_VERSION, settings
 from app.database import engine
 from app.models.user import User, UserRole
 from app.schemas.user import AdminUserCreate
@@ -69,7 +69,7 @@ def create_app() -> FastAPI:
     app = FastAPI(
         title="CivicRecords AI",
         description="AI-powered open records support for American cities",
-        version="1.0.1",
+        version=APP_VERSION,
         lifespan=lifespan,
     )
 
@@ -87,8 +87,9 @@ def create_app() -> FastAPI:
     # Uses in-memory tracking via middleware since fastapi-users generates the
     # login route and slowapi decorators can't be applied directly.
     import time
-    from collections import defaultdict
-    _login_attempts: dict[str, list[float]] = defaultdict(list)
+    from collections import OrderedDict
+    _MAX_TRACKED_IPS = 10_000
+    _login_attempts: OrderedDict[str, list[float]] = OrderedDict()
 
     @app.middleware("http")
     async def rate_limit_login(request: Request, call_next):
@@ -97,17 +98,23 @@ def create_app() -> FastAPI:
             now = time.time()
             window = 60  # seconds
             max_requests = 5
-            # Prune old entries
-            _login_attempts[client_ip] = [
-                t for t in _login_attempts[client_ip] if now - t < window
-            ]
-            if len(_login_attempts[client_ip]) >= max_requests:
+            # Prune old entries for this IP
+            if client_ip in _login_attempts:
+                _login_attempts[client_ip] = [
+                    t for t in _login_attempts[client_ip] if now - t < window
+                ]
+                if not _login_attempts[client_ip]:
+                    del _login_attempts[client_ip]
+            if client_ip in _login_attempts and len(_login_attempts[client_ip]) >= max_requests:
                 return Response(
                     content="Rate limit exceeded. Try again later.",
                     status_code=429,
                     media_type="text/plain",
                 )
-            _login_attempts[client_ip].append(now)
+            _login_attempts.setdefault(client_ip, []).append(now)
+            # Evict oldest IPs if tracking too many
+            while len(_login_attempts) > _MAX_TRACKED_IPS:
+                _login_attempts.popitem(last=False)
         return await call_next(request)
 
     app.include_router(auth_router, prefix="/auth/jwt", tags=["auth"])
@@ -148,7 +155,7 @@ def create_app() -> FastAPI:
 
     @app.get("/health")
     async def health():
-        return {"status": "ok", "version": "1.0.1"}
+        return {"status": "ok", "version": APP_VERSION}
 
     return app
 
