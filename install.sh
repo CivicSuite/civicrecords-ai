@@ -129,19 +129,39 @@ fi
 
 # Wait for API health
 echo ">>> Waiting for API to be healthy..."
+API_HEALTHY=false
 for i in $(seq 1 30); do
     if curl -sf http://localhost:8000/health &>/dev/null; then
         echo "[OK] API is healthy!"
+        API_HEALTHY=true
         break
     fi
     echo "  Waiting... ($i/30)"
     sleep 5
 done
 
+if [ "$API_HEALTHY" = "false" ]; then
+    echo "[WARN] API health check timed out. Check logs with: docker compose logs api"
+fi
+
 # ─── Pull Models ─────────────────────────────────────────────────────────────
 RECOMMENDED_MODEL="${CIVICRECORDS_RECOMMENDED_MODEL:-gemma4:12b}"
 
 echo ""
+echo ">>> Waiting for Ollama to be ready..."
+for i in $(seq 1 30); do
+    # shellcheck disable=SC2086
+    if docker compose $COMPOSE_FILES exec -T ollama curl -sf http://localhost:11434/api/tags &>/dev/null; then
+        echo "[OK] Ollama is ready"
+        break
+    fi
+    if [ "$i" -eq 30 ]; then
+        echo "[WARN] Ollama did not become ready. Model pull may fail."
+    fi
+    echo "  Waiting for Ollama... ($i/30)"
+    sleep 3
+done
+
 echo ">>> Pulling embedding model (required for search)..."
 # shellcheck disable=SC2086
 docker compose $COMPOSE_FILES exec ollama ollama pull nomic-embed-text || echo "[WARN] Embedding model pull failed — retry: docker compose exec ollama ollama pull nomic-embed-text"

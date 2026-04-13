@@ -18,41 +18,54 @@ Thank you for your interest in contributing to CivicRecords AI. This project hel
 git clone https://github.com/scottconverse/civicrecords-ai.git
 cd civicrecords-ai
 
-# Create environment file
+# Option A: Use the installer (recommended)
+bash install.sh          # Linux/macOS
+# .\install.ps1          # Windows PowerShell
+
+# Option B: Manual setup
 cp .env.example .env
 # Edit .env — set JWT_SECRET (generate with: openssl rand -hex 32)
-
-# Start all services
 docker compose up -d
-
-# Run database migrations
-docker compose run --rm api alembic upgrade head
-
-# Pull the embedding model
 docker compose exec ollama ollama pull nomic-embed-text
-
-# Verify it works
 curl http://localhost:8000/health
 # Open http://localhost:8080 in your browser
 ```
 
+### GPU Acceleration
+
+The installer auto-detects AMD GPUs and NPUs. You can also configure manually:
+
+- **Linux (ROCm):** `docker compose -f docker-compose.yml -f docker-compose.gpu.yml up -d`
+- **Windows (DirectML):** Install [Ollama for Windows](https://ollama.com/download), then `docker compose -f docker-compose.yml -f docker-compose.host-ollama.yml up -d`
+
+Hardware detection scripts: `scripts/detect_hardware.sh` (Linux) and `scripts/detect_hardware.ps1` (Windows).
+
 ### Running Tests
+
+Tests run inside the API container (pytest and psycopg2 are included in the image):
+
+```bash
+# Copy tests into the running container and run
+docker cp backend/tests/. "$(docker compose ps -q api)":/app/tests/
+docker compose exec -T api sh -c "TESTING=1 python -m pytest tests/ -v"
+```
+
+Or run locally against a test database:
 
 ```bash
 cd backend
-
-# Install dev dependencies
 pip install -e ".[dev]"
-pip install psycopg2-binary
 
-# Ensure PostgreSQL is accessible on localhost:5432
-# (use docker-compose.dev.yml to expose the port)
-docker compose -f docker-compose.yml -f docker-compose.dev.yml up -d postgres
+# Start PostgreSQL and create test database
+docker compose up -d postgres redis
+docker compose exec postgres createdb -U civicrecords civicrecords_test
 
-# Run all tests
-DATABASE_URL=postgresql+asyncpg://civicrecords:civicrecords@localhost:5432/civicrecords \
+# Run tests
+TESTING=1 DATABASE_URL=postgresql+asyncpg://civicrecords:civicrecords@localhost:5432/civicrecords \
   python -m pytest tests/ -v
 ```
+
+**Note:** The `TESTING=1` env var skips JWT secret validation so tests can run with a dummy secret.
 
 ### Frontend Development
 

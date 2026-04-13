@@ -144,6 +144,24 @@ if (-not $healthy) {
 $recommendedModel = if ($hardwareEnv["CIVICRECORDS_RECOMMENDED_MODEL"]) { $hardwareEnv["CIVICRECORDS_RECOMMENDED_MODEL"] } else { "gemma4:12b" }
 
 Write-Host ""
+if (-not $useHostOllama) {
+    Write-Host ">>> Waiting for Ollama to be ready..."
+    for ($i = 1; $i -le 30; $i++) {
+        try {
+            $ollamaCheck = docker compose @composeFiles exec -T ollama curl -sf http://localhost:11434/api/tags 2>$null
+            if ($LASTEXITCODE -eq 0) {
+                Write-Host "[OK] Ollama is ready" -ForegroundColor Green
+                break
+            }
+        } catch {}
+        if ($i -eq 30) {
+            Write-Host "[WARN] Ollama did not become ready. Model pull may fail." -ForegroundColor Yellow
+        }
+        Write-Host "  Waiting for Ollama... ($i/30)"
+        Start-Sleep -Seconds 3
+    }
+}
+
 Write-Host ">>> Pulling embedding model (required for search)..."
 
 if ($useHostOllama) {
