@@ -17,6 +17,7 @@ from app.config import settings
 from app.database import get_async_session
 from app.main import create_app
 from app.models.user import Base, User, UserRole
+from app.models.departments import Department
 
 # Build test database URL — replace only the database name (last segment)
 _base = settings.database_url.rsplit("/", 1)[0]
@@ -116,4 +117,84 @@ async def staff_token(client: AsyncClient) -> str:
         "/auth/jwt/login",
         data={"username": email, "password": password},
     )
+    return login.json()["access_token"]
+
+
+# ---------------------------------------------------------------------------
+# Department-aware helpers and fixtures (Phase 2)
+# ---------------------------------------------------------------------------
+
+async def _create_department(name: str, code: str) -> uuid.UUID:
+    """Create a department directly in test DB, return its ID."""
+    async with test_session_maker() as session:
+        dept = Department(name=name, code=code)
+        session.add(dept)
+        await session.commit()
+        await session.refresh(dept)
+        return dept.id
+
+
+async def _create_test_user_in_dept(
+    email: str, password: str, full_name: str, role: UserRole, department_id: uuid.UUID
+) -> None:
+    """Create a user with a department assignment."""
+    from fastapi_users_db_sqlalchemy import SQLAlchemyUserDatabase
+    from app.auth.manager import UserManager
+    from app.schemas.user import AdminUserCreate
+
+    async with test_session_maker() as session:
+        user_db = SQLAlchemyUserDatabase(session, User)
+        manager = UserManager(session=session, user_db=user_db)
+        user_create = AdminUserCreate(
+            email=email,
+            password=password,
+            full_name=full_name,
+            role=role,
+            department_id=department_id,
+            is_active=True,
+            is_verified=True,
+            is_superuser=False,
+        )
+        await manager.create(user_create)
+
+
+@pytest.fixture
+async def dept_a(client: AsyncClient) -> uuid.UUID:
+    """Create department A for testing."""
+    return await _create_department("Police Department", "PD")
+
+
+@pytest.fixture
+async def dept_b(client: AsyncClient) -> uuid.UUID:
+    """Create department B for testing."""
+    return await _create_department("Finance Department", "FIN")
+
+
+@pytest.fixture
+async def staff_token_dept_a(client: AsyncClient, dept_a: uuid.UUID) -> str:
+    """Staff user in department A."""
+    email = f"staff-a-{uuid.uuid4().hex[:8]}@test.com"
+    password = "staffpass123"
+    await _create_test_user_in_dept(email, password, "Staff A", UserRole.STAFF, dept_a)
+    login = await client.post("/auth/jwt/login", data={"username": email, "password": password})
+    return login.json()["access_token"]
+
+
+@pytest.fixture
+async def staff_token_dept_b(client: AsyncClient, dept_b: uuid.UUID) -> str:
+    """Staff user in department B."""
+    email = f"staff-b-{uuid.uuid4().hex[:8]}@test.com"
+    password = "staffpass123"
+    await _create_test_user_in_dept(email, password, "Staff B", UserRole.STAFF, dept_b)
+    login = await client.post("/auth/jwt/login", data={"username": email, "password": password})
+    return login.json()["access_token"]
+
+
+@pytest.fixture
+async def reviewer_token_dept_a(client: AsyncClient, dept_a: uuid.UUID) -> str:
+    """Reviewer user in department A."""
+    email = f"reviewer-a-{uuid.uuid4().hex[:8]}@test.com"
+    password = "reviewerpass123"
+    await _create_test_user_in_dept(email, password, "Reviewer A", UserRole.REVIEWER, dept_a)
+    login = await client.post("/auth/jwt/login", data={"username": email, "password": password})
     return login.json()["access_token"]

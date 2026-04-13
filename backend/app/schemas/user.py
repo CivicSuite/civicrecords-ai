@@ -12,6 +12,7 @@ class UserRead(schemas.BaseUser[uuid.UUID]):
     role: UserRole
     created_at: datetime
     last_login: datetime | None
+    department_id: uuid.UUID | None = None
 
 
 class UserCreate(schemas.BaseUserCreate):
@@ -29,6 +30,7 @@ class AdminUserCreate(schemas.BaseUserCreate):
     """Schema for admin-only user creation endpoint. Role IS caller-supplied."""
     full_name: str = ""
     role: UserRole = UserRole.STAFF
+    department_id: uuid.UUID | None = None
 
 
 class UserUpdate(schemas.BaseUserUpdate):
