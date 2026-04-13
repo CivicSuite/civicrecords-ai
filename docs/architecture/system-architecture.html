@@ -1,166 +1,243 @@
-<h2>CivicRecords AI — System Architecture</h2>
-<p class="subtitle">Section 1: How the pieces fit together</p>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CivicRecords AI — System Architecture (v1.1.0)</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --blue-900: #1e3a5f; --blue-700: #1d4ed8; --blue-500: #3b82f6;
+    --blue-300: #93c5fd; --blue-100: #dbeafe; --blue-50: #eff6ff;
+    --green-700: #15803d; --green-100: #dcfce7;
+    --amber-700: #b45309; --amber-100: #fef3c7;
+    --red-700: #b91c1c; --red-100: #fee2e2;
+    --purple-700: #7c3aed; --purple-100: #ede9fe;
+    --gray-900: #111827; --gray-700: #374151; --gray-500: #6b7280;
+    --gray-300: #d1d5db; --gray-100: #f3f4f6; --white: #ffffff;
+    --font: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    --mono: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
+  }
+  body { font-family: var(--font); background: var(--gray-100); color: var(--gray-700); }
+  .page-header {
+    background: linear-gradient(135deg, var(--blue-900) 0%, #1e4d8c 100%);
+    color: white; padding: 2rem 1.5rem; text-align: center;
+  }
+  .page-header h1 { font-size: 1.75rem; font-weight: 800; letter-spacing: -.02em; }
+  .page-header p { color: var(--blue-300); font-size: .95rem; margin-top: .25rem; }
+  .diagram-container { max-width: 1200px; margin: 2rem auto; padding: 0 1rem; }
+  .layer { margin-bottom: 1.25rem; border-radius: 14px; overflow: hidden; box-shadow: 0 1px 4px rgba(0,0,0,.08); }
+  .layer-header { padding: .6rem 1.25rem; font-size: .75rem; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; display: flex; align-items: center; gap: .5rem; }
+  .layer-body { padding: 1rem 1.25rem; display: flex; flex-wrap: wrap; gap: .75rem; }
+  .layer-client .layer-header { background: var(--blue-700); color: white; }
+  .layer-client .layer-body { background: var(--blue-50); }
+  .layer-app .layer-header { background: var(--green-700); color: white; }
+  .layer-app .layer-body { background: var(--green-100); }
+  .layer-data .layer-header { background: var(--purple-700); color: white; }
+  .layer-data .layer-body { background: var(--purple-100); }
+  .layer-ingest .layer-header { background: var(--amber-700); color: white; }
+  .layer-ingest .layer-body { background: var(--amber-100); }
+  .layer-sources .layer-header { background: var(--gray-700); color: white; }
+  .layer-sources .layer-body { background: var(--gray-100); }
+  .layer-compliance .layer-header { background: var(--red-700); color: white; }
+  .layer-compliance .layer-body { background: var(--red-100); }
+  .comp { background: white; border: 1px solid rgba(0,0,0,.1); border-radius: 10px; padding: .75rem 1rem; min-width: 160px; flex: 1 1 160px; max-width: 220px; transition: transform .15s, box-shadow .15s; cursor: default; position: relative; }
+  .comp:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,.12); }
+  .comp-name { font-size: .85rem; font-weight: 700; color: var(--gray-900); margin-bottom: .2rem; }
+  .comp-detail { font-size: .72rem; color: var(--gray-500); line-height: 1.4; }
+  .comp-badge { position: absolute; top: .5rem; right: .5rem; font-size: .6rem; font-weight: 700; padding: .1rem .4rem; border-radius: 4px; letter-spacing: .04em; text-transform: uppercase; }
+  .badge-new { background: #dcfce7; color: #15803d; }
+  .badge-core { background: var(--blue-100); color: var(--blue-700); }
+  .arrow-row { display: flex; justify-content: center; margin: .25rem 0; }
+  .legend { max-width: 1200px; margin: 0 auto 1rem; padding: 1.5rem 1rem 0; display: flex; flex-wrap: wrap; gap: 1rem; justify-content: center; }
+  .legend-item { display: flex; align-items: center; gap: .4rem; font-size: .78rem; color: var(--gray-500); }
+  .legend-dot { width: 14px; height: 14px; border-radius: 4px; }
+  .flow-section { max-width: 1200px; margin: 2rem auto; padding: 0 1rem; }
+  .flow-section h2 { font-size: 1.1rem; font-weight: 700; color: var(--gray-900); margin-bottom: 1rem; border-left: 4px solid var(--blue-500); padding: .25rem .75rem; }
+  .flow-card { background: white; border-radius: 14px; padding: 1.5rem; box-shadow: 0 1px 4px rgba(0,0,0,.08); margin-bottom: 1.5rem; }
+  .flow-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 1rem; }
+  .flow-item { border: 1px solid var(--gray-300); border-radius: 10px; padding: 1rem; }
+  .flow-item h3 { font-size: .9rem; font-weight: 700; color: var(--gray-900); margin-bottom: .5rem; }
+  .flow-step { display: flex; align-items: flex-start; gap: .5rem; margin-bottom: .4rem; font-size: .8rem; line-height: 1.5; }
+  .flow-num { background: var(--blue-500); color: white; min-width: 20px; height: 20px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: .65rem; font-weight: 700; flex-shrink: 0; margin-top: 1px; }
+  .services-table { width: 100%; border-collapse: collapse; font-size: .82rem; margin-top: .75rem; }
+  .services-table th { background: var(--blue-900); color: white; padding: .5rem .75rem; text-align: left; font-weight: 600; font-size: .72rem; letter-spacing: .06em; text-transform: uppercase; }
+  .services-table td { padding: .5rem .75rem; border-bottom: 1px solid var(--gray-300); }
+  .services-table tr:nth-child(even) td { background: var(--gray-100); }
+  .services-table .svc-name { font-weight: 600; color: var(--gray-900); font-family: var(--mono); }
+  @media (max-width: 700px) { .comp { max-width: 100%; } .flow-grid { grid-template-columns: 1fr; } }
+</style>
+</head>
+<body>
 
-<div style="background: #1a1a2e; border-radius: 12px; padding: 28px; margin: 20px 0; font-family: 'Segoe UI', system-ui, sans-serif; font-size: 13px; line-height: 1.5;">
-
-  <!-- Browser Layer -->
-  <div style="text-align: center; margin-bottom: 12px; color: #888; font-size: 11px; text-transform: uppercase; letter-spacing: 2px;">Staff Workstation (Browser)</div>
-  <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; margin-bottom: 20px;">
-    <div style="background: #0d47a1; border-radius: 8px; padding: 14px; text-align: center;">
-      <div style="color: #fff; font-weight: bold; font-size: 14px;">Search UI</div>
-      <div style="color: #90caf9; font-size: 11px; margin-top: 4px;">React + shadcn/ui</div>
-      <div style="color: #64b5f6; font-size: 11px;">Natural language search, filters, source attribution</div>
-    </div>
-    <div style="background: #0d47a1; border-radius: 8px; padding: 14px; text-align: center;">
-      <div style="color: #fff; font-weight: bold; font-size: 14px;">Request Tracker</div>
-      <div style="color: #90caf9; font-size: 11px; margin-top: 4px;">React + shadcn/ui</div>
-      <div style="color: #64b5f6; font-size: 11px;">Case management, deadlines, document association</div>
-    </div>
-    <div style="background: #0d47a1; border-radius: 8px; padding: 14px; text-align: center;">
-      <div style="color: #fff; font-weight: bold; font-size: 14px;">Admin Panel</div>
-      <div style="color: #90caf9; font-size: 11px; margin-top: 4px;">React + shadcn/ui</div>
-      <div style="color: #64b5f6; font-size: 11px;">Data sources, users, model config, audit logs</div>
-    </div>
-  </div>
-
-  <!-- Arrow -->
-  <div style="text-align: center; color: #4ecca3; font-size: 18px; margin: 8px 0;">&#8595; HTTPS (TLS) &#8595;</div>
-
-  <!-- API Layer -->
-  <div style="text-align: center; margin: 12px 0 8px; color: #888; font-size: 11px; text-transform: uppercase; letter-spacing: 2px;">Application Server</div>
-  <div style="background: #1b5e20; border-radius: 8px; padding: 18px; margin-bottom: 16px;">
-    <div style="text-align: center; color: #fff; font-weight: bold; font-size: 15px; margin-bottom: 10px;">FastAPI (Python)</div>
-    <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px;">
-      <div style="background: #2e7d32; border-radius: 6px; padding: 10px; text-align: center;">
-        <div style="color: #c8e6c9; font-weight: bold; font-size: 12px;">Auth</div>
-        <div style="color: #a5d6a7; font-size: 10px;">fastapi-users<br>JWT + RBAC</div>
-      </div>
-      <div style="background: #2e7d32; border-radius: 6px; padding: 10px; text-align: center;">
-        <div style="color: #c8e6c9; font-weight: bold; font-size: 12px;">Search API</div>
-        <div style="color: #a5d6a7; font-size: 10px;">RAG queries<br>Hybrid retrieval</div>
-      </div>
-      <div style="background: #2e7d32; border-radius: 6px; padding: 10px; text-align: center;">
-        <div style="color: #c8e6c9; font-weight: bold; font-size: 12px;">Workflow API</div>
-        <div style="color: #a5d6a7; font-size: 10px;">Requests, cases<br>Deadlines</div>
-      </div>
-      <div style="background: #2e7d32; border-radius: 6px; padding: 10px; text-align: center;">
-        <div style="color: #c8e6c9; font-weight: bold; font-size: 12px;">Audit Logger</div>
-        <div style="color: #a5d6a7; font-size: 10px;">Hash-chained<br>Append-only</div>
-      </div>
-    </div>
-    <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: 8px;">
-      <div style="background: #2e7d32; border-radius: 6px; padding: 10px; text-align: center;">
-        <div style="color: #c8e6c9; font-weight: bold; font-size: 12px;">LLM Abstraction</div>
-        <div style="color: #a5d6a7; font-size: 10px;">Model-agnostic interface<br>Ollama default</div>
-      </div>
-      <div style="background: #2e7d32; border-radius: 6px; padding: 10px; text-align: center;">
-        <div style="color: #c8e6c9; font-weight: bold; font-size: 12px;">Exemption Engine</div>
-        <div style="color: #a5d6a7; font-size: 10px;">Rules primary<br>LLM secondary</div>
-      </div>
-      <div style="background: #2e7d32; border-radius: 6px; padding: 10px; text-align: center;">
-        <div style="color: #c8e6c9; font-weight: bold; font-size: 12px;">Federation API</div>
-        <div style="color: #a5d6a7; font-size: 10px;">REST endpoints<br>Service accounts</div>
-      </div>
-    </div>
-  </div>
-
-  <!-- Data Layer -->
-  <div style="text-align: center; color: #4ecca3; font-size: 18px; margin: 8px 0;">&#8595;</div>
-  <div style="text-align: center; margin: 8px 0 8px; color: #888; font-size: 11px; text-transform: uppercase; letter-spacing: 2px;">Data & AI Layer</div>
-  <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; margin-bottom: 16px;">
-    <div style="background: #4a148c; border-radius: 8px; padding: 16px; text-align: center;">
-      <div style="color: #fff; font-weight: bold; font-size: 14px;">PostgreSQL</div>
-      <div style="color: #ce93d8; font-size: 11px; margin-top: 4px;">+ pgvector extension</div>
-      <div style="color: #ba68c8; font-size: 10px; margin-top: 6px;">App data, user accounts, request records, audit logs, vector embeddings — all in one DB</div>
-    </div>
-    <div style="background: #4a148c; border-radius: 8px; padding: 16px; text-align: center;">
-      <div style="color: #fff; font-weight: bold; font-size: 14px;">Ollama</div>
-      <div style="color: #ce93d8; font-size: 11px; margin-top: 4px;">Local LLM Runtime</div>
-      <div style="color: #ba68c8; font-size: 10px; margin-top: 6px;">Gemma 4 (default)<br>nomic-embed-text<br>Swappable models</div>
-    </div>
-    <div style="background: #4a148c; border-radius: 8px; padding: 16px; text-align: center;">
-      <div style="color: #fff; font-weight: bold; font-size: 14px;">Redis</div>
-      <div style="color: #ce93d8; font-size: 11px; margin-top: 4px;">Task Queue</div>
-      <div style="color: #ba68c8; font-size: 10px; margin-top: 6px;">Celery workers for async ingestion, embedding, LLM jobs</div>
-    </div>
-  </div>
-
-  <!-- Ingestion -->
-  <div style="text-align: center; color: #4ecca3; font-size: 18px; margin: 8px 0;">&#8595;</div>
-  <div style="text-align: center; margin: 8px 0 8px; color: #888; font-size: 11px; text-transform: uppercase; letter-spacing: 2px;">Ingestion Pipeline (Two-Track)</div>
-  <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 16px;">
-    <div style="background: #bf360c; border-radius: 8px; padding: 16px;">
-      <div style="color: #fff; font-weight: bold; font-size: 13px; text-align: center;">Fast Track (Structured Docs)</div>
-      <div style="color: #ffab91; font-size: 11px; margin-top: 8px;">
-        <div style="margin-bottom: 4px;">&#8226; python-docx (MIT) &rarr; DOCX</div>
-        <div style="margin-bottom: 4px;">&#8226; openpyxl (MIT) &rarr; XLSX</div>
-        <div style="margin-bottom: 4px;">&#8226; pdfplumber (MIT) &rarr; text PDFs</div>
-        <div style="margin-bottom: 4px;">&#8226; email/mailbox (stdlib) &rarr; EML/MBOX</div>
-        <div style="margin-bottom: 4px;">&#8226; csv (stdlib) &rarr; CSV</div>
-        <div>&#8226; beautifulsoup4 (MIT) &rarr; HTML</div>
-      </div>
-      <div style="color: #ff8a65; font-size: 10px; margin-top: 8px;">Text &rarr; chunk &rarr; embed &rarr; pgvector</div>
-    </div>
-    <div style="background: #bf360c; border-radius: 8px; padding: 16px;">
-      <div style="color: #fff; font-weight: bold; font-size: 13px; text-align: center;">LLM Track (Scanned/Image Docs)</div>
-      <div style="color: #ffab91; font-size: 11px; margin-top: 8px;">
-        <div style="margin-bottom: 4px;">&#8226; Scanned PDFs (image-only)</div>
-        <div style="margin-bottom: 4px;">&#8226; JPEG, PNG, TIFF images</div>
-        <div style="margin-bottom: 4px;">&#8226; Handwritten documents</div>
-        <div style="margin-bottom: 4px;">&#8226; Charts and diagrams</div>
-        <div>&#8226; Mixed text+image documents</div>
-      </div>
-      <div style="color: #ff8a65; font-size: 10px; margin-top: 8px;">Image &rarr; Gemma 4 multimodal &rarr; extracted text &rarr; chunk &rarr; embed &rarr; pgvector</div>
-      <div style="color: #ffcc80; font-size: 10px; margin-top: 4px;">Fallback: Tesseract OCR if non-multimodal model</div>
-    </div>
-  </div>
-
-  <!-- Data Sources -->
-  <div style="text-align: center; color: #4ecca3; font-size: 18px; margin: 8px 0;">&#8593;</div>
-  <div style="text-align: center; margin: 8px 0 8px; color: #888; font-size: 11px; text-transform: uppercase; letter-spacing: 2px;">City Data Sources</div>
-  <div style="display: flex; gap: 8px; flex-wrap: wrap; justify-content: center;">
-    <div style="background: #37474f; border-radius: 6px; padding: 8px 14px; color: #b0bec5; font-size: 12px;">File Shares</div>
-    <div style="background: #37474f; border-radius: 6px; padding: 8px 14px; color: #b0bec5; font-size: 12px;">Email Server</div>
-    <div style="background: #37474f; border-radius: 6px; padding: 8px 14px; color: #b0bec5; font-size: 12px;">SQL Databases</div>
-    <div style="background: #37474f; border-radius: 6px; padding: 8px 14px; color: #b0bec5; font-size: 12px;">SharePoint</div>
-    <div style="background: #37474f; border-radius: 6px; padding: 8px 14px; color: #b0bec5; font-size: 12px;">REST APIs</div>
-    <div style="background: #37474f; border-radius: 6px; padding: 8px 14px; color: #b0bec5; font-size: 12px;">Uploaded Files</div>
-  </div>
-
+<div class="page-header">
+  <h1>CivicRecords AI &mdash; System Architecture</h1>
+  <p>v1.1.0 &nbsp;|&nbsp; Phase 2 Complete &nbsp;|&nbsp; 7 Docker Services &nbsp;|&nbsp; 144 Tests</p>
 </div>
 
-<div class="section" style="margin-top: 24px;">
-  <h3>Key Architecture Decisions</h3>
-  <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 12px;">
-    <div>
-      <div class="label">Single Database</div>
-      <p>PostgreSQL + pgvector handles everything: app data, vectors, audit logs, user accounts. One backup, one restore, one connection pool.</p>
+<div class="legend">
+  <div class="legend-item"><div class="legend-dot" style="background: var(--blue-700);"></div> Client</div>
+  <div class="legend-item"><div class="legend-dot" style="background: var(--green-700);"></div> Application</div>
+  <div class="legend-item"><div class="legend-dot" style="background: var(--red-700);"></div> Compliance</div>
+  <div class="legend-item"><div class="legend-dot" style="background: var(--purple-700);"></div> Data &amp; AI</div>
+  <div class="legend-item"><div class="legend-dot" style="background: var(--amber-700);"></div> Ingestion</div>
+  <div class="legend-item"><div class="legend-dot" style="background: var(--gray-700);"></div> Sources</div>
+  <div class="legend-item"><span class="comp-badge badge-new" style="position:static;">NEW</span> Phase 2</div>
+</div>
+
+<div class="diagram-container">
+
+  <!-- Layer 1: Client -->
+  <div class="layer layer-client">
+    <div class="layer-header">&#128421; Client Layer &mdash; Browser (React 18 + shadcn/ui + Tailwind CSS)</div>
+    <div class="layer-body">
+      <div class="comp"><div class="comp-name">Search UI</div><div class="comp-detail">Natural language hybrid search with source attribution and confidence scores</div></div>
+      <div class="comp"><div class="comp-name">Request Tracker</div><div class="comp-detail">11-status lifecycle, timeline, messaging, fees, response letters</div></div>
+      <div class="comp"><div class="comp-name">Admin Panel</div><div class="comp-detail">Users, departments, models, rules, onboarding, analytics</div></div>
+      <div class="comp"><div class="comp-name">Exemption Review</div><div class="comp-detail">Flag review, auditability dashboard, acceptance/rejection rates</div></div>
     </div>
-    <div>
-      <div class="label">Model Abstraction</div>
-      <p>LLM interface abstracts Ollama. Swap models (Gemma 4, Llama, Mistral) without touching app code. Embedding model also swappable.</p>
+  </div>
+
+  <div class="arrow-row"><svg width="40" height="28"><path d="M20 0 L20 18 M14 12 L20 20 L26 12" stroke="#6b7280" stroke-width="2" fill="none"/></svg></div>
+
+  <!-- Layer 2: Application Server -->
+  <div class="layer layer-app">
+    <div class="layer-header">&#9881; Application Server &mdash; FastAPI (Python 3.12)</div>
+    <div class="layer-body">
+      <div class="comp"><div class="comp-name">Auth Module</div><div class="comp-detail">JWT + 4 roles (Admin, Staff, Reviewer, Read-Only) + service accounts</div></div>
+      <div class="comp"><div class="comp-badge badge-new">NEW</div><div class="comp-name">Department Scoping</div><div class="comp-detail">check_department_access middleware scopes all endpoints by user department</div></div>
+      <div class="comp"><div class="comp-name">Search API</div><div class="comp-detail">Hybrid retrieval (pgvector + full-text), RRF fusion, session context</div></div>
+      <div class="comp"><div class="comp-name">Workflow API</div><div class="comp-detail">Request CRUD, status transitions, document attachment, deadline alerts</div></div>
+      <div class="comp"><div class="comp-name">Exemption Engine</div><div class="comp-detail">Rules-primary (regex + keyword), LLM-secondary. 180 rules, 51 jurisdictions</div></div>
+      <div class="comp"><div class="comp-name">LLM Abstraction</div><div class="comp-detail">Model-agnostic Ollama wrapper for chat completion + embedding</div></div>
+      <div class="comp"><div class="comp-name">Federation API</div><div class="comp-detail">Service account auth for instance-to-instance queries (Phase 3+)</div></div>
+      <div class="comp"><div class="comp-badge badge-new">NEW</div><div class="comp-name">Department API</div><div class="comp-detail">CRUD for departments with audit logging and user assignment</div></div>
+      <div class="comp"><div class="comp-badge badge-new">NEW</div><div class="comp-name">Template Renderer</div><div class="comp-detail">Compliance template rendering with city profile variable substitution</div></div>
+      <div class="comp"><div class="comp-badge badge-new">NEW</div><div class="comp-name">Model Registry</div><div class="comp-detail">CRUD for model compliance metadata (name, license, version, capabilities)</div></div>
     </div>
-    <div>
-      <div class="label">Federation-Ready API</div>
-      <p>REST API supports both human users (JWT) and service accounts (API keys). Another CivicRecords AI instance can query this one.</p>
+  </div>
+
+  <div class="arrow-row"><svg width="40" height="28"><path d="M20 0 L20 18 M14 12 L20 20 L26 12" stroke="#6b7280" stroke-width="2" fill="none"/></svg></div>
+
+  <!-- Layer 3: Compliance -->
+  <div class="layer layer-compliance">
+    <div class="layer-header">&#9878; Compliance &amp; Audit Layer</div>
+    <div class="layer-body">
+      <div class="comp"><div class="comp-name">Audit Logger</div><div class="comp-detail">Hash-chained (SHA-256), append-only, SELECT FOR UPDATE on chain writes, 3-year retention</div></div>
+      <div class="comp"><div class="comp-badge badge-new">NEW</div><div class="comp-name">Compliance Templates</div><div class="comp-detail">5 documents: AI Disclosure, CAIA Assessment, Governance Policy, Data Residency, Response Letter</div></div>
+      <div class="comp"><div class="comp-badge badge-new">NEW</div><div class="comp-name">Auditability Dashboard</div><div class="comp-detail">Acceptance/rejection rates by category and department. CSV/JSON export</div></div>
+      <div class="comp"><div class="comp-name">Sovereignty Verifier</div><div class="comp-detail">Script confirms zero outbound connections from application stack</div></div>
     </div>
-    <div>
-      <div class="label">Compliance by Default</div>
-      <p>Audit logging, human-in-the-loop enforcement, and AI content labeling are in the API layer, not the UI. Can't be bypassed.</p>
+  </div>
+
+  <div class="arrow-row"><svg width="40" height="28"><path d="M20 0 L20 18 M14 12 L20 20 L26 12" stroke="#6b7280" stroke-width="2" fill="none"/></svg></div>
+
+  <!-- Layer 4: Data & AI -->
+  <div class="layer layer-data">
+    <div class="layer-header">&#128451; Data &amp; AI Layer</div>
+    <div class="layer-body">
+      <div class="comp"><div class="comp-name">PostgreSQL 17</div><div class="comp-detail">+ pgvector. Single DB for app data, vectors, audit logs. 29 tables</div></div>
+      <div class="comp"><div class="comp-name">Ollama</div><div class="comp-detail">Local LLM runtime. Gemma 4 recommended. nomic-embed-text for embeddings</div></div>
+      <div class="comp"><div class="comp-name">Redis 7.2</div><div class="comp-detail">Celery task broker + result backend. BSD licensed (pinned &lt;8.0)</div></div>
+      <div class="comp"><div class="comp-name">Celery Workers</div><div class="comp-detail">Async ingestion, embedding, LLM inference. Beat scheduler for periodic tasks</div></div>
+    </div>
+  </div>
+
+  <div class="arrow-row"><svg width="40" height="28"><path d="M20 0 L20 18 M14 12 L20 20 L26 12" stroke="#6b7280" stroke-width="2" fill="none"/></svg></div>
+
+  <!-- Layer 5: Ingestion -->
+  <div class="layer layer-ingest">
+    <div class="layer-header">&#128206; Ingestion Pipeline &mdash; Two-Track</div>
+    <div class="layer-body">
+      <div class="comp" style="flex: 2 1 320px; max-width: 400px;"><div class="comp-name">Fast Track (Structured)</div><div class="comp-detail">PDF, DOCX, XLSX, CSV, HTML, email, text &rarr; parse &rarr; chunk &rarr; embed &rarr; pgvector</div></div>
+      <div class="comp" style="flex: 2 1 320px; max-width: 400px;"><div class="comp-name">LLM Track (Scanned/Image)</div><div class="comp-detail">Scanned PDFs, JPEG, PNG, TIFF &rarr; Gemma 4 multimodal &rarr; text &rarr; chunk &rarr; embed. Tesseract fallback</div></div>
+    </div>
+  </div>
+
+  <div class="arrow-row"><svg width="40" height="28"><path d="M20 0 L20 18 M14 12 L20 20 L26 12" stroke="#6b7280" stroke-width="2" fill="none"/></svg></div>
+
+  <!-- Layer 6: Sources -->
+  <div class="layer layer-sources">
+    <div class="layer-header">&#127970; City Data Sources</div>
+    <div class="layer-body">
+      <div class="comp"><div class="comp-badge badge-core">LIVE</div><div class="comp-name">File Shares</div><div class="comp-detail">Local directories, NAS</div></div>
+      <div class="comp"><div class="comp-badge badge-core">LIVE</div><div class="comp-name">Uploads</div><div class="comp-detail">Manual file upload via API</div></div>
+      <div class="comp"><div class="comp-detail" style="font-style: italic;">Phase 3: SQL databases, IMAP email, SMB/NFS, SharePoint, REST APIs</div></div>
     </div>
   </div>
 </div>
 
-<div class="section" style="margin-top: 20px;">
-  <h3>Docker Compose Stack (5 services)</h3>
-  <div style="font-family: monospace; background: #1a1a2e; border-radius: 8px; padding: 16px; font-size: 12px; color: #e0e0e0; line-height: 1.8;">
-    <span style="color: #4ecca3;">1.</span> <strong>postgres</strong> — PostgreSQL 16 + pgvector (data, vectors, audit) <br>
-    <span style="color: #4ecca3;">2.</span> <strong>redis</strong> — Task queue broker<br>
-    <span style="color: #4ecca3;">3.</span> <strong>api</strong> — FastAPI application server<br>
-    <span style="color: #4ecca3;">4.</span> <strong>worker</strong> — Celery worker(s) for async ingestion/embedding<br>
-    <span style="color: #4ecca3;">5.</span> <strong>ollama</strong> — Local LLM runtime (Gemma 4 + nomic-embed-text)<br>
-    <span style="color: #888;">+</span> <span style="color: #888;">frontend</span> — React build served by api (or nginx in production)
+<!-- Data Flow Diagrams -->
+<div class="flow-section">
+  <h2>Key Data Flows</h2>
+  <div class="flow-card">
+    <div class="flow-grid">
+      <div class="flow-item">
+        <h3>&#128269; Search Query</h3>
+        <div class="flow-step"><div class="flow-num">1</div> Staff enters natural language query</div>
+        <div class="flow-step"><div class="flow-num">2</div> Auth + department scope verified</div>
+        <div class="flow-step"><div class="flow-num">3</div> Semantic search via pgvector embeddings</div>
+        <div class="flow-step"><div class="flow-num">4</div> Keyword search via PostgreSQL full-text</div>
+        <div class="flow-step"><div class="flow-num">5</div> Reciprocal Rank Fusion (0.7/0.3 weighting)</div>
+        <div class="flow-step"><div class="flow-num">6</div> Results with source attribution + confidence</div>
+        <div class="flow-step"><div class="flow-num">7</div> Optional LLM summary (labeled AI draft)</div>
+      </div>
+      <div class="flow-item">
+        <h3>&#128196; Document Ingestion</h3>
+        <div class="flow-step"><div class="flow-num">1</div> Admin configures data source</div>
+        <div class="flow-step"><div class="flow-num">2</div> Celery worker picks up task from Redis</div>
+        <div class="flow-step"><div class="flow-num">3</div> File routed to Fast Track or LLM Track</div>
+        <div class="flow-step"><div class="flow-num">4</div> Sentence-aware chunking with overlap</div>
+        <div class="flow-step"><div class="flow-num">5</div> nomic-embed-text generates 768-dim vectors</div>
+        <div class="flow-step"><div class="flow-num">6</div> Chunks + embeddings stored in pgvector</div>
+        <div class="flow-step"><div class="flow-num">7</div> Status updated, audit log written</div>
+      </div>
+      <div class="flow-item">
+        <h3>&#128274; Exemption Detection</h3>
+        <div class="flow-step"><div class="flow-num">1</div> Staff triggers scan on request</div>
+        <div class="flow-step"><div class="flow-num">2</div> State-specific rules loaded (keyword + regex)</div>
+        <div class="flow-step"><div class="flow-num">3</div> Each document chunk scanned</div>
+        <div class="flow-step"><div class="flow-num">4</div> Matches create flags (status: flagged)</div>
+        <div class="flow-step"><div class="flow-num">5</div> Optional LLM secondary pass</div>
+        <div class="flow-step"><div class="flow-num">6</div> Staff reviews: accept or reject each flag</div>
+        <div class="flow-step"><div class="flow-num">7</div> Rates tracked on auditability dashboard</div>
+      </div>
+      <div class="flow-item">
+        <h3>&#127970; Department Scoping <span class="comp-badge badge-new" style="position:static; margin-left:.25rem;">NEW</span></h3>
+        <div class="flow-step"><div class="flow-num">1</div> JWT auth loads user + department_id</div>
+        <div class="flow-step"><div class="flow-num">2</div> require_role() checks minimum role</div>
+        <div class="flow-step"><div class="flow-num">3</div> List endpoints: WHERE department_id filter</div>
+        <div class="flow-step"><div class="flow-num">4</div> Single-resource: check_department_access()</div>
+        <div class="flow-step"><div class="flow-num">5</div> Admin bypasses all department checks</div>
+        <div class="flow-step"><div class="flow-num">6</div> Shared resources (NULL dept) visible to all</div>
+        <div class="flow-step"><div class="flow-num">7</div> All access decisions audit-logged</div>
+      </div>
+    </div>
   </div>
 </div>
 
-<p class="subtitle" style="margin-top: 20px;">Does this architecture look right? Any components missing or misplaced?</p>
+<!-- Docker Services -->
+<div class="flow-section">
+  <h2>Docker Compose Services</h2>
+  <div class="flow-card">
+    <table class="services-table">
+      <thead><tr><th>Service</th><th>Image</th><th>Port</th><th>Purpose</th><th>Health Check</th></tr></thead>
+      <tbody>
+        <tr><td class="svc-name">postgres</td><td>postgres:17 + pgvector</td><td>5432</td><td>All application data, vectors, audit logs (29 tables)</td><td>pg_isready</td></tr>
+        <tr><td class="svc-name">redis</td><td>redis:7.2 (BSD)</td><td>6379</td><td>Celery task broker and result backend</td><td>redis-cli ping</td></tr>
+        <tr><td class="svc-name">ollama</td><td>ollama/ollama</td><td>11434</td><td>Local LLM runtime (Gemma 4 + nomic-embed-text)</td><td>ollama list</td></tr>
+        <tr><td class="svc-name">api</td><td>Dockerfile.backend</td><td>8000</td><td>FastAPI application server (~30 endpoints)</td><td>curl /health</td></tr>
+        <tr><td class="svc-name">worker</td><td>(same as api)</td><td>&mdash;</td><td>Celery worker for async ingestion/embedding</td><td>celery inspect ping</td></tr>
+        <tr><td class="svc-name">beat</td><td>(same as api)</td><td>&mdash;</td><td>Celery beat scheduler for periodic tasks</td><td>&mdash;</td></tr>
+        <tr><td class="svc-name">frontend</td><td>nginx + React</td><td>8080</td><td>Static frontend served via nginx</td><td>&mdash;</td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<div style="text-align: center; padding: 2rem; color: var(--gray-500); font-size: .8rem;">
+  CivicRecords AI v1.1.0 &nbsp;&middot;&nbsp; Apache License 2.0 &nbsp;&middot;&nbsp;
+  <a href="https://github.com/scottconverse/civicrecords-ai" style="color: var(--blue-500);">github.com/scottconverse/civicrecords-ai</a>
+</div>
+</body>
+</html>

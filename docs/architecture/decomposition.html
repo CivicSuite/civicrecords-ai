@@ -1,92 +1,263 @@
-<h2>CivicRecords AI — Project Decomposition</h2>
-<p class="subtitle">How should we break this into buildable sub-projects?</p>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CivicRecords AI — Project Phases &amp; Decomposition</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --blue-900: #1e3a5f; --blue-700: #1d4ed8; --blue-500: #3b82f6;
+    --blue-300: #93c5fd; --blue-100: #dbeafe; --blue-50: #eff6ff;
+    --green-700: #15803d; --green-500: #22c55e; --green-100: #dcfce7;
+    --amber-500: #f59e0b; --amber-100: #fef3c7;
+    --gray-900: #111827; --gray-700: #374151; --gray-500: #6b7280;
+    --gray-300: #d1d5db; --gray-200: #e5e7eb; --gray-100: #f3f4f6;
+    --white: #ffffff;
+    --font: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    --mono: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
+  }
+  body { font-family: var(--font); background: var(--gray-100); color: var(--gray-700); }
 
-<div class="section">
-  <h3>The System Has 5 Major Subsystems</h3>
-  <p>Each could be its own spec → plan → build cycle. The question is sequencing.</p>
+  .page-header {
+    background: linear-gradient(135deg, var(--blue-900) 0%, #1e4d8c 100%);
+    color: white; padding: 2rem 1.5rem; text-align: center;
+  }
+  .page-header h1 { font-size: 1.75rem; font-weight: 800; }
+  .page-header p { color: var(--blue-300); font-size: .95rem; margin-top: .25rem; }
+
+  .container { max-width: 1100px; margin: 0 auto; padding: 2rem 1rem; }
+
+  /* ── Phase Timeline ──────────────────────────── */
+  .timeline { position: relative; padding-left: 60px; }
+  .timeline::before {
+    content: ""; position: absolute; left: 24px; top: 0; bottom: 0;
+    width: 3px; background: var(--gray-300);
+  }
+  .phase {
+    position: relative; margin-bottom: 2rem;
+    background: var(--white); border-radius: 14px;
+    box-shadow: 0 1px 4px rgba(0,0,0,.08); overflow: hidden;
+  }
+  .phase-dot {
+    position: absolute; left: -48px; top: 1.25rem;
+    width: 18px; height: 18px; border-radius: 50%;
+    border: 3px solid white; z-index: 1;
+  }
+  .dot-shipped { background: var(--green-500); box-shadow: 0 0 0 3px var(--green-100); }
+  .dot-next { background: var(--amber-500); box-shadow: 0 0 0 3px var(--amber-100); }
+  .dot-future { background: var(--gray-300); box-shadow: 0 0 0 3px var(--gray-200); }
+
+  .phase-header {
+    padding: 1rem 1.5rem; display: flex; align-items: center;
+    justify-content: space-between; flex-wrap: wrap; gap: .5rem;
+  }
+  .phase-title { font-size: 1.1rem; font-weight: 700; color: var(--gray-900); }
+  .phase-version {
+    font-size: .75rem; font-weight: 700; padding: .2rem .6rem;
+    border-radius: 6px; letter-spacing: .04em;
+  }
+  .ver-shipped { background: var(--green-100); color: var(--green-700); }
+  .ver-next { background: var(--amber-100); color: #92400e; }
+  .ver-future { background: var(--gray-200); color: var(--gray-500); }
+
+  .phase-body { padding: 0 1.5rem 1.25rem; }
+
+  .deliverable-grid {
+    display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+    gap: .75rem; margin-top: .75rem;
+  }
+  .deliverable {
+    border: 1px solid var(--gray-200); border-radius: 8px; padding: .75rem;
+    background: var(--gray-100);
+  }
+  .deliverable-name { font-size: .82rem; font-weight: 600; color: var(--gray-900); margin-bottom: .2rem; }
+  .deliverable-detail { font-size: .72rem; color: var(--gray-500); line-height: 1.4; }
+  .deliverable-status {
+    display: inline-block; font-size: .6rem; font-weight: 700; padding: .1rem .35rem;
+    border-radius: 3px; letter-spacing: .04em; text-transform: uppercase; margin-bottom: .25rem;
+  }
+  .ds-done { background: var(--green-100); color: var(--green-700); }
+  .ds-planned { background: var(--amber-100); color: #92400e; }
+
+  .phase-stats {
+    display: flex; gap: 1.5rem; flex-wrap: wrap; margin-top: .75rem;
+    padding-top: .75rem; border-top: 1px solid var(--gray-200);
+  }
+  .pstat { text-align: center; }
+  .pstat-num { font-size: 1.4rem; font-weight: 800; color: var(--blue-700); }
+  .pstat-label { font-size: .65rem; color: var(--gray-500); text-transform: uppercase; letter-spacing: .06em; }
+
+  /* ── Sub-Project Cards ───────────────────────── */
+  .subsection-title {
+    font-size: 1.1rem; font-weight: 700; color: var(--gray-900);
+    margin: 2rem 0 1rem; border-left: 4px solid var(--blue-500);
+    padding: .25rem .75rem;
+  }
+  .subproject-grid {
+    display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: .75rem;
+  }
+  .subproject {
+    background: white; border: 1px solid var(--gray-300); border-radius: 10px;
+    padding: 1rem; position: relative;
+  }
+  .subproject-num {
+    font-size: .65rem; font-weight: 700; color: var(--blue-700);
+    letter-spacing: .06em; text-transform: uppercase; margin-bottom: .25rem;
+  }
+  .subproject-name { font-size: .9rem; font-weight: 700; color: var(--gray-900); margin-bottom: .3rem; }
+  .subproject-items { font-size: .75rem; color: var(--gray-500); line-height: 1.5; }
+
+  /* ── Sequence Arrow ──────────────────────────── */
+  .seq-arrow {
+    display: flex; align-items: center; justify-content: center;
+    padding: .25rem 0; color: var(--gray-300);
+  }
+
+  @media (max-width: 600px) {
+    .timeline { padding-left: 40px; }
+    .phase-dot { left: -30px; }
+    .deliverable-grid { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<div class="page-header">
+  <h1>CivicRecords AI &mdash; Project Phases &amp; Decomposition</h1>
+  <p>Master design spec &rarr; phased delivery &rarr; v2.0 federation</p>
 </div>
 
-<div style="background: #1a1a2e; border-radius: 12px; padding: 24px; margin: 24px 0; font-family: monospace; font-size: 13px; line-height: 1.6;">
-  <div style="color: #e0e0e0; text-align: center; margin-bottom: 16px; font-size: 15px; font-weight: bold;">Architecture Overview</div>
+<div class="container">
 
-  <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px;">
-    <div style="background: #16213e; border: 2px solid #0f3460; border-radius: 8px; padding: 16px;">
-      <div style="color: #e94560; font-weight: bold; margin-bottom: 8px;">1. FOUNDATION</div>
-      <div style="color: #a0a0a0; font-size: 12px;">Docker + PostgreSQL/pgvector + FastAPI skeleton + Auth + Audit logging</div>
-      <div style="color: #4ecca3; font-size: 11px; margin-top: 8px;">Must be first. Everything depends on this.</div>
-    </div>
-    <div style="background: #16213e; border: 2px solid #0f3460; border-radius: 8px; padding: 16px;">
-      <div style="color: #e94560; font-weight: bold; margin-bottom: 8px;">2. INGESTION PIPELINE</div>
-      <div style="color: #a0a0a0; font-size: 12px;">Two-track: parsers (DOCX, CSV, email, text) + Gemma 4 multimodal (scans, images, OCR)</div>
-      <div style="color: #4ecca3; font-size: 11px; margin-top: 8px;">Feeds the knowledge base. No search without this.</div>
-    </div>
-  </div>
+  <!-- ── Phase Timeline ──────────────────────────── -->
+  <div class="timeline">
 
-  <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px;">
-    <div style="background: #16213e; border: 2px solid #0f3460; border-radius: 8px; padding: 16px;">
-      <div style="color: #e94560; font-weight: bold; margin-bottom: 8px;">3. RAG SEARCH ENGINE</div>
-      <div style="color: #a0a0a0; font-size: 12px;">Ollama + pgvector + hybrid search + source attribution + React search UI</div>
-      <div style="color: #4ecca3; font-size: 11px; margin-top: 8px;">The core value prop. This is what staff use every day.</div>
-    </div>
-    <div style="background: #16213e; border: 2px solid #0f3460; border-radius: 8px; padding: 16px;">
-      <div style="color: #e94560; font-weight: bold; margin-bottom: 8px;">4. REQUEST TRACKING</div>
-      <div style="color: #a0a0a0; font-size: 12px;">Case management, deadlines, document association, basic request logging</div>
-      <div style="color: #4ecca3; font-size: 11px; margin-top: 8px;">Turns search results into managed workflow.</div>
-    </div>
-  </div>
-
-  <div style="display: grid; grid-template-columns: 1fr; gap: 16px;">
-    <div style="background: #16213e; border: 2px solid #533483; border-radius: 8px; padding: 16px;">
-      <div style="color: #b388ff; font-weight: bold; margin-bottom: 8px;">5. EXEMPTION DETECTION & COMPLIANCE</div>
-      <div style="color: #a0a0a0; font-size: 12px;">Rules engine (PII regex, statutory phrases) + LLM suggestion layer + exemption flag workflow + compliance templates + auditability dashboard</div>
-      <div style="color: #4ecca3; font-size: 11px; margin-top: 8px;">Builds on top of search + request tracking. Phase 2 territory.</div>
-    </div>
-  </div>
-</div>
-
-<div class="section">
-  <h3>Proposed Sequencing</h3>
-</div>
-
-<div class="options">
-  <div class="option" data-choice="a" onclick="toggleSelect(this)">
-    <div class="letter">A</div>
-    <div class="content">
-      <h3>Linear: 1 → 2 → 3 → 4 → 5</h3>
-      <p><strong>Foundation first, then ingestion, then search, then tracking, then exemptions.</strong></p>
-      <p style="color: #a0a0a0; font-size: 13px;">Each sub-project fully complete before the next starts. Simplest to manage. MVP (usable search) arrives after sub-projects 1-3 are done. Slower to first value but each piece is solid.</p>
-      <div class="pros-cons" style="margin-top: 12px;">
-        <div class="pros"><h4>Pros</h4><ul><li>Clean dependencies</li><li>Each piece tested in isolation</li><li>Easiest for 1 person</li></ul></div>
-        <div class="cons"><h4>Cons</h4><ul><li>Longest time to first usable product</li><li>No workflow until sub-project 4</li></ul></div>
+    <!-- Phase 1 -->
+    <div class="phase">
+      <div class="phase-dot dot-shipped"></div>
+      <div class="phase-header">
+        <div class="phase-title">Phase 1 &mdash; MVP</div>
+        <span class="phase-version ver-shipped">v1.0.x &bull; SHIPPED</span>
+      </div>
+      <div class="phase-body">
+        <div class="deliverable-grid">
+          <div class="deliverable"><div class="deliverable-status ds-done">DONE</div><div class="deliverable-name">Docker Compose Stack</div><div class="deliverable-detail">7 services: PostgreSQL+pgvector, Redis, Ollama, FastAPI, Celery worker, Celery beat, nginx</div></div>
+          <div class="deliverable"><div class="deliverable-status ds-done">DONE</div><div class="deliverable-name">Auth &amp; RBAC</div><div class="deliverable-detail">JWT, 4 roles, service accounts, rate limiting, admin-only user creation</div></div>
+          <div class="deliverable"><div class="deliverable-status ds-done">DONE</div><div class="deliverable-name">Ingestion Pipeline</div><div class="deliverable-detail">Two-track: Fast (PDF, DOCX, XLSX, CSV, email, HTML) + LLM (scanned docs via Gemma 4)</div></div>
+          <div class="deliverable"><div class="deliverable-status ds-done">DONE</div><div class="deliverable-name">RAG Search Engine</div><div class="deliverable-detail">Hybrid search (pgvector + full-text), RRF fusion, source attribution, confidence scores</div></div>
+          <div class="deliverable"><div class="deliverable-status ds-done">DONE</div><div class="deliverable-name">Request Tracking</div><div class="deliverable-detail">11-status lifecycle, timeline, messaging, fees, response letter generation</div></div>
+          <div class="deliverable"><div class="deliverable-status ds-done">DONE</div><div class="deliverable-name">Exemption Detection</div><div class="deliverable-detail">Rules-primary (PII regex + keyword), LLM-secondary, human-in-the-loop enforcement</div></div>
+          <div class="deliverable"><div class="deliverable-status ds-done">DONE</div><div class="deliverable-name">Audit Logging</div><div class="deliverable-detail">Hash-chained (SHA-256), append-only, archival, 3-year retention, CSV/JSON export</div></div>
+          <div class="deliverable"><div class="deliverable-status ds-done">DONE</div><div class="deliverable-name">Onboarding Wizard</div><div class="deliverable-detail">City profile, systems catalog (12 domains, 25+ vendors), coverage gap analysis</div></div>
+        </div>
+        <div class="phase-stats">
+          <div class="pstat"><div class="pstat-num">104</div><div class="pstat-label">Tests</div></div>
+          <div class="pstat"><div class="pstat-num">29</div><div class="pstat-label">Tables</div></div>
+          <div class="pstat"><div class="pstat-num">~25</div><div class="pstat-label">Endpoints</div></div>
+          <div class="pstat"><div class="pstat-num">5</div><div class="pstat-label">Pilot States</div></div>
+        </div>
       </div>
     </div>
-  </div>
 
-  <div class="option" data-choice="b" onclick="toggleSelect(this)">
-    <div class="letter">B</div>
-    <div class="content">
-      <h3>Vertical Slice: 1 → (2+3+4 minimal) → iterate</h3>
-      <p><strong>Foundation, then a thin slice through all three MVP subsystems at once.</strong></p>
-      <p style="color: #a0a0a0; font-size: 13px;">Build the minimum of each: ingest PDFs only, basic search, simple request form. Get something end-to-end working fast, then deepen each subsystem iteratively. MVP arrives sooner but each piece starts thin.</p>
-      <div class="pros-cons" style="margin-top: 12px;">
-        <div class="pros"><h4>Pros</h4><ul><li>Fastest to something usable</li><li>End-to-end validation early</li><li>Can demo/test with real users sooner</li></ul></div>
-        <div class="cons"><h4>Cons</h4><ul><li>More moving parts at once</li><li>Risk of thin features that need rework</li><li>Harder to track progress</li></ul></div>
+    <!-- Phase 2 -->
+    <div class="phase">
+      <div class="phase-dot dot-shipped"></div>
+      <div class="phase-header">
+        <div class="phase-title">Phase 2 &mdash; Department Access &amp; Compliance</div>
+        <span class="phase-version ver-shipped">v1.1.0 &bull; SHIPPED</span>
       </div>
+      <div class="phase-body">
+        <div class="deliverable-grid">
+          <div class="deliverable"><div class="deliverable-status ds-done">DONE</div><div class="deliverable-name">Department Access Controls</div><div class="deliverable-detail">Department CRUD, scoping middleware, all endpoints filtered by user department, admin bypass</div></div>
+          <div class="deliverable"><div class="deliverable-status ds-done">DONE</div><div class="deliverable-name">50-State Exemption Rules</div><div class="deliverable-detail">180 rules across 51 jurisdictions (50 states + DC). 5 universal PII regex rules</div></div>
+          <div class="deliverable"><div class="deliverable-status ds-done">DONE</div><div class="deliverable-name">Compliance Templates</div><div class="deliverable-detail">5 documents: AI Use Disclosure, CAIA Assessment, Governance Policy, Data Residency, Response Letter</div></div>
+          <div class="deliverable"><div class="deliverable-status ds-done">DONE</div><div class="deliverable-name">Template Renderer</div><div class="deliverable-detail">City profile variable substitution with unresolved variable detection</div></div>
+          <div class="deliverable"><div class="deliverable-status ds-done">DONE</div><div class="deliverable-name">Auditability Dashboard</div><div class="deliverable-detail">Acceptance/rejection rates by category and department, CSV/JSON export</div></div>
+          <div class="deliverable"><div class="deliverable-status ds-done">DONE</div><div class="deliverable-name">Model Registry</div><div class="deliverable-detail">CRUD for model compliance metadata (name, license, version, capabilities)</div></div>
+        </div>
+        <div class="phase-stats">
+          <div class="pstat"><div class="pstat-num">144</div><div class="pstat-label">Tests</div></div>
+          <div class="pstat"><div class="pstat-num">~30</div><div class="pstat-label">Endpoints</div></div>
+          <div class="pstat"><div class="pstat-num">180</div><div class="pstat-label">Exemption Rules</div></div>
+          <div class="pstat"><div class="pstat-num">51</div><div class="pstat-label">Jurisdictions</div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Phase 3 -->
+    <div class="phase">
+      <div class="phase-dot dot-next"></div>
+      <div class="phase-header">
+        <div class="phase-title">Phase 3 &mdash; Connectors &amp; Integration</div>
+        <span class="phase-version ver-next">v1.2.0 &bull; NEXT</span>
+      </div>
+      <div class="phase-body">
+        <div class="deliverable-grid">
+          <div class="deliverable"><div class="deliverable-status ds-planned">PLANNED</div><div class="deliverable-name">SQL Database Connectors</div><div class="deliverable-detail">PostgreSQL, MySQL, MSSQL, SQLite connectors for direct database ingestion</div></div>
+          <div class="deliverable"><div class="deliverable-status ds-planned">PLANNED</div><div class="deliverable-name">IMAP Email Connector</div><div class="deliverable-detail">Connect to city email archives for automated email record ingestion</div></div>
+          <div class="deliverable"><div class="deliverable-status ds-planned">PLANNED</div><div class="deliverable-name">SMB/NFS File Shares</div><div class="deliverable-detail">Network file share access for departmental shared drives</div></div>
+          <div class="deliverable"><div class="deliverable-status ds-planned">PLANNED</div><div class="deliverable-name">SharePoint Connector</div><div class="deliverable-detail">Microsoft SharePoint document library integration</div></div>
+          <div class="deliverable"><div class="deliverable-status ds-planned">PLANNED</div><div class="deliverable-name">REST API Connector</div><div class="deliverable-detail">Generic REST connector for municipal software APIs</div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Phase 3+ -->
+    <div class="phase">
+      <div class="phase-dot dot-future"></div>
+      <div class="phase-header">
+        <div class="phase-title">Phase 3+ &mdash; Federation</div>
+        <span class="phase-version ver-future">v2.0.0 &bull; FUTURE</span>
+      </div>
+      <div class="phase-body">
+        <div class="deliverable-grid">
+          <div class="deliverable"><div class="deliverable-status ds-planned">PLANNED</div><div class="deliverable-name">Instance Discovery</div><div class="deliverable-detail">Registration and discovery between CivicRecords AI instances</div></div>
+          <div class="deliverable"><div class="deliverable-status ds-planned">PLANNED</div><div class="deliverable-name">Cross-Instance Search</div><div class="deliverable-detail">Query multiple cooperating city instances from a single UI</div></div>
+          <div class="deliverable"><div class="deliverable-status ds-planned">PLANNED</div><div class="deliverable-name">Federated Audit Logs</div><div class="deliverable-detail">Cross-boundary audit trail for inter-jurisdiction requests</div></div>
+          <div class="deliverable"><div class="deliverable-status ds-planned">PLANNED</div><div class="deliverable-name">Trust Management UI</div><div class="deliverable-detail">Admin interface for managing peer instance trust relationships</div></div>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /timeline -->
+
+  <!-- ── Original Sub-Project Decomposition ────── -->
+  <h2 class="subsection-title">Sub-Project Build Sequence (from master spec section 9)</h2>
+  <div class="subproject-grid">
+    <div class="subproject">
+      <div class="subproject-num">Sub-Project 1</div>
+      <div class="subproject-name">Foundation</div>
+      <div class="subproject-items">Docker Compose stack, user auth (JWT + 4 roles), hash-chained audit logging, Alembic migrations, admin panel skeleton, install scripts</div>
+    </div>
+    <div class="subproject">
+      <div class="subproject-num">Sub-Project 2</div>
+      <div class="subproject-name">Ingestion Pipeline</div>
+      <div class="subproject-items">Data source config, fast track parsers (7 formats), LLM track (Gemma 4 multimodal), chunking engine, embedding via nomic-embed-text, Celery workers</div>
+    </div>
+    <div class="subproject">
+      <div class="subproject-num">Sub-Project 3</div>
+      <div class="subproject-name">RAG Search + UI</div>
+      <div class="subproject-items">Natural language search, hybrid retrieval (semantic + keyword), source attribution, filters, iterative refinement, AI output labeling</div>
+    </div>
+    <div class="subproject">
+      <div class="subproject-num">Sub-Project 4</div>
+      <div class="subproject-name">Request Tracking</div>
+      <div class="subproject-items">Intake form, search-to-request association, 11-status workflow, document caching, deadline dashboard, response letters, review/approval</div>
+    </div>
+    <div class="subproject">
+      <div class="subproject-num">Sub-Project 5</div>
+      <div class="subproject-name">Exemption &amp; Compliance</div>
+      <div class="subproject-items">Rules engine (PII regex + keywords), LLM suggestions, per-state config, flag workflow, auditability dashboard, compliance templates</div>
     </div>
   </div>
 
-  <div class="option" data-choice="c" onclick="toggleSelect(this)">
-    <div class="letter">C</div>
-    <div class="content">
-      <h3>Hybrid: 1 → 2 → 3 → (3+4 integrated) → 5</h3>
-      <p><strong>Foundation, ingestion, and search as complete sub-projects. Then integrate request tracking into the working search UI. Exemptions last.</strong></p>
-      <p style="color: #a0a0a0; font-size: 13px;">You get a fully working search tool after sub-project 3 (already useful to a clerk). Then add request tracking as an enhancement to the search experience, not a separate system. Exemption detection builds on both.</p>
-      <div class="pros-cons" style="margin-top: 12px;">
-        <div class="pros"><h4>Pros</h4><ul><li>Search is usable standalone after sub-project 3</li><li>Request tracking builds on proven search UX</li><li>Natural progression of value</li><li>Each spec is focused</li></ul></div>
-        <div class="cons"><h4>Cons</h4><ul><li>Slightly slower than B to full MVP</li><li>Request tracking design might change search UI</li></ul></div>
-      </div>
-    </div>
-  </div>
 </div>
 
-<p class="subtitle" style="margin-top: 24px;">My recommendation is <strong>C</strong> — it gives you a usable product after sub-project 3, and each piece is solid before the next builds on it.</p>
+<div style="text-align: center; padding: 2rem; color: var(--gray-500); font-size: .8rem;">
+  CivicRecords AI v1.1.0 &nbsp;&middot;&nbsp; Apache License 2.0 &nbsp;&middot;&nbsp;
+  <a href="https://github.com/scottconverse/civicrecords-ai" style="color: var(--blue-500);">github.com/scottconverse/civicrecords-ai</a>
+</div>
+</body>
+</html>
