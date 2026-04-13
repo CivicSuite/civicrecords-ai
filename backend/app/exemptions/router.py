@@ -6,9 +6,10 @@ from sqlalchemy import select, func
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.audit.logger import write_audit_log
-from app.auth.dependencies import require_role
+from app.auth.dependencies import require_role, check_department_access
 from app.database import get_async_session
 from app.exemptions.engine import scan_request_documents
+from app.models.request import RecordsRequest
 from app.models.exemption import (
     DisclosureTemplate, ExemptionFlag, ExemptionRule, FlagStatus, RuleType,
 )
@@ -107,10 +108,10 @@ async def scan_for_exemptions(
     user: User = Depends(require_role(UserRole.STAFF)),
 ):
     """Scan all documents attached to a request for exemptions."""
-    from app.models.request import RecordsRequest
     req = await session.get(RecordsRequest, request_id)
     if not req:
         raise HTTPException(status_code=404, detail="Request not found")
+    check_department_access(user, req.department_id)
 
     flags = await scan_request_documents(session, request_id, state_code)
 
@@ -173,6 +174,11 @@ async def list_flags(
     session: AsyncSession = Depends(get_async_session),
     user: User = Depends(require_role(UserRole.STAFF)),
 ):
+    req = await session.get(RecordsRequest, request_id)
+    if not req:
+        raise HTTPException(status_code=404, detail="Request not found")
+    check_department_access(user, req.department_id)
+
     stmt = select(ExemptionFlag).where(
         ExemptionFlag.request_id == request_id
     ).order_by(ExemptionFlag.confidence.desc())
@@ -192,6 +198,11 @@ async def review_flag(
     flag = await session.get(ExemptionFlag, flag_id)
     if not flag:
         raise HTTPException(status_code=404, detail="Flag not found")
+
+    # Department check via the flag's request
+    req = await session.get(RecordsRequest, flag.request_id)
+    if req:
+        check_department_access(user, req.department_id)
 
     if data.status not in (FlagStatus.ACCEPTED, FlagStatus.REJECTED, FlagStatus.REVIEWED):
         raise HTTPException(status_code=400, detail="Status must be accepted, rejected, or reviewed")
