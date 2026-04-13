@@ -16,6 +16,8 @@ class UserRole(str, enum.Enum):
     STAFF = "staff"
     REVIEWER = "reviewer"
     READ_ONLY = "read_only"
+    LIAISON = "liaison"
+    PUBLIC = "public"
 
 
 class User(SQLAlchemyBaseUserTableUUID, Base):

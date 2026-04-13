@@ -11,12 +11,14 @@ fastapi_users = FastAPIUsers[User, uuid.UUID](get_user_manager, [auth_backend])
 
 current_active_user = fastapi_users.current_user(active=True)
 
-# Role hierarchy: admin > reviewer > staff > read_only
+# Role hierarchy: admin > reviewer > staff > liaison > read_only > public
 ROLE_HIERARCHY = {
-    UserRole.ADMIN: 4,
-    UserRole.REVIEWER: 3,
-    UserRole.STAFF: 2,
-    UserRole.READ_ONLY: 1,
+    UserRole.ADMIN: 6,
+    UserRole.REVIEWER: 5,
+    UserRole.STAFF: 4,
+    UserRole.LIAISON: 3,
+    UserRole.READ_ONLY: 2,
+    UserRole.PUBLIC: 1,
 }
 
 

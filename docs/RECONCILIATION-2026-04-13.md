@@ -22,12 +22,13 @@
 | staff | `STAFF = "staff"` | Built |
 | reviewer | `REVIEWER = "reviewer"` | Built |
 | read_only | `READ_ONLY = "read_only"` | Built |
-| liaison | Not in enum | Missing |
-| public | Not in enum | Missing |
+| liaison | `LIAISON = "liaison"` | Built (2026-04-13) |
+| public | `PUBLIC = "public"` | Built (2026-04-13) |
 
-**Status: Partial**
-**File:** `backend/app/models/user.py`
-**Notes:** UserRole enum has 4 of 6 required values. `liaison` and `public` roles are missing. The `public` role is needed for citizen-facing portal access; `liaison` is for department contact points.
+**Status: Built** (completed 2026-04-13)
+**Files:** `backend/app/models/user.py`, `backend/app/auth/dependencies.py`
+**Tests:** `backend/tests/test_roles.py` (6 tests)
+**Notes:** All 6 roles now in UserRole enum. Role hierarchy updated: admin(6) > reviewer(5) > staff(4) > liaison(3) > read_only(2) > public(1). Liaison is department-scoped via existing `check_department_access()` — can view department resources but cannot create requests or manage exemptions (below STAFF threshold). Public role exists in enum for future Phase 3 portal auth; no public endpoints yet.
 
 ---
 
@@ -270,7 +271,7 @@ Applied to all document chunks and exemption rules in `assemble_context()`. Syst
 
 1. ~~**P0 — Prompt Injection Defense:** COMPLETED 2026-04-13. `sanitize_for_llm()` in `context_manager.py`, 19 tests.~~
 
-2. **P0 — Add `liaison` and `public` roles** to `UserRole` enum in `backend/app/models/user.py`. Update auth dependencies to handle new roles.
+2. ~~**P0 — Add `liaison` and `public` roles:** COMPLETED 2026-04-13. Both roles in enum, hierarchy updated, 6 tests.~~
 
 3. **P0 — Public API endpoints:** Create unauthenticated API routes for citizen records request submission and status lookup.
 
