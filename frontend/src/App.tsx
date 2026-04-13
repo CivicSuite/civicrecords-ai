@@ -14,6 +14,8 @@ import Users from "@/pages/Users";
 import Onboarding from "@/pages/Onboarding";
 import CityProfile from "@/pages/CityProfile";
 import Discovery from "@/pages/Discovery";
+import Settings from "@/pages/Settings";
+import AuditLog from "@/pages/AuditLog";
 
 export default function App() {
   const [token, setToken] = useState<string | null>(() => {
@@ -82,6 +84,8 @@ export default function App() {
         <Route path="/onboarding" element={<Onboarding token={token} />} />
         <Route path="/city-profile" element={<CityProfile token={token} />} />
         <Route path="/discovery" element={<Discovery token={token} />} />
+        <Route path="/settings" element={<Settings token={token} />} />
+        <Route path="/audit-log" element={<AuditLog token={token} />} />
         <Route path="*" element={<Navigate to="/" />} />
       </Routes>
     </AppShell>

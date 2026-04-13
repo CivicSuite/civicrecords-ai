@@ -26,6 +26,8 @@ import {
   AlertCircle,
   Info,
   Plus,
+  FileEdit,
+  Loader2,
 } from "lucide-react";
 
 interface RequestData {
@@ -78,6 +80,16 @@ interface FeeLineItem {
   total: number;
   status: string;
   created_at: string;
+}
+
+interface ResponseLetter {
+  id: string;
+  request_id: string;
+  content: string;
+  edited_content: string | null;
+  status: string;
+  created_at: string;
+  updated_at: string;
 }
 
 function formatDate(dateStr: string | null): string {
@@ -151,6 +163,12 @@ export default function RequestDetail({ token }: { token: string }) {
   const [addingFee, setAddingFee] = useState(false);
   const [showFeeForm, setShowFeeForm] = useState(false);
 
+  // Response letter state
+  const [letter, setLetter] = useState<ResponseLetter | null>(null);
+  const [letterContent, setLetterContent] = useState("");
+  const [generatingLetter, setGeneratingLetter] = useState(false);
+  const [savingLetter, setSavingLetter] = useState(false);
+
   const loadData = async () => {
     try {
       const [reqData, docsData, timelineData, messagesData, feesData] = await Promise.all([
@@ -165,6 +183,15 @@ export default function RequestDetail({ token }: { token: string }) {
       setTimeline(timelineData);
       setMessages(messagesData);
       setFees(feesData);
+      // Load response letter (may not exist yet — 404 is fine)
+      try {
+        const letterData = await apiFetch<ResponseLetter>(`/requests/${id}/response-letter`, { token });
+        setLetter(letterData);
+        setLetterContent(letterData.edited_content ?? letterData.content ?? "");
+      } catch {
+        setLetter(null);
+        setLetterContent("");
+      }
     } catch (e) {
       setError(e instanceof Error ? e.message : "Failed to load");
     } finally {
@@ -239,6 +266,59 @@ export default function RequestDetail({ token }: { token: string }) {
       setError(e instanceof Error ? e.message : "Failed to add fee");
     } finally {
       setAddingFee(false);
+    }
+  };
+
+  const LETTER_ELIGIBLE_STATUSES = ["searching", "in_review", "drafted", "ready_for_release"];
+
+  const handleGenerateLetter = async () => {
+    setGeneratingLetter(true);
+    try {
+      const generated = await apiFetch<ResponseLetter>(`/requests/${id}/response-letter`, {
+        token,
+        method: "POST",
+      });
+      setLetter(generated);
+      setLetterContent(generated.edited_content ?? generated.content ?? "");
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Failed to generate letter");
+    } finally {
+      setGeneratingLetter(false);
+    }
+  };
+
+  const handleSaveLetter = async () => {
+    if (!letter) return;
+    setSavingLetter(true);
+    try {
+      const updated = await apiFetch<ResponseLetter>(`/requests/${id}/response-letter/${letter.id}`, {
+        token,
+        method: "PATCH",
+        body: JSON.stringify({ edited_content: letterContent }),
+      });
+      setLetter(updated);
+      setLetterContent(updated.edited_content ?? updated.content ?? "");
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Failed to save letter");
+    } finally {
+      setSavingLetter(false);
+    }
+  };
+
+  const handleApproveLetter = async () => {
+    if (!letter) return;
+    setSavingLetter(true);
+    try {
+      const updated = await apiFetch<ResponseLetter>(`/requests/${id}/response-letter/${letter.id}`, {
+        token,
+        method: "PATCH",
+        body: JSON.stringify({ status: "approved" }),
+      });
+      setLetter(updated);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Failed to approve letter");
+    } finally {
+      setSavingLetter(false);
     }
   };
 
@@ -582,6 +662,85 @@ export default function RequestDetail({ token }: { token: string }) {
               )}
             </CardContent>
           </Card>
+
+          {/* Response Letter */}
+          <Card className="shadow-none">
+            <CardHeader>
+              <CardTitle className="text-lg flex items-center gap-2">
+                <FileEdit className="h-4 w-4" />
+                Response Letter
+                {letter && (
+                  <Badge
+                    variant={letter.status === "approved" ? "default" : letter.status === "sent" ? "default" : "secondary"}
+                    className="ml-auto capitalize text-xs"
+                  >
+                    {letter.status}
+                  </Badge>
+                )}
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {generatingLetter ? (
+                <div className="flex flex-col items-center justify-center py-8 gap-3">
+                  <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+                  <p className="text-sm text-muted-foreground">Generating response letter...</p>
+                </div>
+              ) : letter ? (
+                <>
+                  {letter.status === "draft" && (
+                    <div className="flex items-start gap-2 rounded-md border border-amber-300 bg-amber-50 dark:bg-amber-950/20 dark:border-amber-800 p-3">
+                      <AlertCircle className="h-4 w-4 text-amber-600 mt-0.5 shrink-0" />
+                      <p className="text-sm text-amber-800 dark:text-amber-200 font-medium">
+                        AI-GENERATED DRAFT — Review before sending
+                      </p>
+                    </div>
+                  )}
+                  <textarea
+                    className="w-full min-h-[240px] rounded-md border border-border bg-background px-3 py-2 text-sm font-mono leading-relaxed resize-y focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:opacity-60"
+                    value={letterContent}
+                    onChange={(e) => setLetterContent(e.target.value)}
+                    disabled={letter.status === "sent"}
+                  />
+                  <div className="flex gap-2 flex-wrap">
+                    <Button
+                      onClick={handleSaveLetter}
+                      disabled={savingLetter || letter.status === "sent"}
+                      className="gap-1"
+                    >
+                      {savingLetter ? <Loader2 className="h-4 w-4 animate-spin" /> : <CheckCircle className="h-4 w-4" />}
+                      Save Changes
+                    </Button>
+                    {letter.status === "draft" && (
+                      <Button
+                        variant="outline"
+                        onClick={handleApproveLetter}
+                        disabled={savingLetter}
+                        className="gap-1"
+                      >
+                        <Eye className="h-4 w-4" />
+                        Submit for Approval
+                      </Button>
+                    )}
+                  </div>
+                </>
+              ) : (
+                <div className="flex flex-col items-center justify-center py-6 gap-3">
+                  <p className="text-sm text-muted-foreground">No response letter generated yet.</p>
+                  {LETTER_ELIGIBLE_STATUSES.includes(req.status) && (
+                    <Button
+                      variant="outline"
+                      className="gap-1"
+                      disabled={generatingLetter}
+                      onClick={handleGenerateLetter}
+                    >
+                      <FileEdit className="h-4 w-4" />
+                      Generate Response Letter
+                    </Button>
+                  )}
+                </div>
+              )}
+            </CardContent>
+          </Card>
         </div>
 
         {/* Right column — workflow */}
@@ -617,6 +776,24 @@ export default function RequestDetail({ token }: { token: string }) {
                 <Search className="h-4 w-4" />
                 Search &amp; Attach Documents
               </Link>
+              {LETTER_ELIGIBLE_STATUSES.includes(req.status) && (
+                <>
+                  <Separator />
+                  <Button
+                    variant="outline"
+                    className="w-full justify-start gap-2"
+                    disabled={generatingLetter}
+                    onClick={handleGenerateLetter}
+                  >
+                    {generatingLetter ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <FileEdit className="h-4 w-4" />
+                    )}
+                    {generatingLetter ? "Generating..." : "Generate Response Letter"}
+                  </Button>
+                </>
+              )}
             </CardContent>
           </Card>
         </div>

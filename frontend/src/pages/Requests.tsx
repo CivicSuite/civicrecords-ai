@@ -24,7 +24,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Plus, FileText, AlertTriangle, Clock } from "lucide-react";
+import { Plus, FileText, AlertTriangle, Clock, ChevronLeft, ChevronRight } from "lucide-react";
 
 interface Request {
   id: string;
@@ -32,6 +32,8 @@ interface Request {
   requester_email: string;
   description: string;
   status: string;
+  priority?: string;
+  department?: string;
   statutory_deadline: string | null;
   assigned_to: string | null;
   created_at: string;
@@ -42,6 +44,17 @@ interface Stats {
   by_status: Record<string, number>;
   approaching_deadline: number;
   overdue: number;
+}
+
+interface Department {
+  id: string;
+  name: string;
+}
+
+interface User {
+  id: string;
+  email: string;
+  full_name?: string;
 }
 
 function formatDate(dateStr: string | null): string {
@@ -65,14 +78,31 @@ export default function Requests({ token }: { token: string }) {
   const [error, setError] = useState("");
   const [showForm, setShowForm] = useState(false);
   const [statusFilter, setStatusFilter] = useState("all");
+  const [departmentFilter, setDepartmentFilter] = useState("all");
+  const [priorityFilter, setPriorityFilter] = useState("all");
+  const [assignedToFilter, setAssignedToFilter] = useState("all");
+  const [dateFrom, setDateFrom] = useState("");
+  const [dateTo, setDateTo] = useState("");
+  const [departments, setDepartments] = useState<Department[]>([]);
+  const [users, setUsers] = useState<User[]>([]);
   const [formData, setFormData] = useState({ name: "", email: "", description: "", deadline: "" });
   const [submitting, setSubmitting] = useState(false);
+  const [page, setPage] = useState(0);
+  const PAGE_SIZE = 25;
   const navigate = useNavigate();
 
   const loadData = async () => {
     try {
+      // Build query params for server-side filtering where supported
+      const params = new URLSearchParams();
+      if (statusFilter !== "all") params.set("status", statusFilter);
+      if (assignedToFilter !== "all") params.set("assigned_to", assignedToFilter);
+      params.set("offset", String(page * PAGE_SIZE));
+      params.set("limit", String(PAGE_SIZE));
+      const qs = params.toString();
+
       const [reqData, statsData] = await Promise.all([
-        apiFetch<Request[]>("/requests/", { token }),
+        apiFetch<Request[]>(`/requests/?${qs}`, { token }),
         apiFetch<Stats>("/requests/stats", { token }),
       ]);
       setRequests(reqData);
@@ -84,7 +114,18 @@ export default function Requests({ token }: { token: string }) {
     }
   };
 
-  useEffect(() => { loadData(); }, [token]);
+  // Load filter option data (departments, users)
+  useEffect(() => {
+    apiFetch<Department[]>("/departments/", { token })
+      .then(setDepartments)
+      .catch(() => setDepartments([]));
+    apiFetch<User[]>("/admin/users", { token })
+      .then(setUsers)
+      .catch(() => setUsers([]));
+  }, [token]);
+
+  // Reload requests when filters or page change
+  useEffect(() => { setLoading(true); loadData(); }, [token, statusFilter, assignedToFilter, page]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -112,9 +153,22 @@ export default function Requests({ token }: { token: string }) {
     }
   };
 
-  const filtered = statusFilter === "all"
-    ? requests
-    : requests.filter(r => r.status === statusFilter);
+  // Status and assigned_to are filtered server-side via query params.
+  // Department, priority, and date range are filtered client-side until the
+  // backend adds support for those query parameters.
+  const filtered = requests.filter((r) => {
+    if (departmentFilter !== "all" && r.department !== departmentFilter) return false;
+    if (priorityFilter !== "all" && (r.priority ?? "normal") !== priorityFilter) return false;
+    if (dateFrom) {
+      const created = new Date(r.created_at);
+      if (created < new Date(dateFrom)) return false;
+    }
+    if (dateTo) {
+      const created = new Date(r.created_at);
+      if (created > new Date(dateTo + "T23:59:59")) return false;
+    }
+    return true;
+  });
 
   const columns: Column<Request & Record<string, unknown>>[] = [
     { key: "requester_name", header: "Requester" },
@@ -235,9 +289,9 @@ export default function Requests({ token }: { token: string }) {
       )}
 
       {/* Filter bar */}
-      <div className="flex items-center gap-3">
-        <Select value={statusFilter} onValueChange={(v) => setStatusFilter(v ?? "all")}>
-          <SelectTrigger className="w-[180px]">
+      <div className="flex flex-wrap items-center gap-3">
+        <Select value={statusFilter} onValueChange={(v) => { setStatusFilter(v ?? "all"); setPage(0); }}>
+          <SelectTrigger className="w-[160px]">
             <SelectValue placeholder="All statuses" />
           </SelectTrigger>
           <SelectContent>
@@ -247,8 +301,64 @@ export default function Requests({ token }: { token: string }) {
             <SelectItem value="in_review">In Review</SelectItem>
             <SelectItem value="drafted">Drafted</SelectItem>
             <SelectItem value="approved">Approved</SelectItem>
+            <SelectItem value="fulfilled">Fulfilled</SelectItem>
+            <SelectItem value="closed">Closed</SelectItem>
           </SelectContent>
         </Select>
+
+        <Select value={departmentFilter} onValueChange={(v) => { setDepartmentFilter(v ?? "all"); setPage(0); }}>
+          <SelectTrigger className="w-[160px]">
+            <SelectValue placeholder="All departments" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All departments</SelectItem>
+            {departments.map((d) => (
+              <SelectItem key={d.id} value={d.name}>{d.name}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+
+        <Select value={priorityFilter} onValueChange={(v) => { setPriorityFilter(v ?? "all"); setPage(0); }}>
+          <SelectTrigger className="w-[140px]">
+            <SelectValue placeholder="All priorities" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All priorities</SelectItem>
+            <SelectItem value="normal">Normal</SelectItem>
+            <SelectItem value="high">High</SelectItem>
+            <SelectItem value="urgent">Urgent</SelectItem>
+          </SelectContent>
+        </Select>
+
+        <Select value={assignedToFilter} onValueChange={(v) => { setAssignedToFilter(v ?? "all"); setPage(0); }}>
+          <SelectTrigger className="w-[160px]">
+            <SelectValue placeholder="All assignees" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All assignees</SelectItem>
+            {users.map((u) => (
+              <SelectItem key={u.id} value={u.id}>{u.full_name || u.email}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+
+        <div className="flex items-center gap-2">
+          <Input
+            type="date"
+            value={dateFrom}
+            onChange={(e) => { setDateFrom(e.target.value); setPage(0); }}
+            className="w-[140px]"
+            placeholder="From"
+          />
+          <span className="text-muted-foreground text-sm">to</span>
+          <Input
+            type="date"
+            value={dateTo}
+            onChange={(e) => { setDateTo(e.target.value); setPage(0); }}
+            className="w-[140px]"
+            placeholder="To"
+          />
+        </div>
       </div>
 
       {/* Table */}
@@ -274,6 +384,35 @@ export default function Requests({ token }: { token: string }) {
           emptyMessage="No requests found."
         />
       )}
+
+      {/* Pagination controls */}
+      <div className="flex items-center justify-between pt-2">
+        <span className="text-sm text-muted-foreground">
+          Showing {filtered.length === 0 ? 0 : page * PAGE_SIZE + 1}
+          &ndash;{page * PAGE_SIZE + filtered.length}
+          {stats ? ` of ${stats.total_requests}` : ""}
+        </span>
+        <div className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            disabled={page === 0}
+            onClick={() => setPage((p) => Math.max(0, p - 1))}
+          >
+            <ChevronLeft className="h-4 w-4 mr-1" />
+            Previous
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            disabled={requests.length < PAGE_SIZE}
+            onClick={() => setPage((p) => p + 1)}
+          >
+            Next
+            <ChevronRight className="h-4 w-4 ml-1" />
+          </Button>
+        </div>
+      </div>
     </div>
   );
 }

@@ -12,6 +12,8 @@ import {
   Building2,
   ClipboardList,
   Radar,
+  Settings,
+  ScrollText,
   type LucideIcon,
 } from "lucide-react";
 
@@ -38,6 +40,8 @@ const ADMIN_ITEMS: NavItem[] = [
   { path: "/discovery", label: "Discovery", icon: Radar },
   { path: "/", label: "Dashboard", icon: LayoutDashboard },
   { path: "/users", label: "Users", icon: Users },
+  { path: "/settings", label: "Settings", icon: Settings },
+  { path: "/audit-log", label: "Audit Log", icon: ScrollText },
 ];
 
 function NavLink({ item }: { item: NavItem }) {

@@ -5,6 +5,7 @@ import { StatCard } from "@/components/stat-card";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
+import { StatusBadge } from "@/components/status-badge";
 import {
   Users,
   FileText,
@@ -20,6 +21,7 @@ import {
   AlertTriangle,
   Clock,
   CalendarCheck,
+  Activity,
 } from "lucide-react";
 
 interface SystemStatus {
@@ -44,6 +46,24 @@ interface OperationalMetrics {
   top_request_topics: string[];
 }
 
+interface AuditLogEntry {
+  id: string;
+  action: string;
+  actor_email?: string;
+  target_type?: string;
+  target_id?: string;
+  created_at: string;
+  details?: string;
+}
+
+interface DeadlineRequest {
+  id: string;
+  requester_name: string;
+  description: string;
+  status: string;
+  statutory_deadline: string;
+}
+
 function ServiceIndicator({ name, status, icon: Icon }: { name: string; status: string; icon: React.ElementType }) {
   const isConnected = status === "connected" || status === "ok" || status === "healthy";
   return (
@@ -64,6 +84,8 @@ export default function Dashboard({ token }: { token: string }) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [analytics, setAnalytics] = useState<OperationalMetrics | null>(null);
+  const [auditLog, setAuditLog] = useState<AuditLogEntry[]>([]);
+  const [approachingDeadlines, setApproachingDeadlines] = useState<DeadlineRequest[]>([]);
 
   useEffect(() => {
     apiFetch<SystemStatus>("/admin/status", { token })
@@ -74,9 +96,28 @@ export default function Dashboard({ token }: { token: string }) {
     apiFetch<OperationalMetrics>("/analytics/operational", { token })
       .then(setAnalytics)
       .catch(() => {
-        // Analytics are non-critical — silently suppress errors
         setAnalytics(null);
       });
+
+    // Recent activity: fetch last 10 audit log entries
+    apiFetch<AuditLogEntry[]>("/admin/audit-log?limit=10", { token })
+      .then(setAuditLog)
+      .catch(() => setAuditLog([]));
+
+    // Approaching deadlines: fetch open requests, filter client-side for deadlines within 3 days
+    apiFetch<DeadlineRequest[]>("/requests/?limit=100", { token })
+      .then((reqs) => {
+        const now = Date.now();
+        const threeDays = 3 * 24 * 60 * 60 * 1000;
+        const approaching = reqs.filter((r) => {
+          if (!r.statutory_deadline) return false;
+          const deadline = new Date(r.statutory_deadline).getTime();
+          const diff = deadline - now;
+          return diff >= 0 && diff <= threeDays;
+        });
+        setApproachingDeadlines(approaching);
+      })
+      .catch(() => setApproachingDeadlines([]));
   }, [token]);
 
   if (loading) {
@@ -163,6 +204,117 @@ export default function Dashboard({ token }: { token: string }) {
             <ServiceIndicator name="Ollama (LLM Engine)" status={status.ollama?.status} icon={Cpu} />
             <ServiceIndicator name="Redis (Task Queue)" status={status.redis?.status} icon={Zap} />
           </div>
+        </CardContent>
+      </Card>
+
+      {/* Requests by Status */}
+      {analytics && Object.keys(analytics.requests_by_status).length > 0 && (
+        <Card className="shadow-none">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-label uppercase text-muted-foreground">Requests by Status</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-2">
+              {Object.entries(analytics.requests_by_status).map(([statusKey, count]) => {
+                const total = Object.values(analytics.requests_by_status).reduce((a, b) => a + b, 0);
+                const pct = total > 0 ? Math.round((count / total) * 100) : 0;
+                return (
+                  <div key={statusKey} className="flex items-center gap-3">
+                    <StatusBadge status={statusKey} domain="request" className="w-32 justify-start" />
+                    <div className="flex-1 h-4 bg-muted rounded-full overflow-hidden">
+                      <div
+                        className="h-full bg-primary rounded-full transition-all"
+                        style={{ width: `${pct}%` }}
+                      />
+                    </div>
+                    <span className="text-sm font-medium w-12 text-right">{count}</span>
+                  </div>
+                );
+              })}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Approaching Deadlines */}
+      <Card className="shadow-none">
+        <CardHeader className="pb-3">
+          <CardTitle className="text-label uppercase text-muted-foreground flex items-center gap-2">
+            <AlertTriangle className="h-4 w-4" />
+            Approaching Deadlines (within 3 days)
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          {approachingDeadlines.length === 0 ? (
+            <p className="text-sm text-muted-foreground">No requests with upcoming deadlines.</p>
+          ) : (
+            <div className="space-y-3">
+              {approachingDeadlines.map((r: DeadlineRequest) => {
+                const days = Math.ceil(
+                  (new Date(r.statutory_deadline).getTime() - Date.now()) / (1000 * 60 * 60 * 24)
+                );
+                return (
+                  <div
+                    key={r.id}
+                    className="flex items-center justify-between p-3 rounded-lg border cursor-pointer hover:bg-muted/50 transition-colors"
+                    onClick={() => (window.location.href = `/requests/${r.id}`)}
+                  >
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium truncate">{r.requester_name}</p>
+                      <p className="text-xs text-muted-foreground truncate">{r.description}</p>
+                    </div>
+                    <div className="ml-3 flex items-center gap-2">
+                      <StatusBadge status={r.status} domain="request" />
+                      <span className={`text-xs font-semibold px-2 py-1 rounded ${days === 0 ? "bg-destructive/10 text-destructive" : "bg-warning/10 text-warning"}`}>
+                        {days === 0 ? "Due today" : `${days}d left`}
+                      </span>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Recent Activity Timeline */}
+      <Card className="shadow-none">
+        <CardHeader className="pb-3">
+          <CardTitle className="text-label uppercase text-muted-foreground flex items-center gap-2">
+            <Activity className="h-4 w-4" />
+            Recent Activity
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          {auditLog.length === 0 ? (
+            <p className="text-sm text-muted-foreground">No recent activity recorded.</p>
+          ) : (
+            <div className="relative">
+              <div className="absolute left-3 top-0 bottom-0 w-px bg-border" />
+              <div className="space-y-4">
+                {auditLog.map((entry: AuditLogEntry) => (
+                  <div key={entry.id} className="flex items-start gap-4 relative">
+                    <div className="w-6 h-6 rounded-full bg-primary/10 border border-primary/30 flex items-center justify-center flex-shrink-0 z-10">
+                      <FileText className="h-3 w-3 text-primary" />
+                    </div>
+                    <div className="flex-1 min-w-0 pt-0.5">
+                      <p className="text-sm">
+                        <span className="font-medium">{entry.actor_email ?? "System"}</span>
+                        {" "}
+                        <span className="text-muted-foreground">{entry.action.replace(/_/g, " ")}</span>
+                        {entry.target_type && (
+                          <span className="text-muted-foreground"> on {entry.target_type}</span>
+                        )}
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        {new Date(entry.created_at).toLocaleString()}
+                      </p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
         </CardContent>
       </Card>
 
