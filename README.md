@@ -127,7 +127,7 @@ All dependencies use permissive (MIT, Apache 2.0, BSD) or weak-copyleft (LGPL, M
 **Individual References:**
 - [Staff User Manual](docs/user-manual-staff.html) — For city clerks and records officers (non-technical)
 - [IT Administrator Manual](docs/admin-manual-it.html) — Installation, configuration, security, backup, monitoring
-- [Master Design Spec](docs/superpowers/specs/2026-04-11-civicrecords-ai-master-design.md) — Full architecture and compliance specification (v2.0)
+- [Canonical Spec](docs/UNIFIED-SPEC.md) — Unified Design Specification (single source of truth)
 - [System Architecture Diagram](docs/architecture/system-architecture.html) — Interactive component and data flow diagrams
 - [Phase Decomposition](docs/architecture/decomposition.html) — Project phases and build sequence
 

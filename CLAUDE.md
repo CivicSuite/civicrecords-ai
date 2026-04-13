@@ -49,7 +49,7 @@ Every sub-project must pass ALL verification gates before merge:
 
 ## Architecture
 
-See `docs/superpowers/specs/2026-04-11-civicrecords-ai-master-design.md` for full spec.
+See `docs/UNIFIED-SPEC.md` for the canonical spec (single source of truth).
 
 ### Key Constraints
 - All dependencies must be permissive or weak-copyleft licensed (MIT, Apache 2.0, BSD, LGPL, MPL)
