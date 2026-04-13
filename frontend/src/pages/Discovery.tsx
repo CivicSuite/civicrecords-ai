@@ -32,7 +32,7 @@ export default function Discovery({ token: _token }: { token: string }) {
           <Lock className="h-5 w-5 text-primary mt-0.5" />
           <div>
             <p className="text-sm font-medium text-foreground">
-              Network Discovery — Coming in v1.1
+              Network Discovery — Coming in Phase 3
             </p>
             <p className="text-sm text-muted-foreground mt-1">
               The discovery engine will scan your city's network (with IT authorization) to automatically

@@ -245,8 +245,8 @@ export default function DataSources({ token }: { token: string }) {
               <Button variant="outline" size="sm" className="mt-3" disabled>Configure Email</Button>
             </CardContent>
           </Card>
-          <ComingSoonCard icon={Database} title="Database (ODBC)" phase="v1.1" />
-          <ComingSoonCard icon={Globe} title="API Endpoint" phase="v2.0" />
+          <ComingSoonCard icon={Database} title="Database (ODBC)" phase="Phase 3" />
+          <ComingSoonCard icon={Globe} title="API Endpoint" phase="Phase 3" />
         </div>
       </div>
     </div>

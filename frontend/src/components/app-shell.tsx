@@ -78,7 +78,7 @@ export function AppShell({ children, onSignOut, userEmail }: AppShellProps) {
 
         {/* Footer */}
         <footer className="border-t px-6 py-2 text-xs text-muted-foreground flex items-center justify-between">
-          <span>CivicRecords AI v1.0.0 &middot; Apache 2.0</span>
+          <span>CivicRecords AI v1.1.0 &middot; Apache 2.0</span>
           <span>Help &middot; Audit Log</span>
         </footer>
       </div>

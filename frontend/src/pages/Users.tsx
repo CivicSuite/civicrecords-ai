@@ -32,6 +32,7 @@ interface User {
   is_active: boolean;
   created_at: string;
   last_login: string | null;
+  department_id: string | null;
 }
 
 const ROLE_COLORS: Record<string, string> = {
@@ -39,6 +40,8 @@ const ROLE_COLORS: Record<string, string> = {
   staff: "bg-green-100 text-green-800",
   reviewer: "bg-blue-100 text-blue-800",
   read_only: "bg-gray-100 text-gray-600",
+  liaison: "bg-amber-100 text-amber-800",
+  public: "bg-slate-100 text-slate-600",
 };
 
 function formatLastLogin(dateStr: string | null): string {
@@ -117,6 +120,15 @@ export default function Users({ token }: { token: string }) {
       ),
     },
     {
+      key: "department_id",
+      header: "Department",
+      render: (u) => (
+        <span className="text-sm text-muted-foreground">
+          {u.department_id ? u.department_id.toString().slice(0, 8) + "..." : "None"}
+        </span>
+      ),
+    },
+    {
       key: "is_active",
       header: "Status",
       render: (u) => (
@@ -181,9 +193,11 @@ export default function Users({ token }: { token: string }) {
                     <SelectTrigger><SelectValue /></SelectTrigger>
                     <SelectContent>
                       <SelectItem value="read_only">Read Only</SelectItem>
+                      <SelectItem value="liaison">Liaison</SelectItem>
                       <SelectItem value="staff">Staff</SelectItem>
                       <SelectItem value="reviewer">Reviewer</SelectItem>
                       <SelectItem value="admin">Admin</SelectItem>
+                      <SelectItem value="public">Public</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
