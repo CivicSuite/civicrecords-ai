@@ -89,6 +89,7 @@ async def update_rule(
         rule.description = data.description
     if data.enabled is not None:
         rule.enabled = data.enabled
+    rule.version += 1
 
     await session.commit()
     await session.refresh(rule)
@@ -235,6 +236,8 @@ async def review_flag(
 @router.get("/dashboard/accuracy", response_model=list[ExemptionAccuracyReport])
 async def exemption_accuracy(
     department_id: uuid.UUID | None = None,
+    date_from: datetime | None = None,
+    date_to: datetime | None = None,
     session: AsyncSession = Depends(get_async_session),
     user: User = Depends(require_role(UserRole.ADMIN)),
 ):
@@ -252,6 +255,10 @@ async def exemption_accuracy(
         stmt = stmt.join(
             RecordsRequest, ExemptionFlag.request_id == RecordsRequest.id
         ).where(RecordsRequest.department_id == department_id)
+    if date_from:
+        stmt = stmt.where(ExemptionFlag.created_at >= date_from)
+    if date_to:
+        stmt = stmt.where(ExemptionFlag.created_at <= date_to)
 
     result = await session.execute(stmt)
     rows = result.fetchall()
@@ -287,13 +294,18 @@ async def exemption_accuracy(
 @router.get("/dashboard/export")
 async def export_flag_data(
     format: str = "json",
+    date_from: datetime | None = None,
+    date_to: datetime | None = None,
     session: AsyncSession = Depends(get_async_session),
     user: User = Depends(require_role(UserRole.ADMIN)),
 ):
     """Export exemption flag data as JSON or CSV."""
-    result = await session.execute(
-        select(ExemptionFlag).order_by(ExemptionFlag.created_at.desc())
-    )
+    stmt = select(ExemptionFlag).order_by(ExemptionFlag.created_at.desc())
+    if date_from:
+        stmt = stmt.where(ExemptionFlag.created_at >= date_from)
+    if date_to:
+        stmt = stmt.where(ExemptionFlag.created_at <= date_to)
+    result = await session.execute(stmt)
     flags = result.scalars().all()
 
     if format == "csv":
