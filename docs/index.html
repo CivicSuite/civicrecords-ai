@@ -493,7 +493,7 @@
 <!-- STATS BAR -->
 <div class="stats-bar">
   <div class="stat">
-    <div class="stat-num">14</div>
+    <div class="stat-num">16</div>
     <div class="stat-label">Core Features</div>
   </div>
   <div class="stat">
@@ -505,7 +505,7 @@
     <div class="stat-label">States Supported</div>
   </div>
   <div class="stat">
-    <div class="stat-num">1.0.1</div>
+    <div class="stat-num">1.1.0</div>
     <div class="stat-label">Stable Release</div>
   </div>
 </div>
@@ -514,7 +514,7 @@
 <section class="features" id="features">
   <div class="container">
     <h2 class="section-title">What it does</h2>
-    <p class="section-sub">Fourteen integrated capabilities — all running locally, all under your control.</p>
+    <p class="section-sub">Sixteen integrated capabilities — all running locally, all under your control.</p>
     <div class="grid-6">
 
       <div class="card">
@@ -532,7 +532,7 @@
       <div class="card">
         <div class="card-icon">&#128274;</div>
         <h3>Exemption Detection</h3>
-        <p>Rules-primary engine with built-in PII patterns — SSN, phone, email, credit card, date of birth — plus per-state statutory keyword matching. Optional secondary review via Ollama (confidence capped at 0.7). All flags require explicit human confirmation before any redaction.</p>
+        <p>Rules-primary engine with built-in PII patterns — SSN, phone, email, credit card, date of birth — plus statutory keyword matching across all 50 states and DC (180 rules). Auditability dashboard tracks acceptance/rejection rates by category with CSV/JSON export. All flags require explicit human confirmation.</p>
       </div>
 
       <div class="card">
@@ -544,7 +544,7 @@
       <div class="card">
         <div class="card-icon">&#9878;</div>
         <h3>Compliance by Design</h3>
-        <p>Hash-chained audit logs with SHA-256 tamper evidence and automatic archival. Human-in-the-loop enforced at the API layer — no auto-redaction, no auto-approval. Login rate limiting, admin-only user creation, and JWT secret validation. Verification script confirms zero outbound data transmission.</p>
+        <p>Hash-chained audit logs with SHA-256 tamper evidence and automatic archival. Human-in-the-loop enforced at the API layer — no auto-redaction, no auto-approval. Ships with 5 compliance templates: AI Use Disclosure, CAIA Impact Assessment, AI Governance Policy, Response Letter Disclosure, and Data Residency Attestation. Verification script confirms zero outbound data transmission.</p>
       </div>
 
       <div class="card">
@@ -599,6 +599,18 @@
         <div class="card-icon">&#128337;</div>
         <h3>Request Timeline &amp; Messaging</h3>
         <p>Every request carries a full chronological timeline — intake, assignment, search queries, review actions, approvals, and response. Built-in secure messaging lets staff communicate with requesters and internal reviewers from within the request record.</p>
+      </div>
+
+      <div class="card">
+        <div class="card-icon">&#127970;</div>
+        <h3>Department Access Controls</h3>
+        <p>Staff are scoped to their assigned department — they see only their department's requests, documents, and exemption flags. Admins retain full org-wide visibility. Department CRUD with audit logging ensures every access boundary change is tracked.</p>
+      </div>
+
+      <div class="card">
+        <div class="card-icon">&#128220;</div>
+        <h3>Compliance Templates</h3>
+        <p>Five ready-to-use compliance documents ship with the product: AI Use Disclosure, Response Letter Disclosure Language, CAIA Impact Assessment, AI Governance Policy, and Data Residency Attestation. Templates render with your city profile data and are customizable by admins.</p>
       </div>
 
     </div>
