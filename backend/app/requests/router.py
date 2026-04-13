@@ -8,6 +8,7 @@ from sqlalchemy import select, func
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.audit.logger import write_audit_log
+from app.notifications.service import queue_notification
 from app.config import settings
 from app.auth.dependencies import require_role, check_department_access
 from app.database import get_async_session
@@ -211,6 +212,19 @@ async def update_request(
             req.closed_at = datetime.now(timezone.utc)
         await log_timeline(session, request_id, "status_change",
                           f"Status changed to {data.status.value}", user.id, user.role)
+        # Dispatch notification if template exists for this event
+        if req.requester_email:
+            await queue_notification(
+                session=session,
+                event_type=f"request_{data.status.value}",
+                recipient_email=req.requester_email,
+                request_id=request_id,
+                context_data={
+                    "requester_name": req.requester_name,
+                    "request_id": str(request_id),
+                    "status": data.status.value,
+                },
+            )
 
     if data.description is not None:
         req.description = data.description
@@ -366,6 +380,19 @@ async def submit_for_review(
     req.status = RequestStatus.IN_REVIEW
     await log_timeline(session, request_id, "status_change",
                       "Submitted for review", user.id, user.role)
+    # Dispatch notification if template exists for this event
+    if req.requester_email:
+        await queue_notification(
+            session=session,
+            event_type="request_in_review",
+            recipient_email=req.requester_email,
+            request_id=request_id,
+            context_data={
+                "requester_name": req.requester_name,
+                "request_id": str(request_id),
+                "status": "in_review",
+            },
+        )
     await session.commit()
     await session.refresh(req)
 
@@ -393,6 +420,19 @@ async def mark_ready_for_release(
     req.status = RequestStatus.READY_FOR_RELEASE
     await log_timeline(session, request_id, "status_change",
                       "Marked ready for release", user.id, user.role)
+    # Dispatch notification if template exists for this event
+    if req.requester_email:
+        await queue_notification(
+            session=session,
+            event_type="request_ready_for_release",
+            recipient_email=req.requester_email,
+            request_id=request_id,
+            context_data={
+                "requester_name": req.requester_name,
+                "request_id": str(request_id),
+                "status": "ready_for_release",
+            },
+        )
     await session.commit()
     await session.refresh(req)
 
@@ -420,6 +460,19 @@ async def approve_request(
     req.status = RequestStatus.APPROVED
     await log_timeline(session, request_id, "response_approved",
                       "Request approved", user.id, user.role)
+    # Dispatch notification if template exists for this event
+    if req.requester_email:
+        await queue_notification(
+            session=session,
+            event_type="request_approved",
+            recipient_email=req.requester_email,
+            request_id=request_id,
+            context_data={
+                "requester_name": req.requester_name,
+                "request_id": str(request_id),
+                "status": "approved",
+            },
+        )
     await session.commit()
     await session.refresh(req)
 
@@ -450,6 +503,19 @@ async def reject_request(
     await log_timeline(session, request_id, "status_change",
                       "Request rejected — returned for revision", user.id, user.role,
                       internal_note=reason if reason else None)
+    # Dispatch notification if template exists for this event
+    if req.requester_email:
+        await queue_notification(
+            session=session,
+            event_type="request_drafted",
+            recipient_email=req.requester_email,
+            request_id=request_id,
+            context_data={
+                "requester_name": req.requester_name,
+                "request_id": str(request_id),
+                "status": "drafted",
+            },
+        )
     await session.commit()
     await session.refresh(req)
 
@@ -714,7 +780,11 @@ async def _try_llm_generation(
     """Attempt to generate a letter via Ollama. Returns None on failure."""
     try:
         import httpx
-        from app.llm.context_manager import assemble_context, blocks_to_prompt
+        from app.llm.context_manager import (
+            assemble_context,
+            blocks_to_prompt,
+            get_active_model_context_window,
+        )
 
         # Build request context
         request_context = (
@@ -751,11 +821,14 @@ async def _try_llm_generation(
             "End with standard government closing language."
         )
 
+        max_ctx = await get_active_model_context_window()
+
         blocks = assemble_context(
             system_prompt=system_prompt,
             request_context=request_context,
             chunks=chunks if chunks else None,
             exemption_rules=exemption_rules if exemption_rules else None,
+            max_context_tokens=max_ctx,
         )
         prompt = blocks_to_prompt(blocks)
 

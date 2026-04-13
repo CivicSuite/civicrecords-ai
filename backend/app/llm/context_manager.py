@@ -8,8 +8,13 @@ inclusion in LLM prompts to prevent adversarial text from manipulating
 model behavior.
 """
 
+import logging
 import re
 from dataclasses import dataclass, field
+
+logger = logging.getLogger(__name__)
+
+_DEFAULT_CONTEXT_WINDOW = 8192
 
 
 @dataclass
@@ -197,3 +202,35 @@ def blocks_to_prompt(blocks: list[ContextBlock]) -> str:
         elif block.role == "rule":
             sections.append(f"\n--- Exemption Rule ---\n{block.content}")
     return "\n".join(sections)
+
+
+async def get_active_model_context_window() -> int:
+    """Query ModelRegistry for the active model's context_window_size.
+
+    Returns the context window size of the active model, or
+    ``_DEFAULT_CONTEXT_WINDOW`` (8192) if no active model is found or the
+    value is not set.
+    """
+    from sqlalchemy import select
+
+    from app.database import async_session_maker
+    from app.models.document import ModelRegistry
+
+    try:
+        async with async_session_maker() as session:
+            result = await session.execute(
+                select(ModelRegistry.context_window_size).where(
+                    ModelRegistry.is_active.is_(True)
+                )
+            )
+            row = result.scalar_one_or_none()
+            if row is not None and row > 0:
+                logger.debug("Active model context window: %d", row)
+                return row
+    except Exception as exc:
+        logger.warning(
+            "Failed to read model registry, using default context window: %s",
+            exc,
+        )
+
+    return _DEFAULT_CONTEXT_WINDOW
