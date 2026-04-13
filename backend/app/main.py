@@ -12,6 +12,17 @@ from app.schemas.user import UserCreate
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    # Auto-run Alembic migrations on startup
+    import subprocess
+    result = subprocess.run(
+        ["alembic", "upgrade", "head"],
+        capture_output=True, text=True, cwd="/app"
+    )
+    if result.returncode == 0:
+        print("Migrations: up to date")
+    else:
+        print(f"Migration warning: {result.stderr.strip()}")
+
     # Create first admin user on startup if it doesn't exist
     from sqlalchemy import select
     from app.database import async_session_maker
