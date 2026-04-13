@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timezone
 
 from fastapi import APIRouter, Depends
 from sqlalchemy import Enum, extract, func, select
@@ -17,7 +17,7 @@ async def get_operational_metrics(
     session: AsyncSession = Depends(get_async_session),
     user=Depends(require_role(UserRole.STAFF)),
 ):
-    now = datetime.utcnow()
+    now = datetime.now(timezone.utc)
 
     # Requests by status
     status_result = await session.execute(

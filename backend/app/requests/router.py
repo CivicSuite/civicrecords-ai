@@ -722,7 +722,7 @@ async def generate_response_letter(
 
     letter = ResponseLetter(
         request_id=request_id,
-        template_id=data.template_id,
+        template_id=data.template_id if data else None,
         generated_content=content,
         status="draft",
         generated_by=user.id,
@@ -744,7 +744,7 @@ async def generate_response_letter(
         resource_id=str(letter.id),
         user_id=user.id,
         ai_generated=True,
-        details={"request_id": str(request_id), "template_id": str(data.template_id) if data.template_id else None},
+        details={"request_id": str(request_id), "template_id": str(data.template_id) if data and data.template_id else None},
     )
     return letter
 

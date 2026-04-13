@@ -146,7 +146,7 @@ export default function Dashboard({ token }: { token: string }) {
           />
           <StatCard
             label="Deadline Compliance"
-            value={`${(analytics.deadline_compliance_rate * 100).toFixed(1)}%`}
+            value={`${analytics.deadline_compliance_rate.toFixed(1)}%`}
             icon={CalendarCheck}
           />
         </div>

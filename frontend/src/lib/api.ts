@@ -35,7 +35,14 @@ export async function apiFetch<T>(path: string, options: ApiOptions = {}): Promi
 
   if (!resp.ok) {
     const error = await resp.json().catch(() => ({ detail: resp.statusText }));
-    throw new Error(error.detail || resp.statusText);
+    const detail = error.detail;
+    const message =
+      typeof detail === "string"
+        ? detail
+        : Array.isArray(detail)
+          ? detail.map((d: { msg?: string }) => d.msg || JSON.stringify(d)).join("; ")
+          : resp.statusText;
+    throw new Error(message);
   }
 
   return resp.json();
