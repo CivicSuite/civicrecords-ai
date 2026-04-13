@@ -244,3 +244,90 @@ async def test_non_recursive_skips_subdirs(drop_dir):
 
     filenames = {r.filename for r in records}
     assert "hidden_report.pdf" not in filenames
+
+
+# ── Pipeline Dispatch Tests ───────────────────────────────────────────────────
+
+from app.connectors import manual_drop as _drop_mod
+
+
+@pytest.mark.asyncio
+async def test_ingest_manual_drop_dispatch(drop_dir):
+    """_ingest_manual_drop_source discovers, fetches, ingests, and archives."""
+    from unittest.mock import AsyncMock, MagicMock, patch
+    from app.ingestion.tasks import _ingest_manual_drop_source
+    from app.connectors.base import DiscoveredRecord, FetchedDocument
+
+    source = MagicMock()
+    source.id = "00000000-0000-0000-0000-000000000002"
+    source.connection_config = {"drop_path": str(drop_dir)}
+    source.last_ingestion_at = None
+
+    mock_connector = MagicMock()
+    mock_connector.authenticate = AsyncMock(return_value=True)
+    mock_connector.discover = AsyncMock(return_value=[
+        DiscoveredRecord(
+            source_path=str(drop_dir / "budget.pdf"),
+            filename="budget.pdf",
+            file_type="pdf",
+            file_size=100,
+        ),
+        DiscoveredRecord(
+            source_path=str(drop_dir / "notes.txt"),
+            filename="notes.txt",
+            file_type="txt",
+            file_size=50,
+        ),
+    ])
+    mock_connector.fetch = AsyncMock(side_effect=[
+        FetchedDocument(
+            source_path=str(drop_dir / "budget.pdf"),
+            filename="budget.pdf", file_type="pdf",
+            content=b"%PDF content", file_size=12,
+        ),
+        FetchedDocument(
+            source_path=str(drop_dir / "notes.txt"),
+            filename="notes.txt", file_type="txt",
+            content=b"Meeting notes", file_size=13,
+        ),
+    ])
+    # archive_file is sync
+    mock_connector.archive_file = MagicMock(return_value=Path("/archived"))
+
+    mock_session = AsyncMock()
+    mock_session.commit = AsyncMock()
+
+    with patch.object(_drop_mod, "ManualDropConnector", return_value=mock_connector), \
+         patch("app.ingestion.tasks.ingest_file_from_bytes", new_callable=AsyncMock) as mock_ingest, \
+         patch("app.ingestion.tasks.write_audit_log", new_callable=AsyncMock):
+        mock_ingest.return_value = MagicMock()
+
+        result = await _ingest_manual_drop_source(mock_session, source, user_id=None)
+
+    assert result["discovered"] == 2
+    assert result["ingested"] == 2
+    assert result["errors"] == 0
+    mock_connector.authenticate.assert_called_once()
+    mock_connector.discover.assert_called_once()
+    assert mock_connector.fetch.call_count == 2
+    assert mock_connector.archive_file.call_count == 2
+
+
+@pytest.mark.asyncio
+async def test_ingest_manual_drop_auth_failure():
+    """_ingest_manual_drop_source returns error on inaccessible folder."""
+    from unittest.mock import AsyncMock, MagicMock, patch
+    from app.ingestion.tasks import _ingest_manual_drop_source
+
+    source = MagicMock()
+    source.connection_config = {"drop_path": "/nonexistent"}
+
+    mock_connector = MagicMock()
+    mock_connector.authenticate = AsyncMock(return_value=False)
+
+    mock_session = AsyncMock()
+
+    with patch.object(_drop_mod, "ManualDropConnector", return_value=mock_connector):
+        result = await _ingest_manual_drop_source(mock_session, source, user_id=None)
+
+    assert result["error"] == "ManualDrop: drop folder not accessible"

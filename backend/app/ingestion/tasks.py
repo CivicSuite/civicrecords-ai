@@ -100,6 +100,8 @@ def task_ingest_source(self, source_id: str, user_id: str | None = None):
             # Dispatch by source type
             if source_type == "email":
                 return await _ingest_email_source(session, source, user_id)
+            if source_type == "manual_drop":
+                return await _ingest_manual_drop_source(session, source, user_id)
 
             # Default: directory-based ingestion
             directory = Path(config.get("path", ""))
@@ -196,6 +198,63 @@ async def _ingest_email_source(session, source, user_id: str | None) -> dict:
     )
 
     logger.info("Email ingestion complete for source %s: %s", source.id, stats)
+    return stats
+
+
+async def _ingest_manual_drop_source(session, source, user_id: str | None) -> dict:
+    """Ingest documents from a watched drop folder via the ManualDropConnector."""
+    import logging
+    from datetime import datetime, timezone
+    from app.connectors import manual_drop as _drop_mod
+
+    logger = logging.getLogger(__name__)
+
+    connector = _drop_mod.ManualDropConnector(source.connection_config)
+
+    authenticated = await connector.authenticate()
+    if not authenticated:
+        return {"error": "ManualDrop: drop folder not accessible"}
+
+    discovered = await connector.discover()
+
+    ingested = 0
+    errors = 0
+
+    for record in discovered:
+        try:
+            fetched = await connector.fetch(record.source_path)
+
+            doc = await ingest_file_from_bytes(
+                session=session,
+                content=fetched.content,
+                filename=fetched.filename,
+                file_type=fetched.file_type,
+                source_id=source.id,
+            )
+            if doc:
+                ingested += 1
+                # Archive the processed file
+                connector.archive_file(record.source_path)
+
+        except Exception as exc:
+            logger.error("Failed to ingest drop file %s: %s", record.source_path, exc)
+            errors += 1
+
+    source.last_ingestion_at = datetime.now(timezone.utc)
+    await session.commit()
+
+    stats = {"ingested": ingested, "errors": errors, "discovered": len(discovered)}
+
+    await write_audit_log(
+        session=session,
+        action="ingest_manual_drop_source",
+        resource_type="data_source",
+        resource_id=str(source.id),
+        user_id=uuid.UUID(user_id) if user_id else None,
+        details=stats,
+    )
+
+    logger.info("ManualDrop ingestion complete for source %s: %s", source.id, stats)
     return stats
 
 
