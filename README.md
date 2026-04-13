@@ -119,6 +119,14 @@ Apache License 2.0 — see [LICENSE](LICENSE).
 
 All dependencies use permissive (MIT, Apache 2.0, BSD) or weak-copyleft (LGPL, MPL) licenses. No AGPL, SSPL, or BSL dependencies.
 
+## Documentation
+
+- [Staff User Manual](docs/user-manual-staff.html) — For city clerks and records officers (non-technical)
+- [IT Administrator Manual](docs/admin-manual-it.html) — Installation, configuration, security, backup, monitoring
+- [Master Design Spec](docs/superpowers/specs/2026-04-11-civicrecords-ai-master-design.md) — Full architecture and compliance specification
+- [System Architecture Diagram](docs/architecture/system-architecture.html) — Interactive component and data flow diagrams
+- [Phase Decomposition](docs/architecture/decomposition.html) — Project phases and build sequence
+
 ## Contributing
 
 See [CONTRIBUTING.md](CONTRIBUTING.md) for development setup, coding standards, and how to submit changes.
