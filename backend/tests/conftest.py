@@ -10,12 +10,13 @@ from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_asyn
 import os
 # Set a proper-length JWT secret before importing settings to suppress warnings
 os.environ.setdefault("JWT_SECRET", "a" * 64)
+os.environ["TESTING"] = "1"
 
 import app.database
 from app.config import settings
 from app.database import get_async_session
 from app.main import create_app
-from app.models.user import Base
+from app.models.user import Base, User, UserRole
 
 # Build test database URL — replace only the database name (last segment)
 _base = settings.database_url.rsplit("/", 1)[0]
@@ -71,41 +72,48 @@ async def client(setup_db) -> AsyncGenerator[AsyncClient, None]:
     await test_engine.dispose()
 
 
+async def _create_test_user(email: str, password: str, full_name: str, role: UserRole) -> None:
+    """Create a user directly via UserManager (no HTTP endpoint needed)."""
+    from fastapi_users_db_sqlalchemy import SQLAlchemyUserDatabase
+    from app.auth.manager import UserManager
+    from app.schemas.user import AdminUserCreate
+
+    async with test_session_maker() as session:
+        user_db = SQLAlchemyUserDatabase(session, User)
+        manager = UserManager(session=session, user_db=user_db)
+        user_create = AdminUserCreate(
+            email=email,
+            password=password,
+            full_name=full_name,
+            role=role,
+            is_active=True,
+            is_verified=True,
+            is_superuser=(role == UserRole.ADMIN),
+        )
+        await manager.create(user_create)
+
+
 @pytest.fixture
 async def admin_token(client: AsyncClient) -> str:
-    """Register an admin user and return JWT token."""
-    reg = await client.post(
-        "/auth/register",
-        json={
-            "email": f"admin-{uuid.uuid4().hex[:8]}@test.com",
-            "password": "adminpass123",
-            "full_name": "Test Admin",
-            "role": "admin",
-        },
-    )
-    email = reg.json()["email"]
+    """Create an admin user directly and return JWT token."""
+    email = f"admin-{uuid.uuid4().hex[:8]}@test.com"
+    password = "adminpass123"
+    await _create_test_user(email, password, "Test Admin", UserRole.ADMIN)
     login = await client.post(
         "/auth/jwt/login",
-        data={"username": email, "password": "adminpass123"},
+        data={"username": email, "password": password},
     )
     return login.json()["access_token"]
 
 
 @pytest.fixture
 async def staff_token(client: AsyncClient) -> str:
-    """Register a staff user and return JWT token."""
-    reg = await client.post(
-        "/auth/register",
-        json={
-            "email": f"staff-{uuid.uuid4().hex[:8]}@test.com",
-            "password": "staffpass123",
-            "full_name": "Test Staff",
-            "role": "staff",
-        },
-    )
-    email = reg.json()["email"]
+    """Create a staff user directly and return JWT token."""
+    email = f"staff-{uuid.uuid4().hex[:8]}@test.com"
+    password = "staffpass123"
+    await _create_test_user(email, password, "Test Staff", UserRole.STAFF)
     login = await client.post(
         "/auth/jwt/login",
-        data={"username": email, "password": "staffpass123"},
+        data={"username": email, "password": password},
     )
     return login.json()["access_token"]

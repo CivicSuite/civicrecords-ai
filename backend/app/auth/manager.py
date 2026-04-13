@@ -11,9 +11,15 @@ from app.models.user import User
 
 
 class UserManager(UUIDIDMixin, BaseUserManager[User, uuid.UUID]):
-    from app.config import settings as _settings
-    reset_password_token_secret = _settings.jwt_secret
-    verification_token_secret = _settings.jwt_secret
+    @property
+    def reset_password_token_secret(self):
+        from app.config import settings
+        return settings.jwt_secret
+
+    @property
+    def verification_token_secret(self):
+        from app.config import settings
+        return settings.jwt_secret
 
     def __init__(self, session: AsyncSession, *args, **kwargs):
         super().__init__(*args, **kwargs)

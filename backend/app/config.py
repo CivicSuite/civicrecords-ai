@@ -1,4 +1,7 @@
+from pydantic import model_validator
 from pydantic_settings import BaseSettings
+
+_INSECURE_SECRETS = {"CHANGE-ME", "CHANGE-ME-generate-with-openssl-rand-hex-32", ""}
 
 
 class Settings(BaseSettings):
@@ -10,8 +13,25 @@ class Settings(BaseSettings):
     ollama_base_url: str = "http://ollama:11434"
     redis_url: str = "redis://redis:6379/0"
     audit_retention_days: int = 1095
+    testing: bool = False
 
     model_config = {"env_file": ".env", "extra": "ignore"}
+
+    @model_validator(mode="after")
+    def check_jwt_secret(self):
+        if self.testing:
+            return self
+        if self.jwt_secret in _INSECURE_SECRETS:
+            raise ValueError(
+                "JWT_SECRET is set to an insecure default. "
+                "Generate a proper secret: openssl rand -hex 32"
+            )
+        if len(self.jwt_secret) < 32:
+            raise ValueError(
+                f"JWT_SECRET must be at least 32 characters (got {len(self.jwt_secret)}). "
+                "Generate one with: openssl rand -hex 32"
+            )
+        return self
 
 
 settings = Settings()

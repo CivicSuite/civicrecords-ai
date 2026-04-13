@@ -111,6 +111,67 @@ async def list_users(
     ]
 
 
+class AdminUserCreateRequest(BaseModel):
+    email: str
+    password: str
+    full_name: str = ""
+    role: str = "staff"
+
+
+class AdminUserCreateResponse(BaseModel):
+    id: str
+    email: str
+    full_name: str
+    role: str
+    is_active: bool
+
+    model_config = {"from_attributes": True}
+
+
+@router.post("/users", response_model=AdminUserCreateResponse, status_code=201)
+async def create_user(
+    body: AdminUserCreateRequest,
+    session: AsyncSession = Depends(get_async_session),
+    user: User = Depends(require_role(UserRole.ADMIN)),
+):
+    """Create a new user. Admin only."""
+    from fastapi_users_db_sqlalchemy import SQLAlchemyUserDatabase
+    from app.auth.manager import UserManager
+    from app.schemas.user import AdminUserCreate
+
+    user_db = SQLAlchemyUserDatabase(session, User)
+    manager = UserManager(session=session, user_db=user_db)
+
+    try:
+        role_enum = UserRole(body.role)
+    except ValueError:
+        from fastapi import HTTPException as _HTTPException
+        raise _HTTPException(status_code=422, detail=f"Invalid role: {body.role}")
+
+    user_create = AdminUserCreate(
+        email=body.email,
+        password=body.password,
+        full_name=body.full_name,
+        role=role_enum,
+        is_active=True,
+        is_verified=True,
+    )
+
+    from fastapi import HTTPException as _HTTPException
+    try:
+        created = await manager.create(user_create)
+    except Exception as e:
+        raise _HTTPException(status_code=400, detail=str(e))
+
+    return AdminUserCreateResponse(
+        id=str(created.id),
+        email=created.email,
+        full_name=created.full_name,
+        role=created.role.value if hasattr(created.role, 'value') else str(created.role),
+        is_active=created.is_active,
+    )
+
+
 @router.get("/models", response_model=OllamaStatus)
 async def list_models(
     user: User = Depends(require_role(UserRole.ADMIN)),

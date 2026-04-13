@@ -3,16 +3,19 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 
 from app.audit import AuditMiddleware, audit_router
-from app.auth import auth_router, register_router, users_router
+from app.auth import auth_router, users_router
 from app.config import settings
 from app.database import engine
 from app.models.user import User, UserRole
-from app.schemas.user import UserCreate
+from app.schemas.user import AdminUserCreate
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     # Auto-run Alembic migrations on startup
+    # NOTE: In multi-instance deployments, Alembic uses advisory locks to prevent
+    # concurrent migration runs. This is safe for single-instance Docker Compose
+    # but should be documented for Kubernetes deployments.
     import subprocess
     result = subprocess.run(
         ["alembic", "upgrade", "head"],
@@ -34,7 +37,7 @@ async def lifespan(app: FastAPI):
         if result.scalar_one_or_none() is None:
             user_db = SQLAlchemyUserDatabase(session, User)
             manager = UserManager(session=session, user_db=user_db)
-            user_create = UserCreate(
+            user_create = AdminUserCreate(
                 email=settings.first_admin_email,
                 password=settings.first_admin_password,
                 full_name="System Administrator",
@@ -68,7 +71,6 @@ def create_app() -> FastAPI:
     app.add_middleware(AuditMiddleware)
 
     app.include_router(auth_router, prefix="/auth/jwt", tags=["auth"])
-    app.include_router(register_router, prefix="/auth", tags=["auth"])
     app.include_router(users_router, prefix="/users", tags=["users"])
     app.include_router(audit_router)
 
