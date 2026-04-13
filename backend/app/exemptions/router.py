@@ -1,7 +1,7 @@
 import uuid
 from datetime import datetime, timezone
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy import select, func
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -101,7 +101,7 @@ async def update_rule(
 @router.post("/scan/{request_id}")
 async def scan_for_exemptions(
     request_id: uuid.UUID,
-    state_code: str = "CO",
+    state_code: str = Query(default="CO", pattern="^[A-Z]{2}$"),
     use_llm: bool = False,
     session: AsyncSession = Depends(get_async_session),
     user: User = Depends(require_role(UserRole.STAFF)),

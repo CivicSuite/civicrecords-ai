@@ -700,7 +700,7 @@ async def _try_llm_generation(
             resp = await client.post(
                 f"{settings.ollama_base_url}/api/generate",
                 json={
-                    "model": "llama3.2",
+                    "model": settings.chat_model,
                     "prompt": prompt,
                     "stream": False,
                 },
@@ -820,6 +820,11 @@ async def update_response_letter(
     if not letter or letter.request_id != request_id:
         raise HTTPException(status_code=404, detail="Response letter not found")
 
+    # Validate status BEFORE any mutations
+    if data.status is not None:
+        if data.status not in ("draft", "approved", "sent"):
+            raise HTTPException(status_code=400, detail="Invalid status. Must be draft, approved, or sent")
+
     # Approval requires reviewer role
     if data.status == "approved":
         if user.role not in (UserRole.REVIEWER, UserRole.ADMIN):
@@ -839,8 +844,6 @@ async def update_response_letter(
     if data.edited_content is not None:
         letter.edited_content = data.edited_content
     if data.status is not None:
-        if data.status not in ("draft", "approved", "sent"):
-            raise HTTPException(status_code=400, detail="Invalid status. Must be draft, approved, or sent")
         letter.status = data.status
 
     await session.commit()

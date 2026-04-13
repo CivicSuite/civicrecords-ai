@@ -4,10 +4,10 @@ from pathlib import Path
 import httpx
 from app.config import settings
 
-MULTIMODAL_MODEL = "gemma4:26b"
 OCR_PROMPT = "Extract all text from this image. Return only the extracted text, no commentary."
 
-async def extract_text_multimodal(image_path: Path, model: str = MULTIMODAL_MODEL) -> str:
+async def extract_text_multimodal(image_path: Path, model: str | None = None) -> str:
+    model = model or settings.vision_model
     image_bytes = image_path.read_bytes()
     image_b64 = base64.b64encode(image_bytes).decode("utf-8")
     async with httpx.AsyncClient(timeout=120.0) as client:
@@ -30,7 +30,8 @@ def extract_text_tesseract(image_path: Path) -> str:
     except Exception as e:
         raise RuntimeError(f"Tesseract OCR failed: {e}")
 
-async def extract_text_from_image(image_path: Path, prefer_multimodal: bool = True, model: str = MULTIMODAL_MODEL) -> str:
+async def extract_text_from_image(image_path: Path, prefer_multimodal: bool = True, model: str | None = None) -> str:
+    model = model or settings.vision_model
     if prefer_multimodal:
         try:
             return await extract_text_multimodal(image_path, model)
@@ -38,7 +39,8 @@ async def extract_text_from_image(image_path: Path, prefer_multimodal: bool = Tr
             pass
     return extract_text_tesseract(image_path)
 
-async def extract_text_from_scanned_pdf(pdf_path: Path, prefer_multimodal: bool = True, model: str = MULTIMODAL_MODEL) -> list[dict]:
+async def extract_text_from_scanned_pdf(pdf_path: Path, prefer_multimodal: bool = True, model: str | None = None) -> list[dict]:
+    model = model or settings.vision_model
     from PIL import Image
     import io
     try:

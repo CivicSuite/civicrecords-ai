@@ -1,6 +1,7 @@
 from contextlib import asynccontextmanager
 
-from fastapi import FastAPI
+from fastapi import FastAPI, Request, Response
+from fastapi.middleware.cors import CORSMiddleware
 
 from app.audit import AuditMiddleware, audit_router
 from app.auth import auth_router, users_router
@@ -72,7 +73,42 @@ def create_app() -> FastAPI:
         lifespan=lifespan,
     )
 
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origins=settings.cors_origins,
+        allow_credentials=True,
+        allow_methods=["*"],
+        allow_headers=["*"],
+    )
+
     app.add_middleware(AuditMiddleware)
+
+    # Rate limiting on login: 5 requests/minute per IP.
+    # Uses in-memory tracking via middleware since fastapi-users generates the
+    # login route and slowapi decorators can't be applied directly.
+    import time
+    from collections import defaultdict
+    _login_attempts: dict[str, list[float]] = defaultdict(list)
+
+    @app.middleware("http")
+    async def rate_limit_login(request: Request, call_next):
+        if request.url.path == "/auth/jwt/login" and request.method == "POST":
+            client_ip = request.client.host if request.client else "unknown"
+            now = time.time()
+            window = 60  # seconds
+            max_requests = 5
+            # Prune old entries
+            _login_attempts[client_ip] = [
+                t for t in _login_attempts[client_ip] if now - t < window
+            ]
+            if len(_login_attempts[client_ip]) >= max_requests:
+                return Response(
+                    content="Rate limit exceeded. Try again later.",
+                    status_code=429,
+                    media_type="text/plain",
+                )
+            _login_attempts[client_ip].append(now)
+        return await call_next(request)
 
     app.include_router(auth_router, prefix="/auth/jwt", tags=["auth"])
     app.include_router(users_router, prefix="/users", tags=["users"])

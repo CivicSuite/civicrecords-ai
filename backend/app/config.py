@@ -13,6 +13,10 @@ class Settings(BaseSettings):
     ollama_base_url: str = "http://ollama:11434"
     redis_url: str = "redis://redis:6379/0"
     audit_retention_days: int = 1095
+    cors_origins: list[str] = ["http://localhost:8080"]
+    embedding_model: str = "nomic-embed-text"
+    chat_model: str = "gemma4:26b"
+    vision_model: str = "gemma4:26b"
     testing: bool = False
 
     model_config = {"env_file": ".env", "extra": "ignore"}

@@ -8,6 +8,7 @@ from app.config import settings
 from app.database import get_async_session
 from app.models.audit import AuditLog
 from app.models.user import User, UserRole
+from app.schemas.user import UserRead
 
 router = APIRouter(prefix="/admin", tags=["admin"])
 
@@ -77,18 +78,6 @@ async def system_status(
     )
 
 
-class UserRead(BaseModel):
-    id: str
-    email: str
-    full_name: str
-    role: str
-    is_active: bool
-    created_at: str
-    last_login: str | None
-
-    model_config = {"from_attributes": True}
-
-
 @router.get("/users", response_model=list[UserRead])
 async def list_users(
     session: AsyncSession = Depends(get_async_session),
@@ -96,19 +85,7 @@ async def list_users(
 ):
     """List all users. Admin only."""
     result = await session.execute(select(User).order_by(User.created_at.desc()))
-    users = result.scalars().all()
-    return [
-        UserRead(
-            id=str(u.id),
-            email=u.email,
-            full_name=u.full_name,
-            role=u.role.value if hasattr(u.role, 'value') else str(u.role),
-            is_active=u.is_active,
-            created_at=u.created_at.isoformat() if u.created_at else "",
-            last_login=u.last_login.isoformat() if u.last_login else None,
-        )
-        for u in users
-    ]
+    return result.scalars().all()
 
 
 class AdminUserCreateRequest(BaseModel):

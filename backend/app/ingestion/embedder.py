@@ -1,9 +1,8 @@
 import httpx
 from app.config import settings
 
-DEFAULT_MODEL = "nomic-embed-text"
-
-async def embed_text(text: str, model: str = DEFAULT_MODEL) -> list[float]:
+async def embed_text(text: str, model: str | None = None) -> list[float]:
+    model = model or settings.embedding_model
     async with httpx.AsyncClient(timeout=60.0) as client:
         resp = await client.post(
             f"{settings.ollama_base_url}/api/embed",
@@ -16,7 +15,8 @@ async def embed_text(text: str, model: str = DEFAULT_MODEL) -> list[float]:
             return embeddings[0]
         raise ValueError(f"No embedding returned from Ollama for model {model}")
 
-async def embed_batch(texts: list[str], model: str = DEFAULT_MODEL) -> list[list[float]]:
+async def embed_batch(texts: list[str], model: str | None = None) -> list[list[float]]:
+    model = model or settings.embedding_model
     if not texts:
         return []
     async with httpx.AsyncClient(timeout=120.0) as client:
@@ -31,7 +31,8 @@ async def embed_batch(texts: list[str], model: str = DEFAULT_MODEL) -> list[list
             raise ValueError(f"Expected {len(texts)} embeddings, got {len(embeddings)}")
         return embeddings
 
-async def check_model_available(model: str = DEFAULT_MODEL) -> bool:
+async def check_model_available(model: str | None = None) -> bool:
+    model = model or settings.embedding_model
     try:
         async with httpx.AsyncClient(timeout=10.0) as client:
             resp = await client.get(f"{settings.ollama_base_url}/api/tags")

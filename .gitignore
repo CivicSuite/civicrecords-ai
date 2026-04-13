@@ -32,5 +32,8 @@ Thumbs.db
 .superpowers/
 .~lock.*
 
+# Temp files
+temp_*.tsx
+
 # Claude Code
 .claude/

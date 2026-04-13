@@ -72,7 +72,14 @@ docker compose build
 echo ">>> Running database migrations..."
 docker compose up -d postgres redis
 echo "Waiting for database..."
-sleep 10
+for i in $(seq 1 30); do
+    if docker compose exec postgres pg_isready -U civicrecords &>/dev/null; then
+        echo "[OK] Database is ready"
+        break
+    fi
+    echo "  Waiting for database... ($i/30)"
+    sleep 2
+done
 docker compose run --rm api alembic upgrade head
 
 # Start all services

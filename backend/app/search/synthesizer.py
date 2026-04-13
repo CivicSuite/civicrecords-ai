@@ -3,8 +3,6 @@ import httpx
 from app.config import settings
 from app.search.engine import SearchHit
 
-DEFAULT_MODEL = "gemma4:26b"
-
 SYNTHESIS_PROMPT = """You are a municipal records assistant helping city staff find responsive documents for open records requests.
 
 Based on the following document excerpts, provide a concise answer to the query. Cite your sources using [Doc: filename, Page: N] format.
@@ -31,10 +29,11 @@ def _format_context(hits: list[SearchHit]) -> str:
 async def synthesize_answer(
     query: str,
     hits: list[SearchHit],
-    model: str = DEFAULT_MODEL,
+    model: str | None = None,
     max_context_hits: int = 5,
 ) -> str:
     """Generate a synthesized answer from search results using Ollama."""
+    model = model or settings.chat_model
     if not hits:
         return "No relevant documents found for this query."
 
