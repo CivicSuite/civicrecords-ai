@@ -68,14 +68,17 @@ async def upload_file(file: UploadFile = File(...), session: AsyncSession = Depe
     import aiofiles
     MAX_UPLOAD_BYTES = 100 * 1024 * 1024  # 100 MB
     total = 0
+    too_large = False
     async with aiofiles.open(dest, "wb") as f:
         while chunk := await file.read(8192):
             total += len(chunk)
             if total > MAX_UPLOAD_BYTES:
-                await f.close()
-                dest.unlink(missing_ok=True)
-                raise HTTPException(status_code=413, detail="File too large (max 100 MB)")
+                too_large = True
+                break
             await f.write(chunk)
+    if too_large:
+        dest.unlink(missing_ok=True)
+        raise HTTPException(status_code=413, detail="File too large (max 100 MB)")
     tmp_path = str(dest)
     result = await session.execute(select(DataSource).where(DataSource.name == "_uploads", DataSource.source_type == SourceType.UPLOAD))
     upload_source = result.scalar_one_or_none()
