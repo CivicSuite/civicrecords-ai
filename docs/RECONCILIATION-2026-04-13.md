@@ -9,7 +9,7 @@
 | Status | Count |
 |--------|-------|
 | Built | 7 |
-| Partial | 5 |
+| Partial | 8 |
 | Missing | 1 |
 
 ## Detailed Findings
@@ -58,7 +58,7 @@
 | Workflow API | `app/requests/` | `backend/app/requests/router.py` exists with full CRUD, timeline, messages, fees, response letters | Built |
 | Audit Logger | `app/audit/` | `backend/app/audit/` exists, `write_audit_log` used throughout | Built |
 | LLM Abstraction | `app/llm/` | `backend/app/llm/` exists with `context_manager.py` | Built |
-| Exemption Engine | `app/exemptions/` | `backend/app/exemptions/` exists with `engine.py`, `patterns.py`, `llm_reviewer.py`, `router.py` | Built |
+| Exemption Engine | `app/exemptions/` | `backend/app/exemptions/` exists with `engine.py`, `patterns.py`, `llm_reviewer.py`, `router.py` | Partial (see notes) |
 | Context Manager | Token budgeting | `backend/app/llm/context_manager.py` with `TokenBudget` dataclass and `assemble_context()` | Built |
 | Notification Service | `app/notifications/` | `backend/app/notifications/` exists with `router.py` (template CRUD) and `service.py` (queue only) | Partial |
 | Fee Tracking | Fee endpoints | Fee line item endpoints exist on requests router (`/{request_id}/fees`) | Partial |
@@ -169,6 +169,30 @@ Document text from `document_chunks` is passed directly into LLM prompts without
 
 ---
 
+### 9a. Exemption Dashboard Time-Period Filtering
+
+**Status: Partial**
+**File:** `backend/app/exemptions/router.py`
+**Notes:** The canonical spec (Section 9, Compliance) requires the exemption auditability dashboard to show "flag acceptance/rejection rates by category, department, and time period." The `GET /exemptions/dashboard/accuracy` endpoint supports filtering by `category` (via aggregation) and `department_id` (via query parameter), but has NO time period filtering. There are no `date_from`, `date_to`, `time_period`, or date range parameters on the accuracy or export endpoints. This was identified during development and marked [SHIPPED] anyway.
+
+---
+
+### 9b. Exemption Rule Version Tracking
+
+**Status: Partial**
+**File:** `backend/app/models/exemption.py`
+**Notes:** The canonical spec (Section 9, Compliance) requires "documentation of exemption rule sources with version tracking." The `ExemptionRule` model has no `version` field — changes are tracked only via audit log entries (which record old and new values when a rule is updated). The `version` field exists on `DisclosureTemplate` but NOT on `ExemptionRule`. True version tracking would require a version column that increments on each rule definition change, enabling rollback and historical comparison. Currently only audit log provides change history, with no structured versioning.
+
+---
+
+### 9c. scope_assessment Field
+
+**Status: Partial**
+**File:** `backend/app/models/request.py`
+**Notes:** The canonical spec marks `scope_assessment` as [MVP-NOW] on `records_requests` with values narrow/moderate/broad. The field EXISTS on the `RecordsRequest` model. However, API endpoint coverage for setting and reading this field has not been verified — the `RequestCreate` and `RequestUpdate` schemas may or may not expose it. Field exists in database; endpoint access status unknown.
+
+---
+
 ### 10. Tier 1 Redaction
 
 | PII Type (Spec Requires) | Code Reality | Status |
@@ -254,6 +278,12 @@ Document text from `document_chunks` is passed directly into LLM prompts without
 
 6. **P1 — SMTP/IMAP Connector:** Implement `app/connectors/smtp_imap.py` for email-based document ingestion.
 
-7. **P2 — Manual/Export Drop Connector:** Implement `app/connectors/manual_drop.py` for manual file upload ingestion pathway.
+7. **P1 — Exemption dashboard time-period filtering:** Add `date_from` and `date_to` query parameters to `GET /exemptions/dashboard/accuracy` and `GET /exemptions/dashboard/export` endpoints. Canonical spec requires filtering by category, department, AND time period.
 
-8. **P2 — WCAG touch targets:** Audit and enforce minimum 44px touch targets on interactive elements.
+8. **P1 — Exemption rule version tracking:** Add `version` integer column to `ExemptionRule` model. Increment on each rule_definition change. Enables rollback and historical comparison beyond audit log.
+
+9. **P1 — scope_assessment endpoint coverage:** Verify `scope_assessment` field is exposed in `RequestCreate` and `RequestUpdate` schemas. If not, add it. Field exists in DB model but API access unconfirmed.
+
+10. **P2 — Manual/Export Drop Connector:** Implement `app/connectors/manual_drop.py` for manual file upload ingestion pathway.
+
+11. **P2 — WCAG touch targets:** Audit and enforce minimum 44px touch targets on interactive elements.
