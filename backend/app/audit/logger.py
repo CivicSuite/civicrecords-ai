@@ -56,30 +56,50 @@ async def write_audit_log(
     return entry
 
 
-async def verify_chain(session: AsyncSession, limit: int = 1000) -> tuple[bool, int, str]:
-    result = await session.execute(
-        select(AuditLog).order_by(AuditLog.id.asc()).limit(limit)
-    )
-    entries = result.scalars().all()
+async def verify_chain(session: AsyncSession) -> tuple[bool, int, str]:
+    """Verify the full audit hash chain, paginating in batches of 1000.
 
-    if not entries:
-        return True, 0, ""
+    After archival/cleanup, the first surviving entry's prev_hash may point
+    to a deleted entry — verification starts from whatever the first entry is
+    and verifies forward from there.
+    """
+    batch_size = 1000
+    total_checked = 0
+    expected_prev: str | None = None  # Will be set from first entry
+    last_id = 0
 
-    expected_prev = "0" * 64
-    for i, entry in enumerate(entries):
-        if entry.prev_hash != expected_prev:
-            return False, i, f"Entry {entry.id}: prev_hash mismatch at position {i}"
-
-        recomputed = _compute_hash(
-            entry.prev_hash,
-            entry.timestamp.isoformat(),
-            str(entry.user_id) if entry.user_id else "system",
-            entry.action,
-            json.dumps(entry.details, sort_keys=True, default=str) if entry.details else "",
+    while True:
+        result = await session.execute(
+            select(AuditLog)
+            .where(AuditLog.id > last_id)
+            .order_by(AuditLog.timestamp.asc(), AuditLog.id.asc())
+            .limit(batch_size)
         )
-        if entry.entry_hash != recomputed:
-            return False, i, f"Entry {entry.id}: hash mismatch at position {i}"
+        entries = result.scalars().all()
 
-        expected_prev = entry.entry_hash
+        if not entries:
+            break
 
-    return True, len(entries), ""
+        for entry in entries:
+            if expected_prev is None:
+                # First surviving entry — accept its prev_hash as the starting point
+                expected_prev = entry.prev_hash
+            else:
+                if entry.prev_hash != expected_prev:
+                    return False, total_checked, f"Entry {entry.id}: prev_hash mismatch at position {total_checked}"
+
+            recomputed = _compute_hash(
+                entry.prev_hash,
+                entry.timestamp.isoformat(),
+                str(entry.user_id) if entry.user_id else "system",
+                entry.action,
+                json.dumps(entry.details, sort_keys=True, default=str) if entry.details else "",
+            )
+            if entry.entry_hash != recomputed:
+                return False, total_checked, f"Entry {entry.id}: hash mismatch at position {total_checked}"
+
+            expected_prev = entry.entry_hash
+            total_checked += 1
+            last_id = entry.id
+
+    return True, total_checked, ""

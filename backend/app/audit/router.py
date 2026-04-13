@@ -38,11 +38,10 @@ async def list_audit_logs(
 
 @router.get("/verify", response_model=AuditChainVerification)
 async def verify_audit_chain(
-    limit: int = 1000,
     session: AsyncSession = Depends(get_async_session),
     user: User = Depends(require_role(UserRole.ADMIN)),
 ):
-    is_valid, count, error = await verify_chain(session, limit)
+    is_valid, count, error = await verify_chain(session)
     return AuditChainVerification(
         is_valid=is_valid, entries_checked=count, error_message=error
     )

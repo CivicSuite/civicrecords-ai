@@ -51,10 +51,13 @@ def check_scheduled_sources():
 
 @celery_app.task(name="civicrecords.cleanup_audit_logs")
 def cleanup_audit_logs():
-    """Delete audit log entries older than the configured retention period."""
+    """Archive and then delete audit log entries older than the configured retention period."""
     import asyncio
+    import json
+    import os
     from datetime import datetime, timezone, timedelta
-    from sqlalchemy import delete
+    from pathlib import Path
+    from sqlalchemy import delete, select
     from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
     from app.config import settings
     from app.models.audit import AuditLog
@@ -65,11 +68,54 @@ def cleanup_audit_logs():
         try:
             async with session_maker() as session:
                 cutoff = datetime.now(timezone.utc) - timedelta(days=settings.audit_retention_days)
+
+                # Fetch entries to be archived before deleting
                 result = await session.execute(
+                    select(AuditLog)
+                    .where(AuditLog.timestamp < cutoff)
+                    .order_by(AuditLog.timestamp.asc(), AuditLog.id.asc())
+                )
+                entries = result.scalars().all()
+
+                if not entries:
+                    return {"archived": 0, "deleted": 0, "cutoff": cutoff.isoformat()}
+
+                # Build archive data
+                archive_entries = []
+                for entry in entries:
+                    archive_entries.append({
+                        "id": entry.id,
+                        "user_id": str(entry.user_id) if entry.user_id else None,
+                        "action": entry.action,
+                        "resource_type": entry.resource_type,
+                        "resource_id": entry.resource_id,
+                        "timestamp": entry.timestamp.isoformat() if entry.timestamp else None,
+                        "prev_hash": entry.prev_hash,
+                        "entry_hash": entry.entry_hash,
+                    })
+
+                # Determine date range for filename
+                earliest = entries[0].timestamp.strftime("%Y-%m-%d")
+                latest = entries[-1].timestamp.strftime("%Y-%m-%d")
+
+                # Write archive file
+                archive_dir = Path("/data/cache/audit-archives")
+                archive_dir.mkdir(parents=True, exist_ok=True)
+                archive_path = archive_dir / f"audit_archive_{earliest}_to_{latest}.json"
+                with open(archive_path, "w", encoding="utf-8") as f:
+                    json.dump(archive_entries, f, indent=2, default=str)
+
+                # Delete after successful archival
+                del_result = await session.execute(
                     delete(AuditLog).where(AuditLog.timestamp < cutoff)
                 )
                 await session.commit()
-                return {"deleted": result.rowcount, "cutoff": cutoff.isoformat()}
+                return {
+                    "archived": len(archive_entries),
+                    "deleted": del_result.rowcount,
+                    "archive_file": str(archive_path),
+                    "cutoff": cutoff.isoformat(),
+                }
         finally:
             await engine.dispose()
 
