@@ -14,9 +14,13 @@ from app.models.exemption import (
     DisclosureTemplate, ExemptionFlag, ExemptionRule, FlagStatus, RuleType,
 )
 from app.models.user import User, UserRole
+import re
+
+from app.models.city_profile import CityProfile
 from app.schemas.exemption import (
-    DisclosureTemplateCreate, DisclosureTemplateRead,
-    ExemptionDashboard, ExemptionFlagRead, ExemptionFlagReview,
+    DisclosureTemplateCreate, DisclosureTemplateRead, DisclosureTemplateRendered,
+    DisclosureTemplateUpdate, ExemptionAccuracyReport, ExemptionDashboard,
+    ExemptionFlagRead, ExemptionFlagReview,
     ExemptionRuleCreate, ExemptionRuleRead, ExemptionRuleUpdate,
 )
 
@@ -228,6 +232,110 @@ async def review_flag(
 
 # --- Dashboard ---
 
+@router.get("/dashboard/accuracy", response_model=list[ExemptionAccuracyReport])
+async def exemption_accuracy(
+    department_id: uuid.UUID | None = None,
+    session: AsyncSession = Depends(get_async_session),
+    user: User = Depends(require_role(UserRole.ADMIN)),
+):
+    """Acceptance/rejection rates by category, optionally filtered by department."""
+    stmt = (
+        select(
+            ExemptionFlag.category,
+            ExemptionFlag.status,
+            func.count(ExemptionFlag.id),
+        )
+        .group_by(ExemptionFlag.category, ExemptionFlag.status)
+    )
+
+    if department_id:
+        stmt = stmt.join(
+            RecordsRequest, ExemptionFlag.request_id == RecordsRequest.id
+        ).where(RecordsRequest.department_id == department_id)
+
+    result = await session.execute(stmt)
+    rows = result.fetchall()
+
+    # Aggregate by category
+    cats: dict[str, dict] = {}
+    for category, status_val, count in rows:
+        if category not in cats:
+            cats[category] = {"total": 0, "accepted": 0, "rejected": 0, "pending": 0}
+        cats[category]["total"] += count
+        if status_val == FlagStatus.ACCEPTED:
+            cats[category]["accepted"] += count
+        elif status_val == FlagStatus.REJECTED:
+            cats[category]["rejected"] += count
+        else:
+            cats[category]["pending"] += count
+
+    reports = []
+    for cat, data in sorted(cats.items()):
+        reviewed = data["accepted"] + data["rejected"]
+        rate = data["accepted"] / reviewed if reviewed > 0 else 0.0
+        reports.append(ExemptionAccuracyReport(
+            category=cat,
+            total_flags=data["total"],
+            accepted=data["accepted"],
+            rejected=data["rejected"],
+            pending=data["pending"],
+            acceptance_rate=round(rate, 3),
+        ))
+    return reports
+
+
+@router.get("/dashboard/export")
+async def export_flag_data(
+    format: str = "json",
+    session: AsyncSession = Depends(get_async_session),
+    user: User = Depends(require_role(UserRole.ADMIN)),
+):
+    """Export exemption flag data as JSON or CSV."""
+    result = await session.execute(
+        select(ExemptionFlag).order_by(ExemptionFlag.created_at.desc())
+    )
+    flags = result.scalars().all()
+
+    if format == "csv":
+        import csv
+        import io
+        from fastapi.responses import StreamingResponse
+
+        output = io.StringIO()
+        writer = csv.writer(output)
+        writer.writerow([
+            "id", "request_id", "category", "confidence",
+            "status", "reviewed_by", "reviewed_at", "created_at",
+        ])
+        for f in flags:
+            writer.writerow([
+                str(f.id), str(f.request_id), f.category, f.confidence,
+                f.status.value, str(f.reviewed_by) if f.reviewed_by else "",
+                str(f.reviewed_at) if f.reviewed_at else "", str(f.created_at),
+            ])
+        output.seek(0)
+        return StreamingResponse(
+            iter([output.getvalue()]),
+            media_type="text/csv",
+            headers={"Content-Disposition": "attachment; filename=exemption-flags.csv"},
+        )
+
+    # Default: JSON
+    return [
+        {
+            "id": str(f.id),
+            "request_id": str(f.request_id),
+            "category": f.category,
+            "confidence": f.confidence,
+            "status": f.status.value,
+            "reviewed_by": str(f.reviewed_by) if f.reviewed_by else None,
+            "reviewed_at": str(f.reviewed_at) if f.reviewed_at else None,
+            "created_at": str(f.created_at),
+        }
+        for f in flags
+    ]
+
+
 @router.get("/dashboard", response_model=ExemptionDashboard)
 async def exemption_dashboard(
     session: AsyncSession = Depends(get_async_session),
@@ -300,5 +408,88 @@ async def create_template(
         session=session, action="create_disclosure_template", resource_type="disclosure_template",
         resource_id=str(template.id), user_id=user.id,
         details={"type": data.template_type, "state": data.state_code},
+    )
+    return template
+
+
+@router.get("/templates/{template_id}/render", response_model=DisclosureTemplateRendered)
+async def render_template(
+    template_id: uuid.UUID,
+    session: AsyncSession = Depends(get_async_session),
+    user: User = Depends(require_role(UserRole.STAFF)),
+):
+    """Render a template with city profile variables substituted."""
+    template = await session.get(DisclosureTemplate, template_id)
+    if not template:
+        raise HTTPException(status_code=404, detail="Template not found")
+
+    # Load city profile for variable substitution
+    result = await session.execute(select(CityProfile).limit(1))
+    profile = result.scalar_one_or_none()
+
+    variables = {}
+    if profile:
+        variables = {
+            "CITY_NAME": profile.city_name or "",
+            "STATE": profile.state or "",
+            "CONTACT_NAME": "",
+            "CONTACT_EMAIL": "",
+            "CONTACT_TITLE": "",
+            "EFFECTIVE_DATE": datetime.now(timezone.utc).strftime("%B %d, %Y"),
+            "STATE_STATUTE": "",
+            "DISCLOSURE_URL": "",
+            "FACILITY_ADDRESS": "",
+            "SERVER_OS": "",
+            "SERVER_CPU": "",
+            "SERVER_RAM": "",
+            "SERVER_STORAGE": "",
+        }
+        # Pull extra fields from profile_data JSONB if available
+        if profile.profile_data and isinstance(profile.profile_data, dict):
+            for key in variables:
+                if key.lower() in profile.profile_data:
+                    variables[key] = str(profile.profile_data[key.lower()])
+
+    rendered = template.content
+    for key, value in variables.items():
+        if value:
+            rendered = rendered.replace("{{" + key + "}}", value)
+
+    has_unresolved = bool(re.search(r"\{\{\w+\}\}", rendered))
+
+    return DisclosureTemplateRendered(
+        id=template.id,
+        template_type=template.template_type,
+        rendered_content=rendered,
+        has_unresolved_variables=has_unresolved,
+    )
+
+
+@router.put("/templates/{template_id}", response_model=DisclosureTemplateRead)
+async def update_template(
+    template_id: uuid.UUID,
+    data: DisclosureTemplateUpdate,
+    session: AsyncSession = Depends(get_async_session),
+    user: User = Depends(require_role(UserRole.ADMIN)),
+):
+    template = await session.get(DisclosureTemplate, template_id)
+    if not template:
+        raise HTTPException(status_code=404, detail="Template not found")
+
+    if data.content is not None:
+        template.content = data.content
+        template.version += 1
+    if data.state_code is not None:
+        template.state_code = data.state_code
+    template.updated_by = user.id
+    template.updated_at = datetime.now(timezone.utc)
+
+    await session.commit()
+    await session.refresh(template)
+
+    await write_audit_log(
+        session=session, action="update_disclosure_template", resource_type="disclosure_template",
+        resource_id=str(template.id), user_id=user.id,
+        details={"template_type": template.template_type, "new_version": template.version},
     )
     return template

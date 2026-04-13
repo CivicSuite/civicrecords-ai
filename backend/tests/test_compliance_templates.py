@@ -66,3 +66,89 @@ async def test_create_template_staff_forbidden(client: AsyncClient, staff_token:
         headers={"Authorization": f"Bearer {staff_token}"},
     )
     assert resp.status_code == 403
+
+
+@pytest.mark.asyncio
+async def test_render_template_with_profile(client: AsyncClient, admin_token: str):
+    # Create city profile
+    await client.post(
+        "/city-profile",
+        json={"city_name": "Springfield", "state": "CO"},
+        headers={"Authorization": f"Bearer {admin_token}"},
+    )
+    # Create a template
+    create = await client.post(
+        "/exemptions/templates/",
+        json={
+            "template_type": "test_render",
+            "content": "Welcome to {{CITY_NAME}}, {{STATE}}!",
+        },
+        headers={"Authorization": f"Bearer {admin_token}"},
+    )
+    template_id = create.json()["id"]
+
+    resp = await client.get(
+        f"/exemptions/templates/{template_id}/render",
+        headers={"Authorization": f"Bearer {admin_token}"},
+    )
+    assert resp.status_code == 200
+    data = resp.json()
+    assert "Springfield" in data["rendered_content"]
+    assert "CO" in data["rendered_content"]
+    assert data["has_unresolved_variables"] is False
+
+
+@pytest.mark.asyncio
+async def test_render_template_without_profile(client: AsyncClient, admin_token: str):
+    create = await client.post(
+        "/exemptions/templates/",
+        json={
+            "template_type": "test_no_profile",
+            "content": "Hello {{CITY_NAME}}",
+        },
+        headers={"Authorization": f"Bearer {admin_token}"},
+    )
+    template_id = create.json()["id"]
+
+    resp = await client.get(
+        f"/exemptions/templates/{template_id}/render",
+        headers={"Authorization": f"Bearer {admin_token}"},
+    )
+    assert resp.status_code == 200
+    assert resp.json()["has_unresolved_variables"] is True
+
+
+@pytest.mark.asyncio
+async def test_update_template_admin(client: AsyncClient, admin_token: str):
+    create = await client.post(
+        "/exemptions/templates/",
+        json={"template_type": "test_update", "content": "Original"},
+        headers={"Authorization": f"Bearer {admin_token}"},
+    )
+    template_id = create.json()["id"]
+
+    resp = await client.put(
+        f"/exemptions/templates/{template_id}",
+        json={"content": "Updated content"},
+        headers={"Authorization": f"Bearer {admin_token}"},
+    )
+    assert resp.status_code == 200
+    assert resp.json()["content"] == "Updated content"
+    assert resp.json()["version"] == 2
+
+
+@pytest.mark.asyncio
+async def test_update_template_staff_forbidden(client: AsyncClient, admin_token: str, staff_token: str):
+    create = await client.post(
+        "/exemptions/templates/",
+        json={"template_type": "test_no_edit", "content": "Original"},
+        headers={"Authorization": f"Bearer {admin_token}"},
+    )
+    template_id = create.json()["id"]
+
+    resp = await client.put(
+        f"/exemptions/templates/{template_id}",
+        json={"content": "Hacked"},
+        headers={"Authorization": f"Bearer {staff_token}"},
+    )
+    assert resp.status_code == 403

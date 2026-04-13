@@ -78,3 +78,24 @@ class ExemptionDashboard(BaseModel):
     acceptance_rate: float
     total_rules: int
     active_rules: int
+
+
+class ExemptionAccuracyReport(BaseModel):
+    category: str
+    total_flags: int
+    accepted: int
+    rejected: int
+    pending: int
+    acceptance_rate: float
+
+
+class DisclosureTemplateRendered(BaseModel):
+    id: uuid.UUID
+    template_type: str
+    rendered_content: str
+    has_unresolved_variables: bool
+
+
+class DisclosureTemplateUpdate(BaseModel):
+    content: str | None = None
+    state_code: str | None = None
