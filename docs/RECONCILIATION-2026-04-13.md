@@ -257,13 +257,13 @@ Applied to all document chunks and exemption rules in `assemble_context()`. Syst
 
 ## Critical Gaps (items that block canonical spec compliance)
 
-1. **Prompt Injection Defense (Section 8)** — No sanitization of document content before LLM context injection. Security risk for any deployment processing untrusted documents.
+1. ~~**Prompt Injection Defense (Section 8)** — RESOLVED 2026-04-13. sanitize_for_llm() in context_manager.py.~~
 
 2. **Public API (Section 3)** — No unauthenticated endpoints for citizen-facing portal. Blocks the public records request submission workflow entirely.
 
 3. **Notification Email Delivery (Section 7)** — Notification service is template CRUD + queue logging only. No actual email sending. Blocks all automated stakeholder notifications.
 
-4. **Missing Roles: liaison, public (Section 1)** — Without `public` role, citizen portal auth is impossible. Without `liaison`, department contact workflow is incomplete.
+4. ~~**Missing Roles: liaison, public (Section 1)** — RESOLVED 2026-04-13. All 6 roles in enum and hierarchy.~~
 
 5. **SMTP/IMAP Connector (Section 9)** — Email-based document ingestion not implemented. Required for MVP-NOW per spec.
 
@@ -277,15 +277,15 @@ Applied to all document chunks and exemption rules in `assemble_context()`. Syst
 
 4. **P1 — Email delivery (SMTP):** Implement a Celery task in `app/notifications/` that reads queued `NotificationLog` entries and sends via SMTP (aiosmtplib or smtplib). Add SMTP configuration to settings.
 
-5. **P1 — Fee Schedules CRUD:** Add admin endpoints for managing `fee_schedules` records (list, create, update, delete). Currently only `fee_line_items` have endpoints.
+5. ~~**P1 — Fee Schedules CRUD:** COMPLETED 2026-04-13. GET/POST/PATCH/DELETE at /admin/fee-schedules, 5 tests.~~
 
 6. **P1 — SMTP/IMAP Connector:** Implement `app/connectors/smtp_imap.py` for email-based document ingestion.
 
-7. **P1 — Exemption dashboard time-period filtering:** Add `date_from` and `date_to` query parameters to `GET /exemptions/dashboard/accuracy` and `GET /exemptions/dashboard/export` endpoints. Canonical spec requires filtering by category, department, AND time period.
+7. ~~**P1 — Exemption dashboard time-period filtering:** COMPLETED 2026-04-13. date_from/date_to params on accuracy and export endpoints.~~
 
-8. **P1 — Exemption rule version tracking:** Add `version` integer column to `ExemptionRule` model. Increment on each rule_definition change. Enables rollback and historical comparison beyond audit log.
+8. ~~**P1 — Exemption rule version tracking:** COMPLETED 2026-04-13. version field on ExemptionRule, increments on update.~~
 
-9. **P1 — scope_assessment endpoint coverage:** Verify `scope_assessment` field is exposed in `RequestCreate` and `RequestUpdate` schemas. If not, add it. Field exists in DB model but API access unconfirmed.
+9. ~~**P1 — scope_assessment endpoint coverage:** COMPLETED 2026-04-13. Added to RequestCreate (with pattern validation), RequestRead, RequestUpdate. Router wired through on create and update.~~
 
 10. **P2 — Manual/Export Drop Connector:** Implement `app/connectors/manual_drop.py` for manual file upload ingestion pathway.
 
