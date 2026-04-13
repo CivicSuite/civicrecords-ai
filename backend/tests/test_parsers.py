@@ -57,6 +57,14 @@ def test_is_image_file():
     assert is_image_file(Path("file.txt")) is False
 
 
+def test_xls_legacy_format_blocklisted():
+    """Legacy .xls (BIFF8) is not in XlsxParser.supported_extensions."""
+    parser = XlsxParser()
+    assert not parser.can_parse(Path("legacy.xls"))
+    assert parser.can_parse(Path("modern.xlsx"))
+    assert parser.can_parse(Path("macro.xlsm"))
+
+
 # --- DOCX macro stripping tests ---
 
 def _create_docx(path: Path, text: str = "Test paragraph"):

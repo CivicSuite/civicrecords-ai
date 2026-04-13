@@ -14,7 +14,9 @@ _XLSX_VBA_ENTRIES = {"xl/vbaproject.bin"}
 
 
 class XlsxParser(BaseParser):
-    supported_extensions = [".xlsx", ".xlsm", ".xls"]
+    # .xls (legacy BIFF8 binary) excluded — not ZIP-based, macros cannot be
+    # stripped with the ZIP approach.  Blocklisted per pre-Phase 3 audit.
+    supported_extensions = [".xlsx", ".xlsm"]
 
     @staticmethod
     def _strip_macros(file_path: Path) -> tuple[Path | None, list[str]]:
