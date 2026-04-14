@@ -1,16 +1,43 @@
 # CivicRecords AI — Development Standards
 
-## Context Mode (MANDATORY)
+## Hard Rule 10 — CONTEXT-MODE HARD GATE (active in every session)
 
-Context-mode MCP tools are REQUIRED for all operations that produce large output. This is not optional.
+**Context-mode is a hard gate — not a suggestion.** When the context-mode plugin is loaded, every operation MUST follow the 4-Stage Context-Mode Protocol below. This is non-negotiable. If you catch yourself about to use Bash for a command that produces output, STOP and use context-mode instead. If you catch yourself using Read to analyze a file you won't edit, STOP and use ctx_execute_file instead.
 
-- Bash commands that may produce >20 lines: use mcp__plugin_context-mode_context-mode__ctx_execute or ctx_batch_execute
-- Reading files for analysis (not for editing): use mcp__plugin_context-mode_context-mode__ctx_execute_file
-- Web fetches: use mcp__plugin_context-mode_context-mode__ctx_fetch_and_index
-- Multiple commands + searches: use mcp__plugin_context-mode_context-mode__ctx_batch_execute
-- Bash is ONLY for: git, mkdir, rm, mv, and commands producing <20 lines
-- Read is ONLY for: files you intend to Edit (Edit requires file content in context)
-- NEVER dismiss context-mode hook reminders. They exist because you keep ignoring them.
+**THE 4-STAGE CONTEXT-MODE PROTOCOL:**
+
+**Stage 1 — GATHER:** All research, exploration, multi-command operations → `ctx_batch_execute(commands, queries)`. This is the PRIMARY tool. One call replaces many individual steps. Use it FIRST for any new investigation.
+
+**Stage 2 — FOLLOW-UP:** All follow-up questions on previously gathered data → `ctx_search(queries: ["q1", "q2", ...])`. One call, multiple queries. Never make separate ctx_search calls when you can batch them.
+
+**Stage 3 — PROCESS:** All data processing, log analysis, file analysis, API calls → `ctx_execute(language, code)` or `ctx_execute_file(files, language, code)`. Raw data stays in the sandbox. Only your printed summary enters context.
+
+**Stage 4 — WRITE:** All file creation and modification → Native `Write` and `Edit` tools ONLY. Never use ctx_execute to create, modify, or overwrite files. ctx_execute is for reading and analysis; Write/Edit are for mutations.
+
+**WHAT IS FORBIDDEN:**
+- Bash for ANY command producing >20 lines of output
+- Read for file analysis (use ctx_execute_file) — Read is ONLY for files you are about to Edit
+- WebFetch (use ctx_fetch_and_index instead)
+- ctx_execute or ctx_execute_file to create/modify/overwrite files
+- Dumping test output into context via Bash — ALWAYS use ctx_execute
+- Running git log, git diff, npm test, pytest, or any CLI that returns data via Bash
+
+**WHAT IS ALLOWED via native Bash:**
+- git add, git commit, git push, git checkout, git branch, git merge (write operations)
+- mkdir, rm, mv, cp, touch, chmod (file mutations)
+- cd, pwd, which, echo, printf (navigation and simple output)
+- npm install, pip install (package management)
+
+**REFUSAL TEMPLATE — use this exact language when tempted to skip:**
+"I need to use context-mode for this operation. Running [command] via Bash would dump [estimated size] into the context window. Using [ctx tool] instead keeps only the summary in context."
+
+**If context-mode tools are unavailable:** State clearly "Context-mode tools are not responding. I cannot proceed with large-output operations until the plugin is restored." Do NOT fall back to Bash as a workaround.
+
+**NEVER dismiss context-mode hook reminders.** They exist because the default reflex is wrong. Every reminder is a signal that the wrong tool was about to be used.
+
+**Enforcement:** A PreToolUse hook at `~/.claude/hooks/context-mode-gate.sh` matches `Bash` commands against a forbidden-verb list (git log, git diff, pytest, grep, find, cat, head, tail, ls -la, docker logs, etc.). Matches exit with code 2 and return the `[HARD-RULE-10]` message above. This is a Level 3 blocking gate, not advisory — the tool call physically does not complete when the forbidden pattern is detected.
+
+**Override phrase:** To bypass this gate for a single operation, the human must say the literal phrase `"override hard rule 10"`. The model should never self-authorize a bypass.
 
 ## Project
 
