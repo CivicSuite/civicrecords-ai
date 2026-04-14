@@ -541,11 +541,11 @@ Session B did **not** verify and explicitly defers to **Session C**:
 |---|---|---|
 | Color contrast | Passes (text ~15:1, muted ~5.7:1) | Met |
 | Touch targets | 44×44px enforced (min-width + min-height on all interactive elements, all icon button variants) | Met [v1.1.0] |
-| Focus visibility | **Partial.** shadcn Button / Input / SelectTrigger declare `focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50` in their className strings, but Tailwind v4 does not emit a CSS rule for the `ring-3` utility (the v3 alias was removed). CSS bundle scan via `document.styleSheets` found zero rules matching `.focus-visible\:ring-3:focus-visible`; computed `--tw-ring-shadow` is `0 0 #0000` (no-op) and `box-shadow` is `none` on a genuinely keyboard-focused Input and Button. The only rendered focus indicator on primitives is a 1px border color swap to brand `#1F5784` via `focus-visible:border-ring`, which likely fails WCAG 2.2 AA 1.4.11 Non-text Contrast (3:1 required). The global `:focus-visible` outline fallback from `2663836` — targeting bare `<a>`, `[role="link"]`, and `[tabindex]:not([tabindex="-1"]):not([data-slot])` — renders correctly and **is Met** on non-primitive interactive elements. **The Phase 1 hotfix (`b6627db`) incorrectly marked this row "Met" based on CSS class-presence inspection rather than computed-style verification; this is corrected in Session B.** See F1. | Partial — primitives Not Met; global fallback Met |
+| Focus visibility | **Met (Session B.1).** `ring-3` → `ring-[3px]` fix shipped in this commit (see §13.4 F1). Post-rebuild computed-style verification after a real Tab keystroke: `--tw-ring-shadow` = `0 0 0 calc(3px + 0px) hsl(207 62% 32% / .5)` and `box-shadow` = `rgba(31, 87, 132, 0.5) 0px 0px 0px 3px` on keyboard-focused Button (Dashboard), Input (Onboarding "City Name"), and SelectTrigger (Requests filter bar); `focusVisible: true` on all three. The global `:focus-visible` outline fallback from `2663836` continues to render correctly on bare `<a>`, `[role="link"]`, and non-primitive `[tabindex]` elements. **Historical note:** Session B found that the Phase 1 hotfix (`b6627db`) incorrectly marked this "Met" — the 3px ring was never rendering on primitives because Tailwind v4 dropped the `ring-3` alias. Corrected to Partial in Session B, then fixed and confirmed Met in Session B.1. | Met (Session B.1) |
 | Skip navigation | Skip-to-content link present and reachable as the first tab stop; verified live on Login, Dashboard, Requests, RequestDetail | Met [v1.0.0] |
 | ARIA landmarks | `main`, `nav`, `header`, `h1` present on every page walked live | Met |
 | Color-only indicators | StatusBadge uses icon+color across all domains | Met [v1.0.0] |
-| Keyboard navigation | **Session B audit complete.** Systemic Partial due to F3 (base-ui Select emits a hidden `<input>` for form integration without `tabindex="-1"`, leaking into tab order between every SelectTrigger — inferred system-wide from source and confirmed live on the Requests filter bar, which registers 10 tab stops for 6 visible controls). **Hard Not Met on Requests** due to F2 (`data-table.tsx:89-91` renders `<TableRow onClick=...>` with no `tabIndex`, `role`, `onKeyDown`, or interactive child — a keyboard-only staff member literally cannot open a records request from the list). Remaining 8 pages Met structurally in keyboard navigation. See §13.3 for per-page scoring and §13.4 for findings F2, F3. | Partial — one hard Not Met |
+| Keyboard navigation | **Partial (F2 resolved in Session B.1; F3 systemic).** F2 resolved this commit — `data-table.tsx` TableRow now has `tabIndex={0}`, `role="button"`, and `onKeyDown` (Enter/Space); keyboard-only staff can open records requests from the Requests list. Systemic Partial remains due to F3 (base-ui Select emits a hidden `<input>` without `tabindex="-1"`, leaking into tab order; inferred system-wide, confirmed live on Requests filter bar — 10 tab stops for 6 visible controls). See §13.3 for per-page scoring and §13.4 for findings F2, F3. | Partial — F2 resolved; F3 systemic |
 | Form error handling | **Not tested in Session B.** No validation errors were triggered live. Source scan found 0 of 14 pages using `aria-describedby` / `aria-invalid` patterns in error UI, but the scan cannot confirm whether rendered error text is actually associated with its input. Full verification deferred to **Session C** (requires real invalid submits + screen reader listening). | Audit pending (Session C) |
 | Screen reader | **Not tested in Session B.** Source + live DOM inspection found: 0 pages using `aria-live` / `aria-busy` for async load states (F5, confirmed live on Dashboard and Requests); 0 `aria-label` on Requests filter SelectTriggers (F4, inferred system-wide, confirmed live on Requests); RequestDetail has flat heading hierarchy with only `<h1>` and no `<h2>` despite 5+ logical sections (F6, confirmed live). Deferred to **Session C** for NVDA / VoiceOver verification. | Audit pending (Session C) |
 
@@ -555,25 +555,25 @@ Session B did **not** verify and explicitly defers to **Session C**:
 
 | Page | Focus visibility | Keyboard navigation | Form error handling | Screen reader |
 |---|---|---|---|---|
-| Login | Partial (F1) | Met | Not tested | Partial (F5) |
-| Dashboard | Partial (F1) | Met | N/A | Partial (F5) |
-| Search | Partial (F1) | Partial (F3) | Not tested | Partial (F3, F4, F5) |
-| Requests | Partial (F1) | **Not Met (F2)** + Partial (F3) | Not tested | Partial (F3, F4, F5) |
-| RequestDetail | Partial (F1) | Partial (F6 heading hierarchy; scrollable regions not live-verified) | Not tested | Partial (F5, F6) |
-| Exemptions | Partial (F1) | Partial (F3) | Not tested | Partial (F3, F4, F5) |
-| DataSources | Partial (F1) | Met | Not tested | Partial (F5) |
-| Ingestion | Partial (F1) | Met | N/A | Partial (F5) |
-| Users | Partial (F1) | Partial (F3) | Not tested | Partial (F3, F4, F5) |
-| Onboarding | Partial (F1) | Partial (F3) | Not tested | Partial (F3, F4) |
-| CityProfile | Partial (F1) | Met | Not tested | Partial (F5) |
-| Discovery | Partial (F1) | Met | N/A | Met (UI shell — nothing to announce) |
+| Login | Met (F1—B.1) | Met | Not tested | Partial (F5) |
+| Dashboard | Met (F1—B.1) | Met | N/A | Partial (F5) |
+| Search | Met (F1—B.1) | Partial (F3) | Not tested | Partial (F3, F4, F5) |
+| Requests | Met (F1—B.1) | Partial (F3) | Not tested | Partial (F3, F4, F5) |
+| RequestDetail | Met (F1—B.1) | Partial (scrollable regions not live-verified) | Not tested | Partial (F5, F6) |
+| Exemptions | Met (F1—B.1) | Partial (F3) | Not tested | Partial (F3, F4, F5) |
+| DataSources | Met (F1—B.1) | Met | Not tested | Partial (F5) |
+| Ingestion | Met (F1—B.1) | Met | N/A | Partial (F5) |
+| Users | Met (F1—B.1) | Partial (F3) | Not tested | Partial (F3, F4, F5) |
+| Onboarding | Met (F1—B.1) | Partial (F3) | Not tested | Partial (F3, F4) |
+| CityProfile | Met (F1—B.1) | Met | Not tested | Partial (F5) |
+| Discovery | Met (F1—B.1) | Met | N/A | Met (UI shell — nothing to announce) |
 | Settings | N/A (no interactives) | N/A | N/A | Partial (F5) |
-| AuditLog | Partial (F1) | Met | N/A | Partial (F5) |
+| AuditLog | Met (F1—B.1) | Met | N/A | Partial (F5) |
 
 ### 13.4 Findings F1–F7
 
 **F1 — Tailwind v4 `ring-3` utility silently missing. Systemic across every page using shadcn primitives.**
-`frontend/src/components/ui/button.tsx:7`, `input.tsx:12`, and `select.tsx:44` all ship className strings containing `focus-visible:ring-3 focus-visible:ring-ring/50`. The Tailwind v3 `ring-3` alias was removed in Tailwind v4; this project runs Tailwind v4 without a shim or theme alias. CSS bundle scan via `document.styleSheets` returns zero rules matching `.focus-visible\:ring-3:focus-visible`. Computed `--tw-ring-shadow` resolves to `0 0 #0000` and `box-shadow` is `none` on a genuinely keyboard-focused primitive. Only `focus-visible:border-ring` actually renders, producing a 1px border color swap to brand `#1F5784` — which likely fails WCAG 2.2 AA 1.4.11 Non-text Contrast (3:1 required). The global `:focus-visible` fallback in `globals.css @layer base` renders correctly but intentionally excludes `[data-slot]`, so it does not backstop the primitives. **Severity: Partial system-wide.** Remediation: three one-line edits (`ring-3` → `ring-[3px]` on Button / Input / SelectTrigger), OR a Tailwind v4 theme config alias mapping `ring-3` to `3px`. Queued for **Session B.1**.
+`frontend/src/components/ui/button.tsx:7`, `input.tsx:12`, and `select.tsx:44` all ship className strings containing `focus-visible:ring-3 focus-visible:ring-ring/50`. The Tailwind v3 `ring-3` alias was removed in Tailwind v4; this project runs Tailwind v4 without a shim or theme alias. CSS bundle scan via `document.styleSheets` returns zero rules matching `.focus-visible\:ring-3:focus-visible`. Computed `--tw-ring-shadow` resolves to `0 0 #0000` and `box-shadow` is `none` on a genuinely keyboard-focused primitive. Only `focus-visible:border-ring` actually renders, producing a 1px border color swap to brand `#1F5784` — which likely fails WCAG 2.2 AA 1.4.11 Non-text Contrast (3:1 required). The global `:focus-visible` fallback in `globals.css @layer base` renders correctly but intentionally excludes `[data-slot]`, so it does not backstop the primitives. **Severity: Partial system-wide.** Remediation: three one-line edits (`ring-3` → `ring-[3px]` on Button / Input / SelectTrigger), OR a Tailwind v4 theme config alias mapping `ring-3` to `3px`. Queued for **Session B.1**. **RESOLVED in Session B.1 (this commit).** Three edits: `button.tsx:7`, `input.tsx:12`, `select.tsx:44` — `ring-3` → `ring-[3px]` (and `aria-invalid:ring-3` → `aria-invalid:ring-[3px]` on each). Post-rebuild computed-style verification: `--tw-ring-shadow` = `0 0 0 calc(3px + 0px) hsl(207 62% 32% / .5)`, `box-shadow` = `rgba(31, 87, 132, 0.5) 0px 0px 0px 3px` on keyboard-focused Button (Dashboard), Input (Onboarding "City Name"), and SelectTrigger (Requests filter bar, index 0). `focusVisible: true` on all three.
 
 **F2 — `data-table.tsx` rows are mouse-only clickable. WCAG 2.1.1 Keyboard hard fail on Requests.**
 `frontend/src/components/data-table.tsx:89-91`:
@@ -583,7 +583,7 @@ Session B did **not** verify and explicitly defers to **Session C**:
   onClick={() => onRowClick?.(row)}
 >
 ```
-No `tabIndex`, `role="button"`, `onKeyDown`, inner anchor, or inner button. Live DOM confirmation on Requests: `rowTabindex: null, rowRole: null, anchors: [], buttons: [], hasOnclick: true`. **A keyboard-only staff member cannot open a records request from the list.** This is the most user-visible accessibility bug in the product — a hard functional blocker, not a cosmetic gap. Blast radius today is exactly 1 page: `grep onRowClick` confirms `Requests.tsx:400` is the sole consumer. But the fix is in the shared component so any future consumer inherits it automatically. **Severity: Not Met on Requests; Met elsewhere.** Remediation: add `tabIndex={0}`, `role="button"`, and `onKeyDown={(e) => (e.key === "Enter" || e.key === " ") && (e.preventDefault(), onRowClick?.(row))}` to the TableRow in `data-table.tsx`. **One edit. Queued for Session B.1. Sequenced before F1 because severity is orders of magnitude higher.**
+No `tabIndex`, `role="button"`, `onKeyDown`, inner anchor, or inner button. Live DOM confirmation on Requests: `rowTabindex: null, rowRole: null, anchors: [], buttons: [], hasOnclick: true`. **A keyboard-only staff member cannot open a records request from the list.** This is the most user-visible accessibility bug in the product — a hard functional blocker, not a cosmetic gap. Blast radius today is exactly 1 page: `grep onRowClick` confirms `Requests.tsx:400` is the sole consumer. But the fix is in the shared component so any future consumer inherits it automatically. **Severity: Not Met on Requests; Met elsewhere.** Remediation: add `tabIndex={0}`, `role="button"`, and `onKeyDown={(e) => (e.key === "Enter" || e.key === " ") && (e.preventDefault(), onRowClick?.(row))}` to the TableRow in `data-table.tsx`. **One edit. Queued for Session B.1. Sequenced before F1 because severity is orders of magnitude higher.** **RESOLVED in Session B.1 (this commit).** `tabIndex={0}`, `role="button"`, and `onKeyDown` (Enter/Space with `e.preventDefault()`) added to `data-table.tsx:89`. Post-fix verification on Requests page: `<tr>` has `role="button"`, `tabIndex=0`, `focusVisible: true`; Enter key navigated to `/requests/ee112475-788d-49dc-8830-6ea8a66bb9d5`; Space key confirmed same (back-nav + re-test). Both activation keys working.
 
 **F3 — base-ui Select hidden form-input leaks into tab order. Inferred system-wide; confirmed live on Requests.**
 base-ui's `@base-ui/react/select` renders a hidden native `<input>` alongside the SelectTrigger for form integration and does not set `tabindex="-1"` on it. On the Requests filter bar (4 SelectTriggers), live tab order reads `select-trigger → phantom-input → select-trigger → phantom-input → select-trigger → phantom-input → select-trigger → phantom-input → date → date` — 10 tab stops for 6 visible controls. Inferred from shared-primitive usage to apply to every page with `<Select>`: Search, Exemptions, DataSources, Users, Onboarding, CityProfile, Requests. **Severity: Partial keyboard-nav + Partial screen-reader** on every affected page — controls are eventually reachable, just disorientingly, and an SR user hears a content-less listbox/input pair per filter. Remediation: global CSS selector to set `tabindex="-1"` on the pattern, OR an upstream fix to base-ui Select. Queued for **Session B.2 or Session C**.
@@ -602,10 +602,9 @@ Live walk: sidebar nav order is `Search, Requests, Exemptions, Onboarding, City 
 
 ### 13.5 Remediation sequencing
 
-**Session B.1** — single commit, single frontend rebuild, both edits are one-liners:
-- **F2 first.** `data-table.tsx` TableRow `tabIndex={0}` + `role="button"` + `onKeyDown` — unblocks keyboard-only staff opening records requests. Highest user-visible severity in the whole audit.
-- **F1 second.** `ring-3` → `ring-[3px]` on Button, Input, SelectTrigger — restores the intended 3px focus ring across every primitive system-wide.
-Verification: the same computed-style probe Session B used (Chrome MCP + injected JS + real Tab keystroke), re-run on Login Input/Button and the Requests filter bar, must show `box-shadow` non-`none` and `--tw-ring-shadow` non-zero after the edits. And the Requests row must respond to Enter/Space from keyboard focus.
+**Session B.1** — **DONE (this commit).** Single commit, single frontend rebuild:
+- **F2 first.** `data-table.tsx` TableRow `tabIndex={0}` + `role="button"` + `onKeyDown` (Enter/Space) — keyboard-only staff can now open records requests. Highest user-visible severity in the whole audit. Verified: Enter and Space both navigated to `/requests/<uuid>` from keyboard focus.
+- **F1 second.** `ring-3` → `ring-[3px]` on Button, Input, SelectTrigger — 3px brand-color ring restored across every primitive system-wide. Verified: `--tw-ring-shadow` = `0 0 0 calc(3px + 0px) hsl(207 62% 32% / .5)` and `box-shadow` = `rgba(31, 87, 132, 0.5) 0px 0px 0px 3px` on all three primitives after a real Tab keystroke.
 
 **Session B.2** (or rolled into Session C if scope allows):
 - F3 (Select phantom inputs — CSS selector or upstream fix)
@@ -656,7 +655,7 @@ The docs/ directory contains a comprehensive documentation set:
 | 0.1.0 | April 12 | Foundation: Docker stack, auth, ingestion, search, requests, exemptions, 8 pages | 80 |
 | 1.0.0 | April 12 | Design system (shadcn/ui), 11 pages, request lifecycle, fees, analytics, notifications, connectors, context manager | 104 |
 | 1.1.0 | April 13 | Departments, 50-state exemptions, compliance templates, central LLM client, notification dispatch, user mgmt, search enhancements, fee waivers, rich text, macro stripping, coverage gaps, version alignment | 274 |
-| _unreleased_ | April 14 | `request_received` dispatch on create, Mark Fulfilled 404 fix, SENT status removal (migration 010), schema drift fix (migration 011), spec v3.1 import, Session A accessibility (global `:focus-visible` fallback + Geist Variable font wiring), Session B accessibility audit (14-page keyboard walk, findings F1–F7, Phase 1 focus-visibility claim corrected from Met to Partial) | 276 |
+| _unreleased_ | April 14 | `request_received` dispatch on create, Mark Fulfilled 404 fix, SENT status removal (migration 010), schema drift fix (migration 011), spec v3.1 import, Session A accessibility (global `:focus-visible` fallback + Geist Variable font wiring), Session B accessibility audit (14-page keyboard walk, findings F1–F7, Phase 1 focus-visibility claim corrected from Met to Partial), Session B.1 accessibility fixes (F2: `data-table.tsx` keyboard row activation; F1: `ring-[3px]` on Button/Input/SelectTrigger) | 276 |
 
 ## 16. Capability Summary
 
@@ -689,21 +688,18 @@ The docs/ directory contains a comprehensive documentation set:
 | Redaction ledger | [PLANNED] |
 | Saved searches | [PLANNED] |
 | WCAG: focus visibility — global `:focus-visible` fallback (bare `<a>`, `[role="link"]`, non-primitive `[tabindex]`) | [IMPLEMENTED — post-v1.1.0 in `2663836`] |
-| WCAG: focus visibility — shadcn Button / Input / SelectTrigger primitives | [PARTIAL — 1px border color swap only; 3px ring never renders due to Tailwind v4 `ring-3` omission. See §13 F1. Remediation: Session B.1.] |
+| WCAG: focus visibility — shadcn Button / Input / SelectTrigger primitives | [IMPLEMENTED — Session B.1 (this commit). `ring-[3px]` fix on button.tsx, input.tsx, select.tsx; 3px brand-color ring verified post-rebuild on all three primitives.] |
 | WCAG: keyboard navigation audit | [IMPLEMENTED — Session B, 14-page walk, 7 findings F1–F7 in §13.4] |
-| WCAG: keyboard navigation — `data-table.tsx` row accessibility | [NOT MET — WCAG 2.1.1 hard fail on Requests page; keyboard users cannot open a records request. See §13 F2. Remediation: Session B.1.] |
+| WCAG: keyboard navigation — `data-table.tsx` row accessibility | [IMPLEMENTED — Session B.1 (this commit). TableRow `tabIndex={0}` + `role="button"` + `onKeyDown`; Enter and Space key activation verified on Requests page.] |
 | WCAG: form error handling | [AUDIT PENDING — Session C] |
 | WCAG: screen reader testing | [AUDIT PENDING — Session C] |
 
 ## 17. Next Priorities
 Based on the repository as it exists now:
 1. Accessibility audit — in progress.
-   1a. Focus visibility — **PARTIAL.** The global `:focus-visible` outline fallback shipped in `2663836` (Session A) renders correctly on bare `<a>`, `[role="link"]`, and non-primitive `[tabindex]` elements — that part is Met. shadcn Button / Input / SelectTrigger are **Not Met** due to F1 (Tailwind v4 does not emit the `ring-3` utility; see §13.4 F1). The Phase 1 spec hotfix `b6627db` incorrectly marked this Met — corrected in Session B. Remediation queued as Session B.1 below.
+   1a. Focus visibility — **DONE (Session B.1, this commit).** The global `:focus-visible` outline fallback from `2663836` (Session A) is Met on bare `<a>`, `[role="link"]`, and non-primitive `[tabindex]` elements. The shadcn primitive `ring-3` omission (F1) is now resolved — `ring-[3px]` ships on button.tsx, input.tsx, select.tsx; 3px brand-color ring confirmed via computed-style probe post-rebuild. See §13.4 F1 and §13.2.
    1b. Keyboard navigation audit — **DONE** in Session B (this commit). 14-page walk (4 live via Chrome MCP, 10 via source audit) with per-page WCAG 2.2 AA scoring in §13.3 and 7 findings F1–F7 in §13.4. Session B.1 handles the two blocking remediations; F3–F6 queued for Session B.2 or Session C.
-   1c. **Session B.1 — F2 + F1 remediation (highest-severity fixes).** Single commit, single frontend rebuild, both are one-line edits:
-       - **F2 first.** `data-table.tsx:89-91` TableRow `tabIndex={0}` + `role="button"` + `onKeyDown` for Enter / Space. Unblocks keyboard-only staff opening records requests — this is a WCAG 2.1.1 hard fail, the highest user-visible severity in the audit.
-       - **F1 second.** `ring-3` → `ring-[3px]` on `button.tsx`, `input.tsx`, `select.tsx`. Restores the 3px brand-color focus ring across every shadcn primitive system-wide.
-       Verification: re-run the Session B computed-style probe after rebuild; `--tw-ring-shadow` must be non-zero and the Requests row must respond to keyboard activation.
+   1c. **Session B.1 — F2 + F1 remediation — DONE (this commit).** F2 first (WCAG 2.1.1 hard fail): `data-table.tsx` TableRow `tabIndex={0}` + `role="button"` + `onKeyDown` for Enter/Space — keyboard-only staff can now open records requests. F1 second: `ring-3` → `ring-[3px]` on button.tsx, input.tsx, select.tsx — 3px brand-color ring restored on all shadcn primitives. Both fixes verified via Chrome MCP computed-style probe after rebuild. See §13.4 F1, F2 for verification evidence.
    1d. Form error handling — **PENDING Session C** (requires real invalid-submit triggers + screen reader listening).
    1e. Screen reader audit — **PENDING Session C.** NVDA + VoiceOver spot checks covering F3 (Select phantom inputs), F4 (SelectTrigger aria-labels), F5 (`aria-live` on loading states), F6 (RequestDetail heading hierarchy), and Dialog focus trap behavior on Exemptions / DataSources / Users modals.
 2. Liaison scoping completion — role constants and hierarchy are in place; build department-scoped UI views (hide Users/Audit Log/Onboarding nav items, filter Requests/Search to the liaison's department) and endpoint restrictions for liaison-level users. Backend `check_department_access()` already enforces the authoritative boundary; this is ~50 LOC frontend plus a handful of list-query filter params. Auditor's explicit pull-forward — do not let it keep sliding.
