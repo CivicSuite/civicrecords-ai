@@ -9,7 +9,7 @@ April 13, 2026
 | Supersedes | All prior spec versions (v2.0, v2.2, v3.0, v3.0.1) |
 | Repository | github.com/scottconverse/civicrecords-ai |
 | Current release | v1.1.0 (April 13, 2026) — versions aligned across all files |
-| Test suite | 274 automated tests across 45 test modules |
+| Test suite | 276 automated tests across 45 test modules (274 at v1.1.0; +2 unreleased post-v1.1.0 for `request_received` dispatch) |
 | Method | GitHub API crawl of repo structure, README, CHANGELOG, config files, module directories, and in-repo RECONCILIATION doc |
 
 Status Legend: [IMPLEMENTED] evidenced in code, tests, and routes. [PARTIAL] present but incomplete. [UI SHELL] interface exists without full backend capability. [PLANNED] not implemented. [NEW in v1.1.0] added in current release.
@@ -69,7 +69,7 @@ Connector framework (file system, IMAP email, manual drop)
 Central LLM client with context manager, token budgeting, and prompt injection sanitization
 Compliance templates (5 documents) and model registry
 Hash-chained audit logging with CSV/JSON export
-274 automated tests across 45 test modules
+276 automated tests across 45 test modules (274 at v1.1.0; +2 post-v1.1.0)
 Not yet implemented: public resident portal, public search/request tracking, full active network discovery engine, cross-instance federation workflows, liaison department-scoped UI (role exists, full scoping not complete), Tier 2/3 redaction.
 
 ## 3. User Groups & RBAC
@@ -270,7 +270,7 @@ model_registry: Admin-managed Ollama models with context_window_size for budget 
 | status.danger | #8B2E2E | Overdue, denied, failed |
 
 ### 7.2 Typography
-Note: The frontend uses Geist Variable (@fontsource-variable/geist v5.2.8). The CHANGELOG v1.0.0 references "Inter typography scale" but the installed font is Geist. Typography targets below should be read against Geist metrics.
+Note: The frontend uses Geist Variable (@fontsource-variable/geist v5.2.8), imported in `main.tsx` and wired through `globals.css` body font-family and `tailwind.config.js` fontFamily.sans. Prior to commit `2663836` the dependency was declared but never imported, so the rendered font fell back to the system sans stack; the CHANGELOG v1.0.0 entry has also been corrected from "Inter typography scale" to "Geist Variable typography scale." Typography targets below are Geist metrics.
 
 | Element | Current | Target |
 |---|---|---|
@@ -523,19 +523,19 @@ SMTP credentials never logged or displayed after entry
 All LLM outputs labeled as AI-generated drafts
 
 ## 13. Accessibility
-Target: WCAG 2.2 AA. Several requirements now implemented; full audit still pending.
+Target: WCAG 2.2 AA. Focus visibility is now implemented; keyboard navigation, form error handling, and screen reader audit are still pending (Session B of the accessibility sprint).
 
 | Requirement | Current State | Status |
 |---|---|---|
 | Color contrast | Passes (text ~15:1, muted ~5.7:1) | Met |
 | Touch targets | 44x44px enforced (min-width + min-height on all interactive elements, all icon button variants) | Met [v1.1.0] |
-| Focus visibility | No visible focus styles | Not yet implemented |
+| Focus visibility | shadcn Button/Input/SelectTrigger ship Tailwind `focus-visible:ring-3 focus-visible:ring-ring/50` using brand `--ring` (#1F5A84); global `:focus-visible` fallback in `globals.css @layer base` targets `a`, `[role="link"]`, and `[tabindex]:not([tabindex="-1"]):not([data-slot])` with a 2px outline on the same token, 2px offset | Met [post-v1.1.0 in `2663836`] |
 | Skip navigation | Skip-to-content link added | Met [v1.0.0] |
 | ARIA landmarks | Good (nav role, table aria-labels) | Met |
 | Color-only indicators | StatusBadge uses icon+color across all domains | Met [v1.0.0] |
-| Keyboard navigation | Untested | Audit pending |
-| Form error handling | Not tested | Audit pending |
-| Screen reader | Untested | Audit pending |
+| Keyboard navigation | Untested — Session B will tab-walk all 14 pages and produce a punch list | Audit pending |
+| Form error handling | Not tested — Session B will verify label/error association and screen-reader announcement | Audit pending |
+| Screen reader | Untested — Session C (NVDA / VoiceOver) | Audit pending |
 
 ### 13.1 Content Design Rules
 Lead with action: "Tell us what records you need" not "Records Request Submission Form"
@@ -578,6 +578,7 @@ The docs/ directory contains a comprehensive documentation set:
 | 0.1.0 | April 12 | Foundation: Docker stack, auth, ingestion, search, requests, exemptions, 8 pages | 80 |
 | 1.0.0 | April 12 | Design system (shadcn/ui), 11 pages, request lifecycle, fees, analytics, notifications, connectors, context manager | 104 |
 | 1.1.0 | April 13 | Departments, 50-state exemptions, compliance templates, central LLM client, notification dispatch, user mgmt, search enhancements, fee waivers, rich text, macro stripping, coverage gaps, version alignment | 274 |
+| _unreleased_ | April 14 | `request_received` dispatch on create, Mark Fulfilled 404 fix, SENT status removal (migration 010), schema drift fix (migration 011), spec v3.1 import, Session A accessibility (focus visibility + Geist Variable font wiring) | 276 |
 
 ## 16. Capability Summary
 
@@ -599,7 +600,7 @@ The docs/ directory contains a comprehensive documentation set:
 | Operational analytics and coverage gap dashboard | [IMPLEMENTED] |
 | Compliance templates (5 docs) and model registry | [IMPLEMENTED] |
 | Hash-chained audit logging with export | [IMPLEMENTED] |
-| 274 automated tests across 45 modules | [IMPLEMENTED] |
+| 276 automated tests across 45 modules (274 at v1.1.0; +2 post-v1.1.0) | [IMPLEMENTED] |
 | Version alignment across all files | [IMPLEMENTED] |
 | WCAG: 44px touch targets, skip nav, icon+color badges | [IMPLEMENTED] |
 | Full active discovery engine | [UI SHELL / PLANNED] |
@@ -609,17 +610,23 @@ The docs/ directory contains a comprehensive documentation set:
 | Tier 2/3 redaction (NER, visual AI) | [PLANNED] |
 | Redaction ledger | [PLANNED] |
 | Saved searches | [PLANNED] |
-| WCAG: focus styles, keyboard nav, screen reader testing | [AUDIT PENDING] |
+| WCAG: focus visibility (shadcn primitives + global `:focus-visible` fallback) | [IMPLEMENTED — post-v1.1.0 in `2663836`] |
+| WCAG: keyboard navigation, form error handling, screen reader testing | [AUDIT PENDING — Session B/C] |
 
 ## 17. Next Priorities
 Based on the repository as it exists now:
-1. Accessibility audit — focus visibility, keyboard navigation, and screen reader testing are the primary open gaps. Touch targets and icon+color badges are done.
-2. Liaison scoping completion — role constants and hierarchy are in place; build department-scoped UI views and endpoint restrictions for liaison-level users.
-3. Discovery implementation — Discovery.tsx is a shell. Either implement active discovery or mark it explicitly as v1.1+ throughout all documentation.
-4. Connector expansion — REST API, ODBC/JDBC, and SharePoint connectors for broader municipal system coverage.
-5. Spec alignment — DONE. The in-repo `docs/UNIFIED-SPEC.md` is now this v3.1 document. (Completed alongside the SENT removal and notification_log/exemption_rules drift fixes; see migrations 010 and 011.)
-6. Public portal buildout — implement the requester-facing surface only after internal staff workflows are stable and fully documented.
-7. CHANGELOG font correction — v1.0.0 CHANGELOG entry says "Inter typography scale" but installed font is Geist Variable. Minor but should be corrected for accuracy.
+1. Accessibility audit — in progress.
+   1a. Focus visibility — **DONE** in `2663836` (Session A). shadcn primitives plus a global `:focus-visible` outline fallback in `globals.css`; brand `--ring` token throughout.
+   1b. Keyboard navigation — **PENDING** Session B: tab-walk all 14 pages, score each per WCAG 2.2 AA, produce punch list; findings drop directly into §13.
+   1c. Form error handling — **PENDING** Session B: verify label/error association and screen-reader announcement on every form.
+   1d. Screen reader — **PENDING** Session C: NVDA and VoiceOver spot checks across critical workflows.
+2. Liaison scoping completion — role constants and hierarchy are in place; build department-scoped UI views (hide Users/Audit Log/Onboarding nav items, filter Requests/Search to the liaison's department) and endpoint restrictions for liaison-level users. Backend `check_department_access()` already enforces the authoritative boundary; this is ~50 LOC frontend plus a handful of list-query filter params. Auditor's explicit pull-forward — do not let it keep sliding.
+3. Deadline notifications — wire `request_deadline_approaching` and `request_deadline_overdue` into Celery beat. Templates already exist and are seeded; §8.3 matrix has both rows marked open. Self-contained subsystem session.
+4. Discovery implementation — Discovery.tsx is a shell. Either implement active discovery or mark it explicitly as v1.1+ throughout all documentation (decision pending).
+5. Connector expansion — REST API, ODBC/JDBC, and SharePoint connectors for broader municipal system coverage.
+6. Spec alignment — **DONE**. The in-repo `docs/UNIFIED-SPEC.md` is now this v3.1 document, kept current through commit `2663836` + this hotfix. (Completed alongside the SENT removal and notification_log/exemption_rules drift fixes; see migrations 010 and 011.)
+7. Public portal buildout — implement the requester-facing surface only after internal staff workflows are stable and fully documented.
+8. CHANGELOG font correction — **DONE** in `2663836`. The v1.0.0 entry and the actual wiring now both reflect Geist Variable.
 
 ## 18. Engineering Acceptance Criteria
 Every component must support loading, empty, error, and disabled states.

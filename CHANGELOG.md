@@ -5,6 +5,25 @@ All notable changes to CivicRecords AI will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+Post-v1.1.0 commits on `master`. No version bump yet.
+
+### Added
+- **Focus visibility (Session A of accessibility audit):** Global `:focus-visible` outline fallback in `frontend/src/globals.css @layer base` targeting `a`, `[role="link"]`, and `[tabindex]:not([tabindex="-1"]):not([data-slot])`. Uses 2px outline in brand `--ring` (#1F5A84) with 2px offset. Excludes `[data-slot]` so it does not double-stack with the Tailwind `focus-visible:ring-3 focus-visible:ring-ring/50` that shadcn Button, Input, and SelectTrigger already ship. Closes spec §13 "Focus visibility" requirement; spec §17 priority #1 sub-item 1a.
+- **`request_received` notification dispatch:** `create_request` now calls `queue_notification("request_received", ...)` when `requester_email` is present. Pattern mirrors `update_request`'s PATCH-dynamic dispatch. Closes the last router-side gap in the §8.3 dispatch matrix. Two new regression tests in `test_notification_dispatch.py` (positive + negative), passing fail-before / pass-after sanity check. Test suite 274 → 276.
+
+### Fixed
+- **Geist Variable font actually wired:** `frontend/src/main.tsx` now imports `@fontsource-variable/geist`, so Vite bundles and serves the font (three woff2 variants). Previously it was listed as a dependency but never imported — the rendered font was falling back to the system sans stack. `frontend/src/globals.css` body `font-family` and `frontend/tailwind.config.js` `fontFamily.sans` both updated from "Inter" to "Geist Variable". The v1.0.0 entry below (which had claimed "Inter typography scale") is also corrected to "Geist Variable typography scale" since that was always the intent.
+- **Mark Fulfilled button 404 (from the April 13/14 session):** `RequestDetail.tsx` was posting to `POST /requests/{id}/sent`, a route that does not exist. Changed the action from `"sent"` to `"fulfilled"` and extended `handleAction` to route `"fulfilled"` through PATCH alongside `"searching"`. Removed the `sent` display alias from `status-badge.tsx`.
+- **Legacy `RequestStatus.SENT` enum value removed:** Migration `010_remove_sent_status.py` performs a defensive UPDATE → drop column default → rename-recreate dance → restore default → drop old enum type. `VALID_TRANSITIONS`, `/stats` active filters, and analytics `closed_statuses` all updated. 11 statuses → 10. Downgrade is intentional no-op (matches migration 008's pattern).
+- **Schema drift repaired:** Migration `011_fix_schema_drift.py` adds three columns that existed in SQLAlchemy models but were missing from Alembic migrations — `notification_log.subject` (VARCHAR 500 nullable), `notification_log.body` (TEXT nullable), `exemption_rules.version` (INTEGER NOT NULL DEFAULT 1). Integration tests had been masking the drift by using `create_all()` instead of walking migrations.
+
+### Changed
+- **Canonical spec imported at v3.1:** `docs/UNIFIED-SPEC.md` replaced with the v3.1 repo-verified canonical (was v2.0). Source `.docx` preserved at `docs/CivicRecordsAI-UnifiedSpec-v3.1.docx`. Eleven corrections applied during import: §8.3 rewritten with the audited notification dispatch matrix; status count "11 statuses" → "10 statuses" in 4 places; §6.6 `notification_log` and §6.7 `exemption_rules` column lists corrected; §17 priority #5 marked DONE inline; §14 documentation suite row updated; Appendix B footer updated. See commit `1b4795d`.
+- **Spec post-Session A hotfix:** §1 test suite line and §2 summary line now read 276 tests. §7.2 typography note rewritten to explain the pre-`2663836` mis-wire and current state. §13 accessibility table focus-visibility row marked Met (post-v1.1.0 in `2663836`) with the full selector and token explanation. §15 release history adds an `_unreleased_` row for post-v1.1.0 work. §16 capability summary test row updated to 276; a11y audit row split into "focus visibility implemented" vs. "keyboard nav / form errors / screen reader audit pending." §17 priorities restructured: accessibility audit broken into sub-items (1a done, 1b–1d pending); deadline notifications promoted to item 3; CHANGELOG font correction marked done.
+- **CLAUDE.md context-mode section:** Rewritten from a short "Context Mode (MANDATORY)" note into the full 4-Stage Context-Mode Protocol (GATHER → FOLLOW-UP → PROCESS → WRITE), with forbidden/allowed Bash verb lists, a refusal template, the `context-mode-gate.sh` PreToolUse hook reference, and the `"override hard rule 10"` bypass phrase. Commit `2685f00`. Process/tooling only, no code.
+
 ## [1.1.0] - 2026-04-13
 
 ### Added
