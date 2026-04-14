@@ -428,3 +428,82 @@ async def delete_fee_schedule(
         resource_id=str(schedule_id), user_id=user.id,
         details={"jurisdiction": schedule.jurisdiction, "fee_type": schedule.fee_type},
     )
+
+
+# --- Coverage gap analysis ---
+
+class CoverageGapResponse(BaseModel):
+    jurisdictions_without_rules: list[str]
+    departments_without_staff: list[dict]  # [{id, name}]
+    uncovered_categories: list[str]
+    total_gaps: int
+
+
+@router.get("/coverage-gaps", response_model=CoverageGapResponse)
+async def get_coverage_gaps(
+    session: AsyncSession = Depends(get_async_session),
+    user: User = Depends(require_role(UserRole.ADMIN)),
+):
+    """Identify coverage gaps across jurisdictions, departments, and exemption categories.
+
+    Returns:
+    - Jurisdictions (state codes) that have no exemption rules
+    - Departments with no assigned staff users
+    - Exemption categories without any active rules
+    """
+    from app.models.departments import Department
+    from app.models.exemption import ExemptionRule
+
+    # 1. Find US state codes (50 states + DC) without exemption rules
+    us_states = {
+        "AL", "AK", "AZ", "AR", "CA", "CO", "CT", "DE", "DC", "FL",
+        "GA", "HI", "ID", "IL", "IN", "IA", "KS", "KY", "LA", "ME",
+        "MD", "MA", "MI", "MN", "MS", "MO", "MT", "NE", "NV", "NH",
+        "NJ", "NM", "NY", "NC", "ND", "OH", "OK", "OR", "PA", "RI",
+        "SC", "SD", "TN", "TX", "UT", "VT", "VA", "WA", "WV", "WI", "WY",
+    }
+    rule_states_result = await session.execute(
+        select(ExemptionRule.state_code).distinct()
+    )
+    rule_jurisdictions = {r[0] for r in rule_states_result.fetchall()}
+
+    jurisdictions_without_rules = sorted(us_states - rule_jurisdictions)
+
+    # 2. Find departments with no assigned staff
+    all_depts_result = await session.execute(select(Department.id, Department.name))
+    all_depts = {r[0]: r[1] for r in all_depts_result.fetchall()}
+
+    staffed_depts_result = await session.execute(
+        select(User.department_id).distinct().where(
+            User.department_id.isnot(None),
+            User.is_active.is_(True),
+        )
+    )
+    staffed_dept_ids = {r[0] for r in staffed_depts_result.fetchall()}
+
+    departments_without_staff = [
+        {"id": str(did), "name": name}
+        for did, name in all_depts.items()
+        if did not in staffed_dept_ids
+    ]
+
+    # 3. Find standard exemption categories without active rules
+    standard_categories = [
+        "PII", "Law Enforcement", "Legal Privilege", "Trade Secrets",
+        "Personnel Records", "Deliberative Process", "Medical Records",
+    ]
+    active_cats_result = await session.execute(
+        select(ExemptionRule.category).distinct().where(ExemptionRule.enabled.is_(True))
+    )
+    active_categories = {r[0] for r in active_cats_result.fetchall()}
+
+    uncovered_categories = [c for c in standard_categories if c not in active_categories]
+
+    total_gaps = len(jurisdictions_without_rules) + len(departments_without_staff) + len(uncovered_categories)
+
+    return CoverageGapResponse(
+        jurisdictions_without_rules=jurisdictions_without_rules,
+        departments_without_staff=departments_without_staff,
+        uncovered_categories=uncovered_categories,
+        total_gaps=total_gaps,
+    )

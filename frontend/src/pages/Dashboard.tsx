@@ -86,6 +86,12 @@ export default function Dashboard({ token }: { token: string }) {
   const [analytics, setAnalytics] = useState<OperationalMetrics | null>(null);
   const [auditLog, setAuditLog] = useState<AuditLogEntry[]>([]);
   const [approachingDeadlines, setApproachingDeadlines] = useState<DeadlineRequest[]>([]);
+  const [coverageGaps, setCoverageGaps] = useState<{
+    jurisdictions_without_rules: string[];
+    departments_without_staff: { id: string; name: string }[];
+    uncovered_categories: string[];
+    total_gaps: number;
+  } | null>(null);
 
   useEffect(() => {
     apiFetch<SystemStatus>("/admin/status", { token })
@@ -103,6 +109,11 @@ export default function Dashboard({ token }: { token: string }) {
     apiFetch<AuditLogEntry[]>("/admin/audit-log?limit=10", { token })
       .then(setAuditLog)
       .catch(() => setAuditLog([]));
+
+    // Coverage gaps
+    apiFetch<typeof coverageGaps>("/admin/coverage-gaps", { token })
+      .then(setCoverageGaps)
+      .catch(() => setCoverageGaps(null));
 
     // Approaching deadlines: fetch open requests, filter client-side for deadlines within 3 days
     apiFetch<DeadlineRequest[]>("/requests/?limit=100", { token })
@@ -317,6 +328,53 @@ export default function Dashboard({ token }: { token: string }) {
           )}
         </CardContent>
       </Card>
+
+      {/* Coverage Gaps */}
+      {coverageGaps && coverageGaps.total_gaps > 0 && (
+        <Card className="shadow-none border-warning">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-label uppercase text-muted-foreground flex items-center gap-2">
+              <AlertTriangle className="h-4 w-4 text-warning" />
+              Coverage Gaps ({coverageGaps.total_gaps})
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-3">
+              {coverageGaps.uncovered_categories.length > 0 && (
+                <div>
+                  <p className="text-xs font-medium text-muted-foreground mb-1">Exemption categories without rules</p>
+                  <div className="flex flex-wrap gap-1">
+                    {coverageGaps.uncovered_categories.map((c) => (
+                      <span key={c} className="text-xs px-2 py-0.5 rounded-full bg-warning-light text-warning">{c}</span>
+                    ))}
+                  </div>
+                </div>
+              )}
+              {coverageGaps.departments_without_staff.length > 0 && (
+                <div>
+                  <p className="text-xs font-medium text-muted-foreground mb-1">Departments without assigned staff</p>
+                  <div className="flex flex-wrap gap-1">
+                    {coverageGaps.departments_without_staff.map((d) => (
+                      <span key={d.id} className="text-xs px-2 py-0.5 rounded-full bg-warning-light text-warning">{d.name}</span>
+                    ))}
+                  </div>
+                </div>
+              )}
+              {coverageGaps.jurisdictions_without_rules.length > 0 && (
+                <div>
+                  <p className="text-xs font-medium text-muted-foreground mb-1">
+                    Jurisdictions without exemption rules ({coverageGaps.jurisdictions_without_rules.length} of 51)
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    {coverageGaps.jurisdictions_without_rules.slice(0, 10).join(", ")}
+                    {coverageGaps.jurisdictions_without_rules.length > 10 && ` +${coverageGaps.jurisdictions_without_rules.length - 10} more`}
+                  </p>
+                </div>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Quick actions */}
       <Card className="shadow-none">
