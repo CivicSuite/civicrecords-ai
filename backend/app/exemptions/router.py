@@ -102,6 +102,128 @@ async def update_rule(
     return rule
 
 
+# --- Rule history & testing ---
+
+@router.get("/rules/{rule_id}/history")
+async def get_rule_history(
+    rule_id: uuid.UUID,
+    session: AsyncSession = Depends(get_async_session),
+    user: User = Depends(require_role(UserRole.STAFF)),
+):
+    """Get audit history for an exemption rule."""
+    from app.models.audit import AuditLog
+
+    rule = await session.get(ExemptionRule, rule_id)
+    if not rule:
+        raise HTTPException(status_code=404, detail="Rule not found")
+
+    result = await session.execute(
+        select(AuditLog)
+        .where(
+            AuditLog.resource_type == "exemption_rule",
+            AuditLog.resource_id == str(rule_id),
+        )
+        .order_by(AuditLog.timestamp.desc())
+        .limit(50)
+    )
+    logs = result.scalars().all()
+
+    return [
+        {
+            "id": log.id,
+            "action": log.action,
+            "timestamp": log.timestamp.isoformat(),
+            "user_id": str(log.user_id) if log.user_id else None,
+            "details": log.details,
+        }
+        for log in logs
+    ]
+
+
+from pydantic import BaseModel
+
+
+class RuleTestRequest(BaseModel):
+    sample_text: str
+
+
+class RuleTestMatch(BaseModel):
+    matched_text: str
+    start: int
+    end: int
+
+
+class RuleTestResponse(BaseModel):
+    rule_id: uuid.UUID
+    rule_type: str
+    matched: bool
+    matches: list[RuleTestMatch]
+
+
+@router.post("/rules/{rule_id}/test", response_model=RuleTestResponse)
+async def test_rule(
+    rule_id: uuid.UUID,
+    body: RuleTestRequest,
+    session: AsyncSession = Depends(get_async_session),
+    user: User = Depends(require_role(UserRole.STAFF)),
+):
+    """Test a rule against sample text. Returns match results.
+
+    Uses the `regex` library with timeout=2s to prevent ReDoS on
+    admin-entered patterns.
+    """
+    rule = await session.get(ExemptionRule, rule_id)
+    if not rule:
+        raise HTTPException(status_code=404, detail="Rule not found")
+
+    matches: list[RuleTestMatch] = []
+
+    if rule.rule_type == RuleType.REGEX:
+        try:
+            import regex
+            pattern = regex.compile(rule.rule_definition, regex.IGNORECASE)
+            for m in pattern.finditer(body.sample_text, timeout=2):
+                matches.append(RuleTestMatch(
+                    matched_text=m.group()[:200],
+                    start=m.start(),
+                    end=m.end(),
+                ))
+        except regex.error as e:
+            raise HTTPException(status_code=422, detail=f"Invalid regex pattern: {e}")
+        except TimeoutError:
+            raise HTTPException(status_code=408, detail="Regex execution timed out (possible catastrophic backtracking)")
+
+    elif rule.rule_type == RuleType.KEYWORD:
+        # Keywords are comma-separated in rule_definition
+        keywords = [k.strip().lower() for k in rule.rule_definition.split(",") if k.strip()]
+        text_lower = body.sample_text.lower()
+        for kw in keywords:
+            start = 0
+            while True:
+                idx = text_lower.find(kw, start)
+                if idx == -1:
+                    break
+                matches.append(RuleTestMatch(
+                    matched_text=body.sample_text[idx:idx + len(kw)],
+                    start=idx,
+                    end=idx + len(kw),
+                ))
+                start = idx + 1
+
+    elif rule.rule_type == RuleType.LLM_PROMPT:
+        raise HTTPException(
+            status_code=400,
+            detail="LLM-based rules cannot be tested with sample text — they require full document context.",
+        )
+
+    return RuleTestResponse(
+        rule_id=rule.id,
+        rule_type=rule.rule_type.value,
+        matched=len(matches) > 0,
+        matches=matches,
+    )
+
+
 # --- Scanning ---
 
 @router.post("/scan/{request_id}")
