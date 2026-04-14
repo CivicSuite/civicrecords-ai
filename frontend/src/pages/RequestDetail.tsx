@@ -2,6 +2,7 @@
 import { useState, useEffect } from "react";
 import { useParams, Link } from "react-router-dom";
 import { apiFetch } from "@/lib/api";
+import { RichTextEditor } from "@/components/RichTextEditor";
 import { StatusBadge } from "@/components/status-badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -695,10 +696,9 @@ export default function RequestDetail({ token }: { token: string }) {
                       </p>
                     </div>
                   )}
-                  <textarea
-                    className="w-full min-h-[240px] rounded-md border border-border bg-background px-3 py-2 text-sm font-mono leading-relaxed resize-y focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:opacity-60"
-                    value={letterContent}
-                    onChange={(e) => setLetterContent(e.target.value)}
+                  <RichTextEditor
+                    content={letterContent}
+                    onChange={setLetterContent}
                     disabled={letter.status === "sent"}
                   />
                   <div className="flex gap-2 flex-wrap">
