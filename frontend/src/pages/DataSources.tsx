@@ -100,7 +100,12 @@ export default function DataSources({ token }: { token: string }) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [showForm, setShowForm] = useState(false);
-  const [formData, setFormData] = useState({ name: "", path: "" });
+  const [wizardStep, setWizardStep] = useState(1);
+  const [formData, setFormData] = useState({
+    name: "", sourceType: "manual_drop", host: "", port: "", path: "", username: "", password: "",
+  });
+  const [testResult, setTestResult] = useState<{ success: boolean; message: string } | null>(null);
+  const [testing, setTesting] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [ingesting, setIngesting] = useState<string | null>(null);
 
@@ -117,21 +122,56 @@ export default function DataSources({ token }: { token: string }) {
 
   useEffect(() => { loadData(); }, [token]);
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const resetWizard = () => {
+    setWizardStep(1);
+    setFormData({ name: "", sourceType: "manual_drop", host: "", port: "", path: "", username: "", password: "" });
+    setTestResult(null);
+  };
+
+  const handleTestConnection = async () => {
+    setTesting(true);
+    setTestResult(null);
+    try {
+      const result = await apiFetch<{ success: boolean; message: string }>("/datasources/test-connection", {
+        token,
+        method: "POST",
+        body: JSON.stringify({
+          source_type: formData.sourceType,
+          host: formData.host || undefined,
+          port: formData.port ? parseInt(formData.port) : undefined,
+          path: formData.path || undefined,
+          username: formData.username || undefined,
+          password: formData.password || undefined,
+        }),
+      });
+      setTestResult(result);
+    } catch (e) {
+      setTestResult({ success: false, message: e instanceof Error ? e.message : "Test failed" });
+    } finally {
+      setTesting(false);
+    }
+  };
+
+  const handleSubmit = async () => {
     setSubmitting(true);
     try {
+      const config: Record<string, string> = {};
+      if (formData.path) config.path = formData.path;
+      if (formData.host) config.host = formData.host;
+      if (formData.port) config.port = formData.port;
+      if (formData.username) config.username = formData.username;
+      // Never persist password in connection_config — handle via secure vault in production
       await apiFetch("/datasources/", {
         token,
         method: "POST",
         body: JSON.stringify({
           name: formData.name,
-          source_type: "directory",
-          connection_config: { path: formData.path },
+          source_type: formData.sourceType,
+          connection_config: config,
         }),
       });
       setShowForm(false);
-      setFormData({ name: "", path: "" });
+      resetWizard();
       await loadData();
     } catch (e) {
       setError(e instanceof Error ? e.message : "Failed to create");
@@ -169,27 +209,127 @@ export default function DataSources({ token }: { token: string }) {
       <PageHeader
         title="Data Sources"
         actions={
-          <Dialog open={showForm} onOpenChange={setShowForm}>
+          <Dialog open={showForm} onOpenChange={(open) => { setShowForm(open); if (!open) resetWizard(); }}>
             <DialogTrigger render={<Button><Plus className="h-4 w-4 mr-2" />Add Source</Button>} />
             <DialogContent>
               <DialogHeader>
-                <DialogTitle>Add Data Source</DialogTitle>
+                <DialogTitle>Add Data Source — Step {wizardStep} of 3</DialogTitle>
               </DialogHeader>
-              <form onSubmit={handleSubmit} className="space-y-4">
-                <div>
-                  <label className="text-sm font-medium">Source Name</label>
-                  <Input value={formData.name} onChange={(e) => setFormData({ ...formData, name: e.target.value })} placeholder="e.g. Public Records Drive" required />
+              <div className="space-y-4">
+                {/* Step indicators */}
+                <div className="flex gap-2">
+                  {[1, 2, 3].map((s) => (
+                    <div key={s} className={`h-1.5 flex-1 rounded-full ${s <= wizardStep ? "bg-primary" : "bg-muted"}`} />
+                  ))}
                 </div>
-                <div>
-                  <label className="text-sm font-medium">Directory Path</label>
-                  <Input value={formData.path} onChange={(e) => setFormData({ ...formData, path: e.target.value })} placeholder="e.g. C:\Records\Public or /mnt/records" required />
-                  <p className="text-xs text-muted-foreground mt-1">The folder on the server where documents are stored.</p>
-                </div>
-                <div className="flex justify-end gap-3">
-                  <Button type="button" variant="outline" onClick={() => setShowForm(false)}>Cancel</Button>
-                  <Button type="submit" disabled={submitting}>{submitting ? "Adding..." : "Add Source"}</Button>
-                </div>
-              </form>
+
+                {/* Step 1: Source type + name */}
+                {wizardStep === 1 && (
+                  <>
+                    <div>
+                      <label className="text-sm font-medium">Source Name</label>
+                      <Input value={formData.name} onChange={(e) => setFormData({ ...formData, name: e.target.value })} placeholder="e.g. City Clerk Email Archive" />
+                    </div>
+                    <div>
+                      <label className="text-sm font-medium">Source Type</label>
+                      <div className="grid grid-cols-3 gap-2 mt-2">
+                        {[
+                          { type: "imap", icon: Mail, label: "IMAP Email" },
+                          { type: "file_share", icon: FolderOpen, label: "File Share" },
+                          { type: "manual_drop", icon: Upload, label: "Manual Drop" },
+                        ].map(({ type, icon: Icon, label }) => (
+                          <button
+                            key={type}
+                            type="button"
+                            onClick={() => setFormData({ ...formData, sourceType: type })}
+                            className={`p-3 rounded-lg border text-center transition-colors ${formData.sourceType === type ? "border-primary bg-primary/5" : "border-border hover:border-primary/50"}`}
+                          >
+                            <Icon className="h-5 w-5 mx-auto mb-1" />
+                            <span className="text-xs font-medium">{label}</span>
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                    <div className="flex justify-end gap-3">
+                      <Button type="button" variant="outline" onClick={() => { setShowForm(false); resetWizard(); }}>Cancel</Button>
+                      <Button type="button" disabled={!formData.name.trim()} onClick={() => setWizardStep(2)}>Next</Button>
+                    </div>
+                  </>
+                )}
+
+                {/* Step 2: Connection config */}
+                {wizardStep === 2 && (
+                  <>
+                    {formData.sourceType === "imap" && (
+                      <>
+                        <div>
+                          <label className="text-sm font-medium">IMAP Server</label>
+                          <Input value={formData.host} onChange={(e) => setFormData({ ...formData, host: e.target.value })} placeholder="imap.gmail.com" />
+                        </div>
+                        <div>
+                          <label className="text-sm font-medium">Port</label>
+                          <Input value={formData.port} onChange={(e) => setFormData({ ...formData, port: e.target.value })} placeholder="993" />
+                        </div>
+                        <div>
+                          <label className="text-sm font-medium">Username</label>
+                          <Input value={formData.username} onChange={(e) => setFormData({ ...formData, username: e.target.value })} placeholder="records@city.gov" />
+                        </div>
+                        <div>
+                          <label className="text-sm font-medium">Password</label>
+                          <Input type="password" value={formData.password} onChange={(e) => setFormData({ ...formData, password: e.target.value })} />
+                        </div>
+                      </>
+                    )}
+                    {(formData.sourceType === "file_share" || formData.sourceType === "manual_drop") && (
+                      <div>
+                        <label className="text-sm font-medium">Directory Path</label>
+                        <Input value={formData.path} onChange={(e) => setFormData({ ...formData, path: e.target.value })} placeholder="/mnt/records or C:\Records\Public" />
+                        <p className="text-xs text-muted-foreground mt-1">The folder on the server where documents are stored.</p>
+                      </div>
+                    )}
+                    <div className="flex justify-between">
+                      <Button type="button" variant="outline" onClick={() => setWizardStep(1)}>Back</Button>
+                      <Button type="button" onClick={() => setWizardStep(3)}>Next</Button>
+                    </div>
+                  </>
+                )}
+
+                {/* Step 3: Review + test connection */}
+                {wizardStep === 3 && (
+                  <>
+                    <Card className="shadow-none">
+                      <CardContent className="p-4 space-y-2 text-sm">
+                        <p><span className="font-medium">Name:</span> {formData.name}</p>
+                        <p><span className="font-medium">Type:</span> {formData.sourceType}</p>
+                        {formData.host && <p><span className="font-medium">Server:</span> {formData.host}:{formData.port || "993"}</p>}
+                        {formData.path && <p><span className="font-medium">Path:</span> {formData.path}</p>}
+                        {formData.username && <p><span className="font-medium">Username:</span> {formData.username}</p>}
+                      </CardContent>
+                    </Card>
+
+                    <Button type="button" variant="outline" className="w-full" onClick={handleTestConnection} disabled={testing}>
+                      {testing ? "Testing..." : "Test Connection"}
+                    </Button>
+
+                    {testResult && (
+                      <Card className={`shadow-none ${testResult.success ? "border-success" : "border-destructive"}`}>
+                        <CardContent className="p-3">
+                          <p className={`text-sm ${testResult.success ? "text-success" : "text-destructive"}`}>
+                            {testResult.success ? "✓" : "✗"} {testResult.message}
+                          </p>
+                        </CardContent>
+                      </Card>
+                    )}
+
+                    <div className="flex justify-between">
+                      <Button type="button" variant="outline" onClick={() => setWizardStep(2)}>Back</Button>
+                      <Button type="button" onClick={handleSubmit} disabled={submitting}>
+                        {submitting ? "Creating..." : "Create Source"}
+                      </Button>
+                    </div>
+                  </>
+                )}
+              </div>
             </DialogContent>
           </Dialog>
         }

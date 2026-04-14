@@ -1,13 +1,20 @@
+import logging
 import uuid
+from pathlib import Path
+
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, File
+from pydantic import BaseModel
 from sqlalchemy import select, func
 from sqlalchemy.ext.asyncio import AsyncSession
+
 from app.audit.logger import write_audit_log
 from app.auth.dependencies import require_role
 from app.database import get_async_session
 from app.models.document import DataSource, Document, DocumentChunk, IngestionStatus, SourceType
 from app.models.user import User, UserRole
 from app.schemas.document import DataSourceCreate, DataSourceRead, DataSourceUpdate, IngestionStats
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/datasources", tags=["datasources"])
 
@@ -102,3 +109,72 @@ async def ingestion_stats(session: AsyncSession = Depends(get_async_session), us
         count = (await session.execute(select(func.count(Document.id)).where(Document.ingestion_status == status))).scalar() or 0
         status_counts[status.value] = count
     return IngestionStats(total_sources=total_sources, active_sources=active_sources, total_documents=total_documents, documents_by_status=status_counts, total_chunks=total_chunks)
+
+
+# --- Test connection (does NOT persist or log credentials) ---
+
+class TestConnectionRequest(BaseModel):
+    """Dedicated schema for test-connection. NOT the create schema.
+
+    Security: credentials in this request body are never persisted, never
+    written to audit logs, and never returned in the response.
+    """
+    source_type: str  # imap/file_share/manual_drop
+    host: str | None = None
+    port: int | None = None
+    path: str | None = None
+    username: str | None = None
+    password: str | None = None
+
+
+class TestConnectionResponse(BaseModel):
+    success: bool
+    message: str
+
+
+@router.post("/test-connection", response_model=TestConnectionResponse)
+async def test_connection(
+    body: TestConnectionRequest,
+    user: User = Depends(require_role(UserRole.ADMIN)),
+):
+    """Test connectivity to a data source without persisting anything.
+
+    This endpoint validates the connection parameters and attempts a test
+    connection. Credentials are NOT persisted, NOT logged, and NOT returned.
+    """
+    if body.source_type == "imap":
+        if not body.host or not body.username:
+            return TestConnectionResponse(success=False, message="IMAP requires host and username")
+        try:
+            import imaplib
+            port = body.port or 993
+            conn = imaplib.IMAP4_SSL(body.host, port)
+            if body.username and body.password:
+                conn.login(body.username, body.password)
+            conn.logout()
+            return TestConnectionResponse(success=True, message=f"Connected to {body.host}:{port}")
+        except Exception as e:
+            # Never expose credentials in error messages
+            error_msg = str(e)
+            if body.password and body.password in error_msg:
+                error_msg = "Authentication failed"
+            return TestConnectionResponse(success=False, message=f"IMAP connection failed: {error_msg}")
+
+    elif body.source_type == "file_share":
+        if not body.path:
+            return TestConnectionResponse(success=False, message="File share requires a path")
+        target = Path(body.path)
+        if target.exists() and target.is_dir():
+            file_count = len(list(target.iterdir()))
+            return TestConnectionResponse(success=True, message=f"Path accessible: {file_count} items found")
+        return TestConnectionResponse(success=False, message=f"Path not accessible or not a directory")
+
+    elif body.source_type == "manual_drop":
+        if not body.path:
+            return TestConnectionResponse(success=False, message="Manual drop requires a path")
+        target = Path(body.path)
+        if target.exists() and target.is_dir():
+            return TestConnectionResponse(success=True, message="Drop folder accessible")
+        return TestConnectionResponse(success=False, message="Drop folder not accessible")
+
+    return TestConnectionResponse(success=False, message=f"Unknown source type: {body.source_type}")
