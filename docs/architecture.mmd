@@ -1,0 +1,54 @@
+graph TB
+    subgraph Client["Client Layer — Browser (React 18 + shadcn/ui + Tailwind CSS)"]
+        SearchUI["Search UI"]
+        RequestTracker["Request Tracker"]
+        AdminPanel["Admin Panel"]
+        ExemptionReview["Exemption Review"]
+    end
+
+    subgraph AppServer["Application Server — FastAPI (Python 3.12)"]
+        Auth["Auth Module"]
+        DeptScope["Department Scoping"]
+        SearchAPI["Search API"]
+        WorkflowAPI["Workflow API"]
+        ExemptionEngine["Exemption Engine"]
+        LLMAbstraction["LLM Abstraction"]
+        FedAPI["Federation API"]
+        DeptAPI["Department API"]
+        TemplateRenderer["Template Renderer"]
+        ModelRegistry["Model Registry"]
+    end
+
+    subgraph Compliance["Compliance & Audit Layer"]
+        AuditLogger["Audit Logger"]
+        ComplianceTemplates["Compliance Templates"]
+        AuditDashboard["Auditability Dashboard"]
+        SovereigntyVerifier["Sovereignty Verifier"]
+    end
+
+    subgraph DataAI["Data & AI Layer"]
+        PG["PostgreSQL 17 + pgvector"]
+        Ollama["Ollama (Local LLM)"]
+        Redis["Redis 7.2"]
+        CeleryWorkers["Celery Workers (beat + worker)"]
+    end
+
+    subgraph Ingestion["Ingestion Pipeline — Two-Track"]
+        FastTrack["Fast Track (Structured Data)"]
+        LLMTrack["LLM Track (Scanned / Image PDFs)"]
+    end
+
+    subgraph Sources["City Data Sources"]
+        FileShares["File Shares"]
+        Uploads["Direct Uploads"]
+    end
+
+    Client -->|HTTPS / REST| AppServer
+    AppServer -->|reads/writes| Compliance
+    AppServer -->|queries / embeds| DataAI
+    AppServer -->|dispatches tasks| CeleryWorkers
+    Sources -->|ingested by| Ingestion
+    Ingestion -->|indexes into| PG
+    Ingestion -->|embeddings via| Ollama
+    LLMAbstraction -->|inference| Ollama
+    CeleryWorkers -->|notifications / deadlines| Redis
