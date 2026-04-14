@@ -7,6 +7,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.audit.logger import write_audit_log
 from app.auth.dependencies import require_role
 from app.database import get_async_session
+from app.models.departments import Department
 from app.models.document import DataSource, Document, DocumentChunk
 from app.models.search import SearchQuery, SearchResult, SearchSession
 from app.models.user import User, UserRole
@@ -227,6 +228,12 @@ async def get_filter_options(
     )
     source_names = [r[0] for r in sources_result.fetchall()]
 
+    # Departments
+    depts_result = await session.execute(
+        select(Department.id, Department.name).order_by(Department.name)
+    )
+    departments = [{"id": str(r[0]), "name": r[1]} for r in depts_result.fetchall()]
+
     # Date range
     date_result = await session.execute(
         select(func.min(Document.ingested_at), func.max(Document.ingested_at))
@@ -242,5 +249,50 @@ async def get_filter_options(
     return SearchFilterOptions(
         file_types=file_types,
         source_names=source_names,
+        departments=departments,
         date_range=date_range,
+    )
+
+
+@router.get("/export")
+async def export_search_results(
+    query: str,
+    format: str = "csv",
+    department_id: str | None = None,
+    file_type: str | None = None,
+    session: AsyncSession = Depends(get_async_session),
+    user: User = Depends(require_role(UserRole.STAFF)),
+):
+    """Export search results as CSV. Runs a search and streams the results."""
+    import csv
+    import io
+
+    from fastapi.responses import StreamingResponse
+
+    filters: dict = {}
+    if department_id:
+        filters["department_id"] = department_id
+    if file_type:
+        filters["file_type"] = file_type
+
+    hits = await hybrid_search(session=session, query_text=query, limit=50, filters=filters or None)
+
+    output = io.StringIO()
+    writer = csv.writer(output)
+    writer.writerow(["Rank", "Filename", "File Type", "Page", "Score", "Content"])
+    for hit in hits:
+        writer.writerow([
+            hit.rank,
+            hit.filename,
+            hit.file_type,
+            hit.page_number or "",
+            f"{hit.similarity_score:.3f}",
+            hit.content_text[:500],
+        ])
+    output.seek(0)
+
+    return StreamingResponse(
+        iter([output.getvalue()]),
+        media_type="text/csv",
+        headers={"Content-Disposition": "attachment; filename=search-results.csv"},
     )

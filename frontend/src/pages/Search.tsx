@@ -15,7 +15,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Search as SearchIcon, FileText, Sparkles } from "lucide-react";
+import { Download, Search as SearchIcon, FileText, Sparkles } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface SearchResult {
@@ -43,6 +43,7 @@ interface SearchResponse {
 interface FilterOptions {
   file_types: string[];
   source_names: string[];
+  departments: { id: string; name: string }[];
   date_range: { min: string; max: string } | null;
 }
 
@@ -64,6 +65,7 @@ export default function Search({ token }: { token: string }) {
   const [results, setResults] = useState<SearchResponse | null>(null);
   const [filters, setFilters] = useState<FilterOptions | null>(null);
   const [selectedFileType, setSelectedFileType] = useState("all");
+  const [selectedDepartment, setSelectedDepartment] = useState("all");
   const [synthesize, setSynthesize] = useState(false);
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -89,7 +91,10 @@ export default function Search({ token }: { token: string }) {
         limit: 20,
       };
       if (sessionId) body.session_id = sessionId;
-      if (selectedFileType !== "all") body.filters = { file_type: selectedFileType };
+      const searchFilters: Record<string, string> = {};
+      if (selectedFileType !== "all") searchFilters.file_type = selectedFileType;
+      if (selectedDepartment !== "all") searchFilters.department_id = selectedDepartment;
+      if (Object.keys(searchFilters).length > 0) body.filters = searchFilters;
 
       const res = await apiFetch<SearchResponse>("/search/query", {
         token,
@@ -140,6 +145,18 @@ export default function Search({ token }: { token: string }) {
             </SelectContent>
           </Select>
 
+          <Select value={selectedDepartment} onValueChange={(v) => setSelectedDepartment(v ?? "all")}>
+            <SelectTrigger className="w-[180px]">
+              <SelectValue placeholder="All departments" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All departments</SelectItem>
+              {filters?.departments.map((d) => (
+                <SelectItem key={d.id} value={d.id}>{d.name}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+
           <div className="flex items-center gap-2">
             <Checkbox
               id="synthesize"
@@ -183,9 +200,40 @@ export default function Search({ token }: { token: string }) {
       {/* Results */}
       {results && !loading && (
         <div className="space-y-4">
-          <p className="text-sm text-muted-foreground">
-            {results.results_count} result{results.results_count !== 1 ? "s" : ""} found
-          </p>
+          <div className="flex items-center justify-between">
+            <p className="text-sm text-muted-foreground">
+              {results.results_count} result{results.results_count !== 1 ? "s" : ""} found
+            </p>
+            {results.results_count > 0 && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={async () => {
+                  try {
+                    const params = new URLSearchParams({ query: results.query_text, format: "csv" });
+                    if (selectedFileType !== "all") params.set("file_type", selectedFileType);
+                    if (selectedDepartment !== "all") params.set("department_id", selectedDepartment);
+                    const res = await fetch(`/api/search/export?${params}`, {
+                      headers: { Authorization: `Bearer ${token}` },
+                    });
+                    if (!res.ok) throw new Error(`Export failed: ${res.status}`);
+                    const blob = await res.blob();
+                    const url = URL.createObjectURL(blob);
+                    const link = document.createElement("a");
+                    link.href = url;
+                    link.download = "search-results.csv";
+                    link.click();
+                    URL.revokeObjectURL(url);
+                  } catch (e) {
+                    setError(e instanceof Error ? e.message : "Export failed");
+                  }
+                }}
+              >
+                <Download className="h-4 w-4 mr-2" />
+                Export CSV
+              </Button>
+            )}
+          </div>
 
           {/* AI Summary */}
           {results.synthesized_answer && (

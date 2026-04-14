@@ -34,6 +34,7 @@ async def semantic_search(
     filter_clause = ""
     params = {"embedding": embedding_str, "limit": limit}
 
+    join_clause = ""
     if filters:
         if filters.get("file_type"):
             filter_clause += " AND d.file_type = :file_type"
@@ -41,11 +42,15 @@ async def semantic_search(
         if filters.get("source_id"):
             filter_clause += " AND d.source_id = :source_id"
             params["source_id"] = filters["source_id"]
+        if filters.get("department_id"):
+            join_clause = " JOIN data_sources ds ON d.source_id = ds.id"
+            filter_clause += " AND ds.department_id = :department_id"
+            params["department_id"] = filters["department_id"]
 
     sql = text(f"""
         SELECT c.id, c.embedding <=> CAST(:embedding AS vector) AS distance
         FROM document_chunks c
-        JOIN documents d ON c.document_id = d.id
+        JOIN documents d ON c.document_id = d.id{join_clause}
         WHERE c.embedding IS NOT NULL {filter_clause}
         ORDER BY c.embedding <=> CAST(:embedding AS vector)
         LIMIT :limit
@@ -66,6 +71,7 @@ async def keyword_search(
     filter_clause = ""
     params = {"query": query_text, "limit": limit}
 
+    join_clause = ""
     if filters:
         if filters.get("file_type"):
             filter_clause += " AND d.file_type = :file_type"
@@ -73,11 +79,15 @@ async def keyword_search(
         if filters.get("source_id"):
             filter_clause += " AND d.source_id = :source_id"
             params["source_id"] = filters["source_id"]
+        if filters.get("department_id"):
+            join_clause = " JOIN data_sources ds ON d.source_id = ds.id"
+            filter_clause += " AND ds.department_id = :department_id"
+            params["department_id"] = filters["department_id"]
 
     sql = text(f"""
         SELECT c.id, ts_rank(c.content_tsvector, plainto_tsquery('english', :query)) AS rank_score
         FROM document_chunks c
-        JOIN documents d ON c.document_id = d.id
+        JOIN documents d ON c.document_id = d.id{join_clause}
         WHERE c.content_tsvector @@ plainto_tsquery('english', :query) {filter_clause}
         ORDER BY rank_score DESC
         LIMIT :limit

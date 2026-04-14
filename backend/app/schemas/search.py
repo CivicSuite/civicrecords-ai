@@ -47,4 +47,5 @@ class SearchSessionRead(BaseModel):
 class SearchFilterOptions(BaseModel):
     file_types: list[str]
     source_names: list[str]
+    departments: list[dict] = []  # [{id, name}]
     date_range: dict | None = None
