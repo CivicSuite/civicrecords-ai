@@ -61,7 +61,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [1.0.0] - 2026-04-12
 
 ### Added
-- **Design System:** shadcn/ui component library with civic design tokens (#1F5A84 primary), Inter typography scale, sidebar layout shell
+- **Design System:** shadcn/ui component library with civic design tokens (#1F5A84 primary), Geist Variable typography scale, sidebar layout shell
 - **Sidebar Navigation:** Grouped navigation (Workflow / Setup / Administration) replacing top nav bar, 44px touch targets, active page indicator
 - **11 Pages:** Dashboard, Search, Requests, Request Detail, Exemptions, Sources, Ingestion, Users, Onboarding Interview, City Profile, Discovery Dashboard
 - **Onboarding Interview:** 3-phase wizard (City Profile, System Identification, Gap Map) for first-time city deployment
