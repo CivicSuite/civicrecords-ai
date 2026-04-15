@@ -254,7 +254,7 @@ export default function Users({ token }: { token: string }) {
               </DialogHeader>
               <form onSubmit={handleSubmit} className="space-y-4">
                 {formError && (
-                  <Card className="border-destructive">
+                  <Card role="alert" className="border-destructive">
                     <CardContent className="p-3"><p className="text-destructive text-sm">{formError}</p></CardContent>
                   </Card>
                 )}
@@ -295,7 +295,7 @@ export default function Users({ token }: { token: string }) {
       />
 
       {error && (
-        <Card className="border-destructive">
+        <Card role="alert" className="border-destructive">
           <CardContent className="p-4"><p className="text-destructive text-sm">{error}</p></CardContent>
         </Card>
       )}
@@ -326,7 +326,7 @@ export default function Users({ token }: { token: string }) {
           </DialogHeader>
           <form onSubmit={handleEdit} className="space-y-4">
             {editError && (
-              <Card className="border-destructive">
+              <Card role="alert" className="border-destructive">
                 <CardContent className="p-3"><p className="text-destructive text-sm">{editError}</p></CardContent>
               </Card>
             )}
