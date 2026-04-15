@@ -1,4 +1,6 @@
 import uuid
+from unittest.mock import AsyncMock, patch
+
 import pytest
 from httpx import AsyncClient
 
@@ -216,11 +218,97 @@ async def test_liaison_can_search(
     liaison_token_dept_a: str,
 ):
     """LIAISON role should be able to POST /search/query (returns 200, not 403)."""
-    resp = await client.post(
-        "/search/query",
-        json={"query": "test liaison search"},
-        headers={"Authorization": f"Bearer {liaison_token_dept_a}"},
-    )
+    with patch("app.search.engine.embed_text", new_callable=AsyncMock) as mock_embed:
+        mock_embed.return_value = [0.1] * 768
+        resp = await client.post(
+            "/search/query",
+            json={"query": "test liaison search"},
+            headers={"Authorization": f"Bearer {liaison_token_dept_a}"},
+        )
     assert resp.status_code == 200  # fails before fix (returns 403)
     data = resp.json()
     assert "results" in data
+
+
+@pytest.mark.asyncio
+async def test_liaison_search_excludes_dept_b(
+    client: AsyncClient,
+    liaison_token_dept_a: str,
+    dept_a: uuid.UUID,
+    dept_b: uuid.UUID,
+):
+    """LIAISON in dept A must not see dept B documents in search results.
+
+    Seeds a DataSource + Document + DocumentChunk in dept B with a distinctive
+    content string and a high-similarity embedding, then verifies it is absent
+    from liaison-dept-A search results.  The dept scoping filter injected by the
+    router (effective_filters["department_id"] = user.department_id) is the
+    security boundary under test.
+    """
+    from tests.conftest import test_session_maker, _create_test_user
+    from app.models.document import DataSource, Document, DocumentChunk, SourceType
+    from app.models.user import User, UserRole
+    import sqlalchemy as sa
+
+    unique_term = f"dept_b_classified_{uuid.uuid4().hex[:8]}"
+
+    # Create a user to satisfy DataSource.created_by FK, then fetch their ID
+    seed_email = f"seed-{uuid.uuid4().hex[:8]}@test.com"
+    await _create_test_user(seed_email, "seedpass123", "Seed User", UserRole.ADMIN)
+    async with test_session_maker() as session:
+        seed_user = (await session.execute(
+            sa.select(User).where(User.email == seed_email)
+        )).scalar_one()
+        seed_user_id = seed_user.id
+
+    # Seed dept B DataSource → Document → DocumentChunk directly in test DB
+    async with test_session_maker() as session:
+        source_b = DataSource(
+            name=f"Dept B Source {uuid.uuid4().hex[:6]}",
+            source_type=SourceType.UPLOAD,
+            connection_config={},
+            created_by=seed_user_id,
+        )
+        session.add(source_b)
+        await session.flush()
+
+        doc_b = Document(
+            source_id=source_b.id,
+            source_path=f"/seed/{unique_term}.pdf",
+            filename=f"{unique_term}.pdf",
+            file_type="pdf",
+            file_hash=uuid.uuid4().hex,
+            file_size=512,
+            department_id=dept_b,
+        )
+        session.add(doc_b)
+        await session.flush()
+
+        # Use a non-zero embedding so the vector search considers this chunk
+        chunk_b = DocumentChunk(
+            document_id=doc_b.id,
+            chunk_index=0,
+            content_text=unique_term,
+            embedding=[0.9] * 768,
+            token_count=5,
+        )
+        session.add(chunk_b)
+        await session.commit()
+
+    # Search as liaison in dept A using an embedding that perfectly matches
+    # the dept B chunk — scoping must exclude it regardless of similarity.
+    with patch("app.search.engine.embed_text", new_callable=AsyncMock) as mock_embed:
+        mock_embed.return_value = [0.9] * 768
+        resp = await client.post(
+            "/search/query",
+            json={"query": unique_term, "limit": 20},
+            headers={"Authorization": f"Bearer {liaison_token_dept_a}"},
+        )
+
+    assert resp.status_code == 200
+    data = resp.json()
+    result_texts = [r.get("content_text", "") for r in data["results"]]
+    assert not any(unique_term in t for t in result_texts), (
+        f"Dept B document '{unique_term}' appeared in liaison dept-A search results "
+        f"— department scoping failure. Results: {result_texts}"
+    )
