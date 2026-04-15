@@ -41,7 +41,7 @@ export default function Login({ onLogin }: LoginProps) {
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
             {error && (
-              <div className="p-3 rounded-md bg-destructive/10 border border-destructive/20">
+              <div role="alert" className="p-3 rounded-md bg-destructive/10 border border-destructive/20">
                 <p className="text-sm text-destructive">{error}</p>
               </div>
             )}
