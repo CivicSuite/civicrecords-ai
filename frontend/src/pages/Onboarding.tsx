@@ -507,7 +507,7 @@ export default function Onboarding({ token }: { token: string }) {
 
       {/* Navigation */}
       {submitError && (
-        <p className="text-sm text-destructive text-right">{submitError}</p>
+        <p role="alert" className="text-sm text-destructive text-right">{submitError}</p>
       )}
       <div className="flex items-center justify-between">
         <Button

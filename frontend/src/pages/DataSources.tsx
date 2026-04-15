@@ -336,7 +336,7 @@ export default function DataSources({ token }: { token: string }) {
       />
 
       {error && (
-        <Card className="border-destructive">
+        <Card role="alert" className="border-destructive">
           <CardContent className="p-4"><p className="text-destructive text-sm">{error}</p></CardContent>
         </Card>
       )}
