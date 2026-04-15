@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { apiFetch } from "@/lib/api";
 import { PageHeader } from "@/components/page-header";
 import { DataTable, type Column } from "@/components/data-table";
+import { LoadingRegion } from "@/components/loading-region";
 import { EmptyState } from "@/components/empty-state";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -153,12 +154,14 @@ export default function AuditLog({ token }: { token: string }) {
           description="Audit log entries will appear here as system activity occurs."
         />
       ) : (
-        <DataTable
-          columns={columns}
-          data={entries as (AuditEntry & Record<string, unknown>)[]}
-          rowKey={(e) => e.id as string}
-          ariaLabel="Audit log entries"
-        />
+        <LoadingRegion loading={loading} label="Audit log entries">
+          <DataTable
+            columns={columns}
+            data={entries as (AuditEntry & Record<string, unknown>)[]}
+            rowKey={(e) => e.id as string}
+            ariaLabel="Audit log entries"
+          />
+        </LoadingRegion>
       )}
     </div>
   );

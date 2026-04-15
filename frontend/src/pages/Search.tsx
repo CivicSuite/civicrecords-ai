@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { apiFetch } from "@/lib/api";
 import { PageHeader } from "@/components/page-header";
 import { EmptyState } from "@/components/empty-state";
+import { LoadingRegion } from "@/components/loading-region";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
@@ -134,7 +135,7 @@ export default function Search({ token }: { token: string }) {
 
         <div className="flex items-center gap-4">
           <Select value={selectedFileType} onValueChange={(v) => setSelectedFileType(v ?? "all")}>
-            <SelectTrigger className="w-[180px]">
+            <SelectTrigger className="w-[180px]" aria-label="File type filter">
               <SelectValue placeholder="All file types" />
             </SelectTrigger>
             <SelectContent>
@@ -146,7 +147,7 @@ export default function Search({ token }: { token: string }) {
           </Select>
 
           <Select value={selectedDepartment} onValueChange={(v) => setSelectedDepartment(v ?? "all")}>
-            <SelectTrigger className="w-[180px]">
+            <SelectTrigger className="w-[180px]" aria-label="Department filter">
               <SelectValue placeholder="All departments" />
             </SelectTrigger>
             <SelectContent>
@@ -190,7 +191,7 @@ export default function Search({ token }: { token: string }) {
 
       {/* Loading */}
       {loading && (
-        <div className="space-y-4">
+        <div className="space-y-4" role="status" aria-label="Searching, please wait">
           {Array.from({ length: 3 }).map((_, i) => (
             <Skeleton key={i} className="h-32 w-full" />
           ))}
@@ -199,6 +200,7 @@ export default function Search({ token }: { token: string }) {
 
       {/* Results */}
       {results && !loading && (
+        <LoadingRegion loading={loading} label="Search results">
         <div className="space-y-4">
           <div className="flex items-center justify-between">
             <p className="text-sm text-muted-foreground">
@@ -315,6 +317,7 @@ export default function Search({ token }: { token: string }) {
             );
           })}
         </div>
+        </LoadingRegion>
       )}
     </div>
   );

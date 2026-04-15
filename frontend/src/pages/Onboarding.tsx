@@ -343,7 +343,7 @@ export default function Onboarding({ token }: { token: string }) {
               <div>
                 <label className="text-sm font-medium">State *</label>
                 <Select value={profile.state} onValueChange={(v) => updateProfile({ state: v ?? "CO" })}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectTrigger aria-label="State"><SelectValue /></SelectTrigger>
                   <SelectContent>
                     {STATES.map((s) => <SelectItem key={s} value={s}>{s}</SelectItem>)}
                   </SelectContent>
@@ -360,7 +360,7 @@ export default function Onboarding({ token }: { token: string }) {
               <div>
                 <label className="text-sm font-medium">Population *</label>
                 <Select value={profile.populationBand} onValueChange={(v) => updateProfile({ populationBand: v ?? "" })}>
-                  <SelectTrigger><SelectValue placeholder="Select range" /></SelectTrigger>
+                  <SelectTrigger aria-label="Population band"><SelectValue placeholder="Select range" /></SelectTrigger>
                   <SelectContent>
                     {POPULATION_BANDS.map((b) => <SelectItem key={b} value={b}>{b}</SelectItem>)}
                   </SelectContent>
@@ -374,7 +374,7 @@ export default function Onboarding({ token }: { token: string }) {
               <div>
                 <label className="text-sm font-medium">Email Platform *</label>
                 <Select value={profile.emailPlatform} onValueChange={(v) => updateProfile({ emailPlatform: v ?? "" })}>
-                  <SelectTrigger><SelectValue placeholder="Select platform" /></SelectTrigger>
+                  <SelectTrigger aria-label="Email platform"><SelectValue placeholder="Select platform" /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="microsoft365">Microsoft 365</SelectItem>
                     <SelectItem value="google">Google Workspace</SelectItem>
@@ -386,7 +386,7 @@ export default function Onboarding({ token }: { token: string }) {
               <div>
                 <label className="text-sm font-medium">Dedicated IT Department?</label>
                 <Select value={profile.hasDedicatedIT} onValueChange={(v) => updateProfile({ hasDedicatedIT: v ?? "" })}>
-                  <SelectTrigger><SelectValue placeholder="Select" /></SelectTrigger>
+                  <SelectTrigger aria-label="Dedicated IT department"><SelectValue placeholder="Select" /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="yes">Yes — dedicated IT staff</SelectItem>
                     <SelectItem value="no">No — IT is a shared role</SelectItem>
@@ -396,7 +396,7 @@ export default function Onboarding({ token }: { token: string }) {
               <div>
                 <label className="text-sm font-medium">Monthly Records Requests</label>
                 <Select value={profile.monthlyRequestVolume} onValueChange={(v) => updateProfile({ monthlyRequestVolume: v ?? "" })}>
-                  <SelectTrigger><SelectValue placeholder="Approximate volume" /></SelectTrigger>
+                  <SelectTrigger aria-label="Monthly records request volume"><SelectValue placeholder="Approximate volume" /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="1-5">1-5 per month</SelectItem>
                     <SelectItem value="5-20">5-20 per month</SelectItem>

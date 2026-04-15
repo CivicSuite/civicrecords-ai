@@ -373,7 +373,7 @@ export default function RequestDetail({ token }: { token: string }) {
         <div className="lg:col-span-2 space-y-6">
           <Card className="shadow-none">
             <CardHeader>
-              <CardTitle className="text-lg">Request Details</CardTitle>
+              <CardTitle as="h2" className="text-lg">Request Details</CardTitle>
             </CardHeader>
             <CardContent className="space-y-3">
               <div className="flex items-center gap-2 text-sm">
@@ -400,7 +400,7 @@ export default function RequestDetail({ token }: { token: string }) {
           {/* Attached documents */}
           <Card className="shadow-none">
             <CardHeader>
-              <CardTitle className="text-lg">Attached Documents ({docs.length})</CardTitle>
+              <CardTitle as="h2" className="text-lg">Attached Documents ({docs.length})</CardTitle>
             </CardHeader>
             <CardContent>
               {docs.length === 0 ? (
@@ -432,7 +432,7 @@ export default function RequestDetail({ token }: { token: string }) {
           {/* Timeline */}
           <Card className="shadow-none">
             <CardHeader>
-              <CardTitle className="text-lg flex items-center gap-2">
+              <CardTitle as="h2" className="text-lg flex items-center gap-2">
                 <Activity className="h-4 w-4" />
                 Timeline ({timeline.length})
               </CardTitle>
@@ -470,7 +470,7 @@ export default function RequestDetail({ token }: { token: string }) {
           {/* Messages */}
           <Card className="shadow-none">
             <CardHeader>
-              <CardTitle className="text-lg flex items-center gap-2">
+              <CardTitle as="h2" className="text-lg flex items-center gap-2">
                 <MessageSquare className="h-4 w-4" />
                 Messages ({messages.length})
               </CardTitle>
@@ -541,7 +541,7 @@ export default function RequestDetail({ token }: { token: string }) {
           {/* Fees */}
           <Card className="shadow-none">
             <CardHeader>
-              <CardTitle className="text-lg flex items-center gap-2">
+              <CardTitle as="h2" className="text-lg flex items-center gap-2">
                 <DollarSign className="h-4 w-4" />
                 Fees
                 {fees.length > 0 && (
@@ -667,7 +667,7 @@ export default function RequestDetail({ token }: { token: string }) {
           {/* Response Letter */}
           <Card className="shadow-none">
             <CardHeader>
-              <CardTitle className="text-lg flex items-center gap-2">
+              <CardTitle as="h2" className="text-lg flex items-center gap-2">
                 <FileEdit className="h-4 w-4" />
                 Response Letter
                 {letter && (
@@ -747,7 +747,7 @@ export default function RequestDetail({ token }: { token: string }) {
         <div className="space-y-6">
           <Card className="shadow-none">
             <CardHeader>
-              <CardTitle className="text-lg">Workflow</CardTitle>
+              <CardTitle as="h2" className="text-lg">Workflow</CardTitle>
             </CardHeader>
             <CardContent className="space-y-3">
               <p className="text-sm text-muted-foreground">

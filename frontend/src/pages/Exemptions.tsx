@@ -3,6 +3,7 @@ import { apiFetch } from "@/lib/api";
 import { PageHeader } from "@/components/page-header";
 import { StatCard } from "@/components/stat-card";
 import { DataTable, type Column } from "@/components/data-table";
+import { LoadingRegion } from "@/components/loading-region";
 import { EmptyState } from "@/components/empty-state";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -191,7 +192,7 @@ export default function Exemptions({ token }: { token: string }) {
                 <div>
                   <label className="text-sm font-medium">Rule Type</label>
                   <Select value={formData.ruleType} onValueChange={(v) => setFormData({ ...formData, ruleType: v ?? "keyword" })}>
-                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectTrigger aria-label="Exemption category"><SelectValue /></SelectTrigger>
                     <SelectContent>
                       <SelectItem value="keyword">Keyword</SelectItem>
                       <SelectItem value="regex">Regex</SelectItem>
@@ -250,12 +251,14 @@ export default function Exemptions({ token }: { token: string }) {
               action={<Button onClick={() => setShowForm(true)}><Plus className="h-4 w-4 mr-2" /> Add First Rule</Button>}
             />
           ) : (
-            <DataTable
-              columns={ruleColumns}
-              data={rules}
-              rowKey={(r) => r.id}
-              ariaLabel="Exemption rules"
-            />
+            <LoadingRegion loading={loading} label="Exemptions list">
+              <DataTable
+                columns={ruleColumns}
+                data={rules}
+                rowKey={(r) => r.id}
+                ariaLabel="Exemption rules"
+              />
+            </LoadingRegion>
           )}
         </TabsContent>
 

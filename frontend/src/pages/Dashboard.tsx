@@ -133,7 +133,7 @@ export default function Dashboard({ token }: { token: string }) {
 
   if (loading) {
     return (
-      <div className="space-y-6">
+      <div className="space-y-6" role="status" aria-label="Loading dashboard data">
         <Skeleton className="h-10 w-64" />
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           {Array.from({ length: 3 }).map((_, i) => (

@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { apiFetch } from "@/lib/api";
 import { PageHeader } from "@/components/page-header";
 import { DataTable, type Column } from "@/components/data-table";
+import { LoadingRegion } from "@/components/loading-region";
 import { EmptyState } from "@/components/empty-state";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -272,7 +273,7 @@ export default function Users({ token }: { token: string }) {
                 <div>
                   <label className="text-sm font-medium">Role</label>
                   <Select value={formData.role} onValueChange={(v) => setFormData({ ...formData, role: v ?? "read_only" })}>
-                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectTrigger aria-label="User role"><SelectValue /></SelectTrigger>
                     <SelectContent>
                       <SelectItem value="read_only">Read Only</SelectItem>
                       <SelectItem value="liaison">Liaison</SelectItem>
@@ -307,12 +308,14 @@ export default function Users({ token }: { token: string }) {
           action={<Button onClick={() => setShowForm(true)}><Plus className="h-4 w-4 mr-2" /> Create First User</Button>}
         />
       ) : (
-        <DataTable
-          columns={columns}
-          data={users as (User & Record<string, unknown>)[]}
-          rowKey={(u) => u.id as string}
-          ariaLabel="System users"
-        />
+        <LoadingRegion loading={loading} label="Users list">
+          <DataTable
+            columns={columns}
+            data={users as (User & Record<string, unknown>)[]}
+            rowKey={(u) => u.id as string}
+            ariaLabel="System users"
+          />
+        </LoadingRegion>
       )}
 
       {/* Edit User Dialog */}
@@ -334,7 +337,7 @@ export default function Users({ token }: { token: string }) {
             <div>
               <label className="text-sm font-medium">Role</label>
               <Select value={editData.role} onValueChange={(v) => setEditData({ ...editData, role: v ?? editData.role })}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectTrigger aria-label="User role"><SelectValue /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="read_only">Read Only</SelectItem>
                   <SelectItem value="liaison">Liaison</SelectItem>
@@ -348,7 +351,7 @@ export default function Users({ token }: { token: string }) {
             <div>
               <label className="text-sm font-medium">Department</label>
               <Select value={editData.departmentId} onValueChange={(v) => setEditData({ ...editData, departmentId: v ?? "" })}>
-                <SelectTrigger><SelectValue placeholder="Unassigned" /></SelectTrigger>
+                <SelectTrigger aria-label="Department"><SelectValue placeholder="Unassigned" /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="">Unassigned</SelectItem>
                   {departments.map((d) => (

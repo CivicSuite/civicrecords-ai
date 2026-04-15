@@ -5,6 +5,7 @@ import { PageHeader } from "@/components/page-header";
 import { StatCard } from "@/components/stat-card";
 import { StatusBadge } from "@/components/status-badge";
 import { DataTable, type Column } from "@/components/data-table";
+import { LoadingRegion } from "@/components/loading-region";
 import { EmptyState } from "@/components/empty-state";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -309,7 +310,7 @@ export default function Requests({ token }: { token: string }) {
       {/* Filter bar */}
       <div className="flex flex-wrap items-center gap-3">
         <Select value={statusFilter} onValueChange={(v) => { setStatusFilter(v ?? "all"); setPage(0); }}>
-          <SelectTrigger className="w-[160px]">
+          <SelectTrigger className="w-[160px]" aria-label="Status filter">
             <SelectValue placeholder="All statuses" />
           </SelectTrigger>
           <SelectContent>
@@ -325,7 +326,7 @@ export default function Requests({ token }: { token: string }) {
         </Select>
 
         <Select value={departmentFilter} onValueChange={(v) => { setDepartmentFilter(v ?? "all"); setPage(0); }}>
-          <SelectTrigger className="w-[160px]">
+          <SelectTrigger className="w-[160px]" aria-label="Department filter">
             <SelectValue placeholder="All departments" />
           </SelectTrigger>
           <SelectContent>
@@ -337,7 +338,7 @@ export default function Requests({ token }: { token: string }) {
         </Select>
 
         <Select value={priorityFilter} onValueChange={(v) => { setPriorityFilter(v ?? "all"); setPage(0); }}>
-          <SelectTrigger className="w-[140px]">
+          <SelectTrigger className="w-[140px]" aria-label="Priority filter">
             <SelectValue placeholder="All priorities" />
           </SelectTrigger>
           <SelectContent>
@@ -349,7 +350,7 @@ export default function Requests({ token }: { token: string }) {
         </Select>
 
         <Select value={assignedToFilter} onValueChange={(v) => { setAssignedToFilter(v ?? "all"); setPage(0); }}>
-          <SelectTrigger className="w-[160px]">
+          <SelectTrigger className="w-[160px]" aria-label="Assigned to filter">
             <SelectValue placeholder="All assignees" />
           </SelectTrigger>
           <SelectContent>
@@ -393,14 +394,16 @@ export default function Requests({ token }: { token: string }) {
           }
         />
       ) : (
-        <DataTable<Request & Record<string, unknown>>
-          columns={columns}
-          data={filtered as (Request & Record<string, unknown>)[]}
-          rowKey={(r) => r.id}
-          onRowClick={(r) => navigate(`/requests/${r.id}`)}
-          ariaLabel="Records requests"
-          emptyMessage="No requests found."
-        />
+        <LoadingRegion loading={loading} label="Records requests">
+          <DataTable<Request & Record<string, unknown>>
+            columns={columns}
+            data={filtered as (Request & Record<string, unknown>)[]}
+            rowKey={(r) => r.id}
+            onRowClick={(r) => navigate(`/requests/${r.id}`)}
+            ariaLabel="Records requests"
+            emptyMessage="No requests found."
+          />
+        </LoadingRegion>
       )}
 
       {/* Pagination controls */}
