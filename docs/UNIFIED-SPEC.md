@@ -354,8 +354,8 @@ The Mark Fulfilled UX path was repaired in this release. The "Mark Fulfilled" bu
 | `request_approved` | yes | PATCH dynamic + dedicated `approve_request` | wired |
 | `request_fulfilled` | yes | PATCH dynamic | wired (was unreachable until UI fix) |
 | `request_closed` | yes | PATCH dynamic | wired |
-| `request_deadline_approaching` | yes | Celery beat (no router call site) | OPEN — beat scheduler work, separate from router dispatch |
-| `request_deadline_overdue` | yes | Celery beat (no router call site) | OPEN — beat scheduler work, separate from router dispatch |
+| `request_deadline_approaching` | yes | Celery beat daily (no router call site) | IMPLEMENTED — `check_deadline_approaching()` in `deadline_check.py` |
+| `request_deadline_overdue` | yes | Celery beat daily (no router call site) | IMPLEMENTED — `check_deadline_overdue()` in `deadline_check.py` |
 
 The `sent` event type and the legacy `RequestStatus.SENT` enum value were removed in migration 010 (`010_remove_sent_status`). See section 8.1 for the lifecycle update.
 
@@ -711,7 +711,7 @@ Based on the repository as it exists now:
    1d. Form error handling — **DONE (Session C).** `role="alert"` added to error containers across 8 locations in 6 pages. Unmount/remount pattern via `setError("")` ensures re-announcement. Commits `226453c`, `98791d6`, `47b92a3`.
    1e. Screen reader audit — **DONE (code — Session C).** All F3–F6 ARIA code changes landed. F5 complete across all 7 pages. Search `aria-live` restructured with persistent `aria-busy` transitions. Source-level verification: 13 ARIA attributes confirmed; TypeScript build EXIT:0. Full NVDA/VoiceOver listening verification deferred pending backend availability.
 2. **Liaison scoping — DONE (this commit).** `require_role` lowered to LIAISON on read endpoints (`GET /requests/`, `GET /requests/stats`, `GET /requests/{id}`, `POST /search/query`); search dept filter injected automatically for all non-admin users with a department; nav items (Users/Audit Log/Onboarding) hidden + route-guarded for LIAISON role. 278 tests pass.
-3. Deadline notifications — wire `request_deadline_approaching` and `request_deadline_overdue` into Celery beat. Templates already exist and are seeded; §8.3 matrix has both rows marked open. Self-contained subsystem session.
+3. **Deadline notifications — DONE (this commit).** `check_deadline_approaching` fires for requests due within 3 days; `check_deadline_overdue` fires for past-deadline requests. Both run daily via Celery beat. Assigned staff is the recipient; unassigned requests skipped. 23-hour deduplication. 278→287 tests.
 4. Discovery implementation — Discovery.tsx is a shell. Either implement active discovery or mark it explicitly as v1.1+ throughout all documentation (decision pending).
 5. Connector expansion — REST API, ODBC/JDBC, and SharePoint connectors for broader municipal system coverage.
 6. Spec alignment — **DONE**. The in-repo `docs/UNIFIED-SPEC.md` is now this v3.1 document, kept current through commit `2663836` + this hotfix. (Completed alongside the SENT removal and notification_log/exemption_rules drift fixes; see migrations 010 and 011.)
