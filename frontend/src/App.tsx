@@ -1,5 +1,10 @@
 import { useState, useEffect, useCallback } from "react";
 import { Routes, Route, Navigate } from "react-router-dom";
+
+function LiaisonGuard({ userRole, children }: { userRole: string; children: React.ReactNode }) {
+  if (userRole === "liaison") return <Navigate to="/" replace />;
+  return <>{children}</>;
+}
 import { isTokenValid, apiFetch } from "@/lib/api";
 import { AppShell } from "@/components/app-shell";
 import Login from "@/pages/Login";
@@ -29,10 +34,12 @@ export default function App() {
   });
 
   const [userEmail, setUserEmail] = useState("");
+  const [userRole, setUserRole] = useState<string>("");
 
   const logout = useCallback(() => {
     setToken(null);
     setUserEmail("");
+    setUserRole("");
   }, []);
 
   useEffect(() => {
@@ -54,24 +61,29 @@ export default function App() {
   // Fetch real user info from API instead of decoding JWT sub (which is a UUID)
   useEffect(() => {
     if (token) {
-      apiFetch<{ email: string; full_name: string | null }>("/users/me", { token })
-        .then(data => setUserEmail(data.full_name || data.email))
+      apiFetch<{ email: string; full_name: string | null; role: string }>("/users/me", { token })
+        .then(data => {
+          setUserEmail(data.full_name || data.email);
+          setUserRole(data.role);
+        })
         .catch(() => {
           // Fallback to JWT decode
           try {
             const payload = JSON.parse(atob(token.split(".")[1]));
             setUserEmail(payload.email || payload.sub || "");
           } catch { setUserEmail(""); }
+          setUserRole("");
         });
     } else {
       setUserEmail("");
+      setUserRole("");
     }
   }, [token]);
 
   if (!token) return <Login onLogin={setToken} />;
 
   return (
-    <AppShell onSignOut={logout} userEmail={userEmail}>
+    <AppShell onSignOut={logout} userEmail={userEmail} userRole={userRole}>
       <Routes>
         <Route path="/" element={<Dashboard token={token} />} />
         <Route path="/search" element={<Search token={token} />} />
@@ -80,12 +92,12 @@ export default function App() {
         <Route path="/exemptions" element={<Exemptions token={token} />} />
         <Route path="/sources" element={<DataSources token={token} />} />
         <Route path="/ingestion" element={<Ingestion token={token} />} />
-        <Route path="/users" element={<Users token={token} />} />
-        <Route path="/onboarding" element={<Onboarding token={token} />} />
+        <Route path="/users" element={<LiaisonGuard userRole={userRole}><Users token={token} /></LiaisonGuard>} />
+        <Route path="/onboarding" element={<LiaisonGuard userRole={userRole}><Onboarding token={token} /></LiaisonGuard>} />
         <Route path="/city-profile" element={<CityProfile token={token} />} />
         <Route path="/discovery" element={<Discovery token={token} />} />
         <Route path="/settings" element={<Settings token={token} />} />
-        <Route path="/audit-log" element={<AuditLog token={token} />} />
+        <Route path="/audit-log" element={<LiaisonGuard userRole={userRole}><AuditLog token={token} /></LiaisonGuard>} />
         <Route path="*" element={<Navigate to="/" />} />
       </Routes>
     </AppShell>

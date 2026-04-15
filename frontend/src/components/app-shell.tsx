@@ -7,9 +7,10 @@ interface AppShellProps {
   children: React.ReactNode;
   onSignOut: () => void;
   userEmail?: string;
+  userRole?: string;
 }
 
-export function AppShell({ children, onSignOut, userEmail }: AppShellProps) {
+export function AppShell({ children, onSignOut, userEmail, userRole }: AppShellProps) {
   return (
     <div className="flex h-screen overflow-hidden bg-background">
       <a
@@ -38,7 +39,7 @@ export function AppShell({ children, onSignOut, userEmail }: AppShellProps) {
 
         {/* Navigation */}
         <div className="flex-1 overflow-y-auto">
-          <SidebarNav />
+          <SidebarNav userRole={userRole} />
         </div>
 
         {/* Footer */}

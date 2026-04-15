@@ -69,7 +69,19 @@ function NavLink({ item }: { item: NavItem }) {
   );
 }
 
-export function SidebarNav() {
+const LIAISON_HIDDEN_PATHS = new Set(["/users", "/audit-log", "/onboarding"]);
+
+export function SidebarNav({ userRole }: { userRole?: string }) {
+  const isLiaison = userRole === "liaison";
+
+  const visibleSetupItems = isLiaison
+    ? SETUP_ITEMS.filter((item) => !LIAISON_HIDDEN_PATHS.has(item.path))
+    : SETUP_ITEMS;
+
+  const visibleAdminItems = isLiaison
+    ? ADMIN_ITEMS.filter((item) => !LIAISON_HIDDEN_PATHS.has(item.path))
+    : ADMIN_ITEMS;
+
   return (
     <nav
       className="flex flex-col gap-1 px-3 py-4"
@@ -88,7 +100,7 @@ export function SidebarNav() {
       <p className="px-3 mb-1 text-label uppercase text-muted-foreground">
         Setup
       </p>
-      {SETUP_ITEMS.map((item) => (
+      {visibleSetupItems.map((item) => (
         <NavLink key={item.path} item={item} />
       ))}
 
@@ -97,7 +109,7 @@ export function SidebarNav() {
       <p className="px-3 mb-1 text-label uppercase text-muted-foreground">
         Administration
       </p>
-      {ADMIN_ITEMS.map((item) => (
+      {visibleAdminItems.map((item) => (
         <NavLink key={item.path} item={item} />
       ))}
     </nav>
