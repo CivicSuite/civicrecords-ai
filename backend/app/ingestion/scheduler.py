@@ -8,6 +8,17 @@ def setup_periodic_tasks(sender, **kwargs):
     sender.add_periodic_task(86400.0, cleanup_audit_logs.s(), name="audit-retention-cleanup")
     # Deliver queued email notifications every 60 seconds
     sender.add_periodic_task(60.0, deliver_notifications.s(), name="deliver-notifications")
+    # Check for approaching and overdue request deadlines once per day
+    sender.add_periodic_task(
+        86400.0,
+        check_deadline_approaching_task.s(),
+        name="check-deadline-approaching",
+    )
+    sender.add_periodic_task(
+        86400.0,
+        check_deadline_overdue_task.s(),
+        name="check-deadline-overdue",
+    )
 
 
 @celery_app.task(name="civicrecords.check_scheduled_sources")
@@ -148,5 +159,57 @@ def deliver_notifications():
     loop = asyncio.new_event_loop()
     try:
         return loop.run_until_complete(_deliver())
+    finally:
+        loop.close()
+
+
+@celery_app.task(name="civicrecords.check_deadline_approaching")
+def check_deadline_approaching_task():
+    """Celery beat wrapper: queue deadline_approaching notifications."""
+    import asyncio
+    from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
+    from app.config import settings
+    from app.requests.deadline_check import check_deadline_approaching
+
+    async def _run():
+        engine = create_async_engine(settings.database_url, echo=False)
+        session_maker = async_sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
+        try:
+            async with session_maker() as session:
+                result = await check_deadline_approaching(session)
+                await session.commit()
+                return result
+        finally:
+            await engine.dispose()
+
+    loop = asyncio.new_event_loop()
+    try:
+        return loop.run_until_complete(_run())
+    finally:
+        loop.close()
+
+
+@celery_app.task(name="civicrecords.check_deadline_overdue")
+def check_deadline_overdue_task():
+    """Celery beat wrapper: queue deadline_overdue notifications."""
+    import asyncio
+    from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
+    from app.config import settings
+    from app.requests.deadline_check import check_deadline_overdue
+
+    async def _run():
+        engine = create_async_engine(settings.database_url, echo=False)
+        session_maker = async_sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
+        try:
+            async with session_maker() as session:
+                result = await check_deadline_overdue(session)
+                await session.commit()
+                return result
+        finally:
+            await engine.dispose()
+
+    loop = asyncio.new_event_loop()
+    try:
+        return loop.run_until_complete(_run())
     finally:
         loop.close()
