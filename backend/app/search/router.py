@@ -282,6 +282,12 @@ async def export_search_results(
     if file_type:
         filters["file_type"] = file_type
 
+    # Department scoping: same server-authority rule as POST /search/query.
+    # Non-admin users with a department_id are silently scoped; any caller-supplied
+    # department_id is overwritten — this is intentional.
+    if user.role != UserRole.ADMIN and user.department_id is not None:
+        filters["department_id"] = str(user.department_id)
+
     hits = await hybrid_search(session=session, query_text=query, limit=50, filters=filters or None)
 
     output = io.StringIO()

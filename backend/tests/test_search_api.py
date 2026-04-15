@@ -74,3 +74,29 @@ async def test_search_session_not_found(client: AsyncClient, admin_token: str):
         headers={"Authorization": f"Bearer {admin_token}"},
     )
     assert resp.status_code == 404
+
+
+@pytest.mark.asyncio
+async def test_export_dept_scoping(
+    client: AsyncClient,
+    staff_token_dept_a: str,
+    dept_a: uuid.UUID,
+):
+    """Liaison follow-up #4: export must inject server-side dept scoping for non-admin users."""
+    captured_filters = {}
+
+    async def fake_hybrid_search(session, query_text, limit, filters):
+        captured_filters.update(filters or {})
+        return []
+
+    with patch("app.search.router.hybrid_search", side_effect=fake_hybrid_search):
+        resp = await client.get(
+            "/search/export",
+            params={"query": "budget"},
+            headers={"Authorization": f"Bearer {staff_token_dept_a}"},
+        )
+
+    assert resp.status_code == 200
+    assert captured_filters.get("department_id") == str(dept_a), (
+        f"Expected dept scoping to dept_a ({dept_a}), got filters={captured_filters}"
+    )
