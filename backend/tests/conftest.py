@@ -41,14 +41,40 @@ def setup_db():
     # Ensure the user_role enum type exists with ALL current values before
     # create_all() runs.  The SQLAlchemy model uses create_type=False so
     # create_all() will not create the type itself — it must pre-exist.
-    # We recreate it here so the test DB always matches the model definition.
+    # We create the type if absent, or add missing values if it already exists.
+    # NOTE: We do NOT use DROP TYPE CASCADE — that drops dependent table columns.
+    _all_role_values = ('admin', 'staff', 'reviewer', 'read_only', 'liaison', 'public')
     with sync_engine.connect() as conn:
-        conn.execute(sa.text("DROP TYPE IF EXISTS user_role CASCADE"))
-        conn.execute(sa.text(
-            "CREATE TYPE user_role AS ENUM "
-            "('admin', 'staff', 'reviewer', 'read_only', 'liaison', 'public')"
-        ))
-        conn.commit()
+        type_exists = conn.execute(sa.text(
+            "SELECT 1 FROM pg_type WHERE typname = 'user_role'"
+        )).fetchone() is not None
+        if not type_exists:
+            conn.execute(sa.text(
+                "CREATE TYPE user_role AS ENUM "
+                "('admin', 'staff', 'reviewer', 'read_only', 'liaison', 'public')"
+            ))
+            conn.commit()
+        else:
+            existing = {
+                row[0] for row in conn.execute(sa.text(
+                    "SELECT e.enumlabel FROM pg_enum e "
+                    "JOIN pg_type t ON e.enumtypid = t.oid "
+                    "WHERE t.typname = 'user_role'"
+                ))
+            }
+            conn.commit()
+            for val in _all_role_values:
+                if val not in existing:
+                    # ADD VALUE cannot run inside a transaction block
+                    with sync_engine.connect().execution_options(
+                        isolation_level="AUTOCOMMIT"
+                    ) as ac_conn:
+                        ac_conn.execute(sa.text(
+                            f"ALTER TYPE user_role ADD VALUE '{val}'"
+                        ))
+    # Drop all tables first to guarantee a clean schema on every test run.
+    # This prevents stale columns/tables from broken previous runs.
+    Base.metadata.drop_all(sync_engine)
     Base.metadata.create_all(sync_engine)
     # Add generated tsvector column (migration 004 adds this, but create_all doesn't)
     with sync_engine.connect() as conn:
