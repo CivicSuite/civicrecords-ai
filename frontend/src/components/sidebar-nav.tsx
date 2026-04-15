@@ -11,7 +11,6 @@ import {
   Users,
   Building2,
   ClipboardList,
-  Radar,
   Settings,
   ScrollText,
   type LucideIcon,
@@ -37,7 +36,7 @@ const SETUP_ITEMS: NavItem[] = [
 const ADMIN_ITEMS: NavItem[] = [
   { path: "/sources", label: "Sources", icon: FolderOpen },
   { path: "/ingestion", label: "Ingestion", icon: HardDrive },
-  { path: "/discovery", label: "Discovery", icon: Radar },
+  // Discovery deferred to v1.2 — no backend; nav item removed to avoid dead UI
   { path: "/", label: "Dashboard", icon: LayoutDashboard },
   { path: "/users", label: "Users", icon: Users },
   { path: "/settings", label: "Settings", icon: Settings },

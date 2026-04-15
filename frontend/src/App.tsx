@@ -18,7 +18,6 @@ import Ingestion from "@/pages/Ingestion";
 import Users from "@/pages/Users";
 import Onboarding from "@/pages/Onboarding";
 import CityProfile from "@/pages/CityProfile";
-import Discovery from "@/pages/Discovery";
 import Settings from "@/pages/Settings";
 import AuditLog from "@/pages/AuditLog";
 
@@ -95,7 +94,7 @@ export default function App() {
         <Route path="/users" element={<LiaisonGuard userRole={userRole}><Users token={token} /></LiaisonGuard>} />
         <Route path="/onboarding" element={<LiaisonGuard userRole={userRole}><Onboarding token={token} /></LiaisonGuard>} />
         <Route path="/city-profile" element={<CityProfile token={token} />} />
-        <Route path="/discovery" element={<Discovery token={token} />} />
+        {/* /discovery deferred to v1.2 — route removed, nav item removed */}
         <Route path="/settings" element={<Settings token={token} />} />
         <Route path="/audit-log" element={<LiaisonGuard userRole={userRole}><AuditLog token={token} /></LiaisonGuard>} />
         <Route path="*" element={<Navigate to="/" />} />

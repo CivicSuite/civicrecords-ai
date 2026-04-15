@@ -134,11 +134,11 @@ Spec Section 11 marks Phase 0 as COMPLETE. Verified in codebase:
 | Gap Map display | Warning icons for unconnected domains, checkmarks for connected | Unknown | Verify gap map visualization |
 | Re-run Onboarding button | Link back to onboarding wizard | Unknown | Verify re-run action |
 
-### 1.11 Discovery Dashboard (Section 7.12, 12.3.3) [v1.1] -- UI SHELL ONLY for MVP
+### 1.11 Discovery Dashboard (Section 7.12, 12.3.3) [v1.2+] -- DEFERRED
 
-| Item | Spec Says | Code Status | Missing |
+| Item | Spec Says | Code Status | Decision |
 |------|-----------|-------------|---------|
-| Placeholder shell | v1.1 full implementation, MVP shell only | Partial -- `Discovery.tsx` exists | Verify it renders a meaningful placeholder |
+| Discovery nav + route | v1.1 full implementation | Removed from nav and routing in v1.1 | Deferred to v1.2+. No backend exists. Shipping a dead nav item is worse than honest scoping. `Discovery.tsx` preserved as starting point. See CC-004. |
 
 ---
 
