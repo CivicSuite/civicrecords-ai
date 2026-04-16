@@ -49,8 +49,8 @@ Every protocol method (`discover`, `fetch`, `health_check`) calls `_ensure_authe
 6. For each item in each page response, emits one `DiscoveredRecord`:
    - `source_path` = value at `record_id_field` JSON path (may be a full URL or a bare ID)
    - `filename` = synthesized from response metadata (e.g., `"record_{id}.json"`)
-   - `mime_type` = `"application/json"`
-7. After all pages consumed (or `max_records` hit), updates `data_sources.last_sync_cursor` and `last_sync_at` **only on full successful completion** (see §2.5 cursor semantics).
+   - `mime_type` = hint derived from `response_format` (`"application/json"` / `"application/xml"` / `"text/csv"`). This is a discovery-stage hint only; the authoritative `mime_type` is set on `FetchedDocument` at fetch time from the same `response_format` field.
+7. After all pages consumed (or `max_records` hit), updates `data_sources.last_sync_cursor` and `last_sync_at` **only on full successful completion** (see §2.6 cursor semantics).
 8. Returns `list[DiscoveredRecord]`.
 
 **`fetch(record: DiscoveredRecord)`**
@@ -107,7 +107,7 @@ When any REST request (in `discover()`, `fetch()`, or `health_check()`) receives
 - **Jitter:** ±20% random jitter applied to each delay to prevent thundering herd
 - **Max total wait:** 30 seconds — if the next retry would exceed this ceiling, raise immediately
 - **`Retry-After` header:** if present, use its value (seconds) as the delay instead of the computed backoff, subject to the 30s ceiling
-- **Non-retriable errors:** 4xx other than 429, 5xx — these are raised immediately without retry
+- **Non-retriable errors:** 4xx other than 429, 5xx — these are raised immediately without retry. 5xx failures are not retried in-process because sync runs are idempotent and a transient infrastructure failure is absorbed by the next scheduled run; retrying in-process would extend the failure window without improving the outcome.
 
 This policy must be implemented as a shared utility (e.g., `connectors/retry.py`) used by both `RestApiConnector` and any future HTTP-based connectors. It must not be re-implemented per connector.
 
@@ -115,7 +115,7 @@ This policy must be implemented as a shared utility (e.g., `connectors/retry.py`
 
 `_ensure_authenticated()` checks `self._token_expiry` before returning for OAuth2 connectors. If the token is expired (or within 60 seconds of expiry), it re-authenticates transparently. Token is stored in instance variables only — never written to the database or logs.
 
-### 2.5 Cursor semantics — partial sync failure
+### 2.6 Cursor semantics — partial sync failure
 
 `last_sync_cursor` and `last_sync_at` on `data_sources` advance **only after full successful completion** of a sync run — meaning `discover()` returned all records AND all `fetch()` calls succeeded.
 
@@ -240,7 +240,7 @@ Required test cases:
 - `test_health_check_head_success`
 - `test_health_check_head_405_falls_back_to_get` — asserts no false failure on 405
 - `test_partial_sync_cursor_not_advanced` — fetch fails on record N; asserts last_sync_cursor unchanged
-- `test_connection_safety` — calls test-connection path; asserts: (1) `data_sources.connection_config` is byte-for-byte unchanged in the DB, (2) no credential field values (`api_key`, `client_secret`, `password`, `token`) appear in any `AuditLog.details` JSONB entry written during the call. The `AuditLog` model (`audit_log` table) is a real queryable SQLAlchemy model — query it directly: `session.query(AuditLog).filter(AuditLog.action == "test_connection").all()` and assert none of its `.details` dicts contain the credential strings.
+- `test_connection_safety` — calls test-connection path; asserts: (1) `data_sources.connection_config` is byte-for-byte unchanged in the DB, (2) no credential field values (`api_key`, `client_secret`, `password`, `token`) appear anywhere in any `AuditLog.details` JSONB entry written during the call. The `AuditLog` model (`audit_log` table) is a real queryable SQLAlchemy model — query it directly: `session.query(AuditLog).filter(AuditLog.action == "test_connection").all()`. The credential containment check **must recursively walk all nested string values** in each `.details` dict, including values inside arrays and sub-objects at any depth (e.g., `details["request_context"]["headers"]["Authorization"]`), and fail if any credential string appears as a substring of any string value at any depth. A flat `entry.details.get("api_key")` check is insufficient and must not be used.
 
 ### 5.2 `test_odbc_connector.py` — using sqlite3 adapter
 
@@ -253,7 +253,7 @@ Required test cases:
 - `test_fetch_row` — asserts correct JSON serialization of fetched row
 - `test_health_check`
 - `test_partial_sync_cursor_not_advanced` — fetch fails mid-run; cursor remains at pre-run value
-- `test_connection_safety` — same assertion as REST variant: `connection_config` unchanged in DB; `connection_string` value does not appear in any `AuditLog.details` entry written during the call
+- `test_connection_safety` — same assertion as REST variant: `connection_config` unchanged in DB; `connection_string` value does not appear as a substring of any string value at any depth in any `AuditLog.details` JSONB entry written during the call (recursive walk required — same helper as REST variant)
 
 ### 5.3 Cursor semantics test (both connectors)
 
