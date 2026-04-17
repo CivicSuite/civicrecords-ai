@@ -723,7 +723,7 @@ Based on the repository as it exists now:
 
 ## 17.x Decision Log (P6a / P6b / P7)
 
-Decisions that constrain implementation. Each links to the specific test function that proves it. Future devs: if you want to change a decision, update the test first. Count: 27 decisions.
+Decisions that constrain implementation. Each links to the specific test function that proves it. Future devs: if you want to change a decision, update the test first.
 
 | ID | Decision | Why | Proof Test (file::function) |
 |---|---|---|---|
@@ -755,6 +755,8 @@ Decisions that constrain implementation. Each links to the specific test functio
 | D-FAIL-11 | Bulk actions: retry-all and dismiss-all on sync_failures. | Admin with 50 stuck records will not click Retry 50 times. Hotfix later is worse. | `test_sync_failures_router.py::test_retry_all_permanently_failed` |
 | D-UI-1 | Sync Now button stays "Syncing…" + disabled until last_sync_at advances (exponential backoff polling: 5s→10s→20s→30s). Timeout 15min. Shows elapsed time. **Required automated test (not manual QA).** | Button that lies about completion = shipped broken feature. Polling refactors silently break it without test. | `DataSourceCard.test.tsx::test_sync_now_button_stays_disabled_until_completion` |
 | D-UI-2 | Notifications: created_by recipient, fallback to ADMIN-role users. Triggers: circuit-open + recovery. Rate-limit: batch within 5-min window → digest. | First-failure is noisy. Circuit-open is the signal. 10-source simultaneous outage → 1 digest not 10 emails. | `test_sync_notifications.py::test_circuit_open_fires_notification` |
+| D-FAIL-12 | 429 with `Retry-After` header honored at task-level (not enqueued as sync_failures). Capped at 600s to prevent worker starvation. | 429 is transient and expected on rate-limited municipal APIs. Task-level is the right layer — polluting sync_failures with rate-limit events would trip circuit breaker on noise. | `test_rest_connector.py::test_429_retry_after_header_honored` |
+| D-FAIL-13 | sync_failures and sync_run_log both CASCADE on DataSource delete. | Orphaned failure rows for a deleted source are noise. Admin deleting a source intends to remove all associated state. | `test_sync_failures.py::test_cascade_delete_removes_failures_and_run_log` |
 | D-TENANT-1 | CivicRecords is single-tenant per install (one city per deployment). No org-level isolation within a deployment. All admin-role users within the installation share access to all sources. | Architecture is per-city SaaS/self-hosted. Multi-tenant within a single install is not a v1 requirement. | `test_datasources_router.py` — admin-role access tests (existing) |
 
 ## 18. Engineering Acceptance Criteria

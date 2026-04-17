@@ -86,7 +86,7 @@ MIGRATION REPORT: schedule_minutes → sync_schedule conversion
   sync_schedule set to NULL, schedule_enabled set to False.
   Admin action required: set a schedule manually in the DataSources UI.
 ```
-Report is written to migration log (Alembic output) and also to a `_migration_014_report` table for admin visibility.
+Report is written to migration log (Alembic output) and also to a `_migration_015_report` table for admin visibility.
 
 As of 2026-04-16, no production rows have `schedule_minutes` set (UI never exposed it). State this in the migration comment so reviewers can verify.
 
