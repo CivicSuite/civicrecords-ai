@@ -20,6 +20,7 @@ No open-source tool exists for the **responder side** of open records at the mun
 - **Municipal Systems Catalog** — Curated knowledge base of 25+ municipal software vendors across 12 functional domains (finance, public safety, permitting, HR, etc.) with discovery hints and connector templates
 - **Universal Connector Framework** — Standardized protocol (authenticate/discover/fetch/health_check) for connecting to city data sources. Ships with file system, generic REST API (API key / Bearer / OAuth2 client-credentials / Basic auth; JSON/XML/CSV; page/offset/cursor pagination), and ODBC (SQL databases via pyodbc, row-as-document with SQL-injection guards) connectors. IMAP email, SMB/NFS, and SharePoint connectors on roadmap
 - **Scheduled Sync & Idempotent Ingestion** — Per-source cron scheduling (5-field expressions via croniter, evaluated in UTC with local-time disclosure, rolling 7-day min-interval validation, 5-minute floor) with `schedule_enabled` pause toggle. Idempotent pipeline: binary sources dedup by content hash, structured REST/ODBC sources dedup by stable source-path with canonical JSON serialization. Concurrent-update races prevented via `SELECT FOR UPDATE` + partial UNIQUE indexes; content updates atomically replace chunks and embeddings in the same transaction
+- **Sync Failure Tracking & Circuit Breaker** — Per-record failure tracking with two-layer retry (task-level exponential backoff + record-level per-tick retry with N=100/T=90s cap). Automatic circuit breaker after 5 consecutive full-run failures (`sync_paused`) with admin-feedback unpause grace period. `health_status` (healthy/degraded/circuit_open) computed live from failure counts. Admin UI: colored health badge, failed records panel with bulk retry/dismiss, Sync Now button with real-time polling progress
 - **Operational Analytics** — Real-time metrics: average response time, deadline compliance rate, overdue requests, status breakdown
 - **Notification Service** — Template-based notification system with SMTP email delivery via Celery beat (60s interval). Configure SMTP_HOST, SMTP_PORT, SMTP_USERNAME, SMTP_PASSWORD in .env to enable. Notification dispatch into status transitions pending
 - **Compliance by Design** — Hash-chained audit logs, human-in-the-loop enforcement, AI content labeling, data sovereignty verification. Designed for Colorado CAIA and 50-state regulatory compliance. CJIS compliance gate for public safety connectors
@@ -165,7 +166,7 @@ Service accounts with hashed API keys enable instance-to-instance federation acc
 **Carried from v1.0.x:**
 - 11 staff workbench pages with shadcn/ui design system
 - 29 database tables, ~30 API endpoints
-- 144 automated tests passing
+- 423 backend + 5 frontend automated tests passing
 - Guided onboarding, systems catalog, connector framework
 - Request timeline, messaging, fee tracking, response letter generation
 - Operational analytics and notification service
