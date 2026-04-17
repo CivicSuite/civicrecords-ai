@@ -492,8 +492,8 @@ Continuous discovery and self-healing [PLANNED]
 | File System / SMB | Shared drives, document repos, scanned archives | [IMPLEMENTED] |
 | SMTP / IMAP Journal | Email archives (#1 source for records requests) | [IMPLEMENTED] |
 | Manual / Export Drop | Systems with no API — clerk uploads | [IMPLEMENTED] |
-| REST API (Modern SaaS) | Tyler, Accela, NEOGOV, cloud platforms | [PLANNED] |
-| ODBC / JDBC Bridge | On-prem databases, legacy SQL, AS/400 | [PLANNED] |
+| REST API (Modern SaaS) | Tyler, Accela, NEOGOV, cloud platforms | [IMPLEMENTED] |
+| ODBC / JDBC Bridge | On-prem databases, legacy SQL, AS/400 | [IMPLEMENTED] |
 | GIS REST API | Esri ArcGIS, spatial data, property records | [PLANNED] |
 | Vendor SDK | Evidence management (Axon), CAD systems | [PLANNED] |
 
