@@ -30,11 +30,9 @@ depends_on: Union[str, Sequence[str], None] = None
 
 def upgrade() -> None:
     # ALTER TYPE … ADD VALUE cannot run inside a transaction block in Postgres.
-    # op.execute() inside Alembic runs in autocommit mode when the connection
-    # is obtained with execution_options(isolation_level="AUTOCOMMIT").
-    # We use get_bind() + execute in AUTOCOMMIT to satisfy Postgres.
+    # Commit any implicit transaction first, then run the DDL outside a transaction.
     connection = op.get_bind()
-    connection = connection.execution_options(isolation_level="AUTOCOMMIT")
+    connection.execute(sa.text("COMMIT"))
     connection.execute(sa.text("ALTER TYPE user_role ADD VALUE IF NOT EXISTS 'liaison'"))
     connection.execute(sa.text("ALTER TYPE user_role ADD VALUE IF NOT EXISTS 'public'"))
 

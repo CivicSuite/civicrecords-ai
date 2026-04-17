@@ -213,6 +213,7 @@ async def run_connector_sync(connector, source_id: str, session=None, db=None) -
                     },
                 )
                 errors += 1
+                raise
 
         # Cursor advances to last successful modified timestamp, or now()
         source.last_sync_cursor = (
