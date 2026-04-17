@@ -148,6 +148,7 @@ async def run_connector_sync(connector, source_id: str, session=None, db=None) -
     - Calls connector.close() in a finally block regardless of success/failure.
     - Writes last_sync_cursor and last_sync_at ONLY after ALL fetch() calls succeed.
     - Logs failed fetches with structured fields: error_class, record_id, status_code, retry_count.
+    - Routes REST/ODBC fetches to ingest_structured_record; file-based to ingest_file_from_bytes.
 
     Args:
         connector: An authenticated BaseConnector instance.
@@ -156,6 +157,7 @@ async def run_connector_sync(connector, source_id: str, session=None, db=None) -
         db: Alias for session (test compatibility).
     """
     from app.models.document import DataSource
+    from app.ingestion.pipeline import ingest_structured_record
 
     db_session = session or db
     if db_session is None:
@@ -165,23 +167,41 @@ async def run_connector_sync(connector, source_id: str, session=None, db=None) -
     if not source:
         raise ValueError(f"DataSource not found: {source_id}")
 
-    discovered = await connector.discover()
+    connector_type = source.source_type.value if hasattr(source.source_type, "value") else str(source.source_type)
+    is_structured = connector_type in ("rest_api", "odbc")
+
     ingested = 0
     errors = 0
+    last_successful_modified = None
+    discovered = []
 
     try:
+        discovered = await connector.discover()
         for record in discovered:
             try:
                 fetched = await connector.fetch(record.source_path)
-                doc = await ingest_file_from_bytes(
-                    session=db_session,
-                    content=fetched.content,
-                    filename=fetched.filename,
-                    file_type=fetched.file_type,
-                    source_id=source.id,
-                )
+                if is_structured:
+                    doc = await ingest_structured_record(
+                        session=db_session,
+                        source_id=source.id,
+                        source_path=fetched.source_path,
+                        content_bytes=fetched.content,
+                        filename=fetched.filename,
+                        metadata=fetched.metadata,
+                        connector_type=connector_type,
+                    )
+                else:
+                    doc = await ingest_file_from_bytes(
+                        session=db_session,
+                        content=fetched.content,
+                        filename=fetched.filename,
+                        file_type=fetched.file_type,
+                        source_id=source.id,
+                    )
                 if doc:
                     ingested += 1
+                    if record.last_modified:
+                        last_successful_modified = record.last_modified
             except Exception as exc:
                 logger.error(
                     "Fetch failed",
@@ -195,8 +215,12 @@ async def run_connector_sync(connector, source_id: str, session=None, db=None) -
                 errors += 1
                 raise
 
-        # Cursor-on-success: only advance after ALL fetches complete without error
-        source.last_sync_cursor = str(datetime.now(timezone.utc))
+        # Cursor advances to last successful modified timestamp, or now()
+        source.last_sync_cursor = (
+            last_successful_modified.isoformat()
+            if last_successful_modified
+            else datetime.now(timezone.utc).isoformat()
+        )
         source.last_sync_at = datetime.now(timezone.utc)
         await db_session.commit()
 
