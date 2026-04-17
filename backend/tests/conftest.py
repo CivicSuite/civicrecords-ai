@@ -6,6 +6,7 @@ import sqlalchemy as sa
 from httpx import ASGITransport, AsyncClient
 from sqlalchemy import create_engine
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
+from sqlalchemy.pool import NullPool
 
 import os
 # Set a proper-length JWT secret before importing settings to suppress warnings
@@ -26,8 +27,10 @@ TEST_DATABASE_URL = f"{_base}/civicrecords_test"
 # Sync URL for schema setup/teardown (avoids async concurrency issues)
 _sync_url = TEST_DATABASE_URL.replace("postgresql+asyncpg", "postgresql+psycopg2")
 
-# Async engine/session for test queries
-test_engine = create_async_engine(TEST_DATABASE_URL, echo=False)
+# Async engine/session for test queries.
+# NullPool ensures each session gets a fresh connection with no stale asyncpg state
+# from a previous test's savepoint/rollback sequence.
+test_engine = create_async_engine(TEST_DATABASE_URL, echo=False, poolclass=NullPool)
 test_session_maker = async_sessionmaker(test_engine, class_=AsyncSession, expire_on_commit=False)
 
 
@@ -82,6 +85,53 @@ def setup_db():
             ALTER TABLE document_chunks
             ADD COLUMN IF NOT EXISTS content_tsvector tsvector
             GENERATED ALWAYS AS (to_tsvector('english', content_text)) STORED
+        """))
+        conn.commit()
+    # Add migration 014 columns and partial UNIQUE indexes (create_all doesn't create these)
+    with sync_engine.connect() as conn:
+        conn.execute(sa.text("""
+            ALTER TABLE documents
+            ADD COLUMN IF NOT EXISTS connector_type VARCHAR(20),
+            ADD COLUMN IF NOT EXISTS updated_at TIMESTAMPTZ
+        """))
+        conn.execute(sa.text("""
+            DO $$
+            BEGIN
+                IF NOT EXISTS (
+                    SELECT 1 FROM pg_indexes
+                    WHERE indexname = 'uq_documents_structured_path'
+                ) THEN
+                    CREATE UNIQUE INDEX uq_documents_structured_path
+                    ON documents (source_id, source_path)
+                    WHERE connector_type IN ('rest_api', 'odbc');
+                END IF;
+            END$$
+        """))
+        conn.execute(sa.text("""
+            DO $$
+            BEGIN
+                IF NOT EXISTS (
+                    SELECT 1 FROM pg_indexes
+                    WHERE indexname = 'uq_documents_binary_hash'
+                ) THEN
+                    CREATE UNIQUE INDEX uq_documents_binary_hash
+                    ON documents (source_id, file_hash)
+                    WHERE connector_type IS NULL OR connector_type NOT IN ('rest_api', 'odbc');
+                END IF;
+            END$$
+        """))
+        conn.execute(sa.text("""
+            DO $$
+            BEGIN
+                IF NOT EXISTS (
+                    SELECT 1 FROM pg_constraint
+                    WHERE conname = 'chk_source_path_length'
+                ) THEN
+                    ALTER TABLE documents
+                    ADD CONSTRAINT chk_source_path_length
+                    CHECK (source_path IS NULL OR length(source_path) <= 2048);
+                END IF;
+            END$$
         """))
         conn.commit()
     yield
@@ -257,6 +307,7 @@ async def db_session(setup_db):
     async with test_session_maker() as session:
         yield session
         await session.rollback()
+        await session.close()
 
 
 @pytest.fixture

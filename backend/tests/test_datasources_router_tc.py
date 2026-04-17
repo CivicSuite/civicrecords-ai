@@ -78,15 +78,15 @@ class TestTestConnectionPollutionDetection:
     @pytest.mark.asyncio
     async def test_test_connection_pollution_warning(self, client, admin_token):
         """test-connection with two differing fetches → success=True + warning: non_deterministic_response."""
-        from unittest.mock import patch
+        from unittest.mock import patch, AsyncMock, MagicMock
+        from app.connectors.base import HealthCheckResult, HealthStatus
 
-        with patch("app.datasources.router._double_fetch_hashes") as mock_dfh:
-            import asyncio
-            mock_dfh.return_value = (
-                "aaa111",  # hash1
-                "bbb222",  # hash2 — differs!
-                ["fetched_at", "request_id"],  # differing_keys
-            )
+        with patch("app.connectors.rest_api.RestApiConnector.authenticate", new_callable=AsyncMock, return_value=True), \
+             patch("app.connectors.rest_api.RestApiConnector.health_check", new_callable=AsyncMock,
+                   return_value=HealthCheckResult(status=HealthStatus.HEALTHY, latency_ms=5)), \
+             patch("app.connectors.rest_api.RestApiConnector.discover", new_callable=AsyncMock,
+                   return_value=[MagicMock(source_path="records/1")]), \
+             patch("app.datasources.router._double_fetch_hashes") as mock_dfh:
             # Make _double_fetch_hashes an async mock
             async def _async_dfh(*args, **kwargs):
                 return ("aaa111", "bbb222", ["fetched_at", "request_id"])
@@ -116,9 +116,15 @@ class TestTestConnectionPollutionDetection:
     @pytest.mark.asyncio
     async def test_test_connection_no_pollution_warning(self, client, admin_token):
         """Two identical fetches → no warning field in response."""
-        from unittest.mock import patch
+        from unittest.mock import patch, AsyncMock, MagicMock
+        from app.connectors.base import HealthCheckResult, HealthStatus
 
-        with patch("app.datasources.router._double_fetch_hashes") as mock_dfh:
+        with patch("app.connectors.rest_api.RestApiConnector.authenticate", new_callable=AsyncMock, return_value=True), \
+             patch("app.connectors.rest_api.RestApiConnector.health_check", new_callable=AsyncMock,
+                   return_value=HealthCheckResult(status=HealthStatus.HEALTHY, latency_ms=5)), \
+             patch("app.connectors.rest_api.RestApiConnector.discover", new_callable=AsyncMock,
+                   return_value=[MagicMock(source_path="records/1")]), \
+             patch("app.datasources.router._double_fetch_hashes") as mock_dfh:
             async def _async_dfh(*args, **kwargs):
                 return ("aaa111", "aaa111", [])
             mock_dfh.side_effect = _async_dfh
