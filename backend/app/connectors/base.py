@@ -64,6 +64,10 @@ class BaseConnector(ABC):
         self.config = config
         self._authenticated = False
 
+    def close(self) -> None:
+        """Release connector resources. Subclasses override for stateful connections."""
+        pass
+
     @property
     @abstractmethod
     def connector_type(self) -> str:
