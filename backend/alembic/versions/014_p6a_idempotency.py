@@ -49,7 +49,8 @@ def upgrade() -> None:
             SELECT 1 FROM documents d2
             WHERE d2.source_id = d1.source_id
               AND d2.source_path = d1.source_path
-              AND d2.ingested_at > d1.ingested_at
+              AND (d2.ingested_at > d1.ingested_at
+              OR (d2.ingested_at = d1.ingested_at AND d2.id > d1.id))
           )
     """)
 
