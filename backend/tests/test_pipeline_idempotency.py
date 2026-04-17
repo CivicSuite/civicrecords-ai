@@ -3,8 +3,6 @@
 import hashlib
 import json
 import uuid
-from unittest.mock import AsyncMock, MagicMock, patch
-
 import pytest
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -19,7 +17,6 @@ def _make_source_id() -> uuid.UUID:
 
 def _canonical_rest(record: dict, data_key: str | None = None) -> bytes:
     """Reference implementation of what fetch() should produce."""
-    import json
     if data_key:
         parts = data_key.split(".")
         obj = record
@@ -56,7 +53,6 @@ class TestRestDeterminism:
         assert bytes1 == bytes2, (
             "Envelope timestamp differs between fetches but should not affect canonical bytes"
         )
-        assert hashlib.sha256(bytes1).hexdigest() == hashlib.sha256(bytes2).hexdigest()
 
     def test_rest_key_order_same_document(self):
         """Same logical record with JSON keys in different order → same canonical bytes."""
@@ -95,6 +91,16 @@ class TestOdbcDeterminism:
 # Integration: ingest_structured_record() — will fail until Task 6 implements it
 # ---------------------------------------------------------------------------
 
+async def _seed_data_source(session, source_id: uuid.UUID, source_type: str = "rest_api") -> None:
+    """Insert a minimal data_sources row to satisfy FK constraints."""
+    from sqlalchemy import text
+    await session.execute(text("""
+        INSERT INTO data_sources (id, name, source_type, connection_config, is_active, created_by)
+        VALUES (:id, :name, :source_type, '{}', true, (SELECT id FROM users LIMIT 1))
+    """), {"id": str(source_id), "name": f"test-{source_id}", "source_type": source_type})
+    await session.flush()
+
+
 class TestIngestStructuredRecord:
 
     @pytest.mark.asyncio
@@ -102,6 +108,7 @@ class TestIngestStructuredRecord:
         """Same source_path, same content hash → document unchanged, updated_at not set."""
         from app.ingestion.pipeline import ingest_structured_record
         source_id = _make_source_id()
+        await _seed_data_source(db_session, source_id)
         content = b'{"id": 1, "title": "Budget"}'
 
         doc1 = await ingest_structured_record(
@@ -123,6 +130,7 @@ class TestIngestStructuredRecord:
             connector_type="rest_api",
         )
         assert doc1.id == doc2.id, "Same source_path + same hash → same document"
+        assert doc2.updated_at is None, "No-op ingest must not set updated_at"
 
     @pytest.mark.asyncio
     async def test_structured_record_content_change_updates_document(self, db_session):
@@ -131,6 +139,7 @@ class TestIngestStructuredRecord:
         from sqlalchemy import select, func
         from app.models.document import Document
         source_id = _make_source_id()
+        await _seed_data_source(db_session, source_id)
 
         doc1 = await ingest_structured_record(
             session=db_session,
@@ -169,6 +178,7 @@ class TestIngestStructuredRecord:
         from sqlalchemy import select, func
         from app.models.document import DocumentChunk
         source_id = _make_source_id()
+        await _seed_data_source(db_session, source_id)
         path = "https://api.example.com/records/3"
 
         doc = await ingest_structured_record(
