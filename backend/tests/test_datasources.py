@@ -30,3 +30,69 @@ async def test_ingestion_stats(client: AsyncClient, admin_token: str):
     assert "total_sources" in data
     assert "total_documents" in data
     assert "total_chunks" in data
+
+
+@pytest.mark.asyncio
+async def test_health_status_degraded_on_failure_count(client: AsyncClient, admin_token: str, db_session):
+    """consecutive_failure_count > 0 → health_status=degraded in list response."""
+    from sqlalchemy import text
+    source_id = uuid.uuid4()
+    await db_session.execute(text("""
+        INSERT INTO data_sources
+          (id, name, source_type, connection_config, is_active,
+           sync_schedule, schedule_enabled, sync_paused,
+           consecutive_failure_count, created_by)
+        VALUES (:id, :name, 'rest_api', '{}', true,
+                NULL, true, false, 3,
+                (SELECT id FROM users LIMIT 1))
+    """), {"id": str(source_id), "name": f"health-degraded-{source_id.hex[:8]}"})
+    await db_session.commit()
+
+    resp = await client.get("/datasources/", headers={"Authorization": f"Bearer {admin_token}"})
+    assert resp.status_code == 200
+    src = next((s for s in resp.json() if s["id"] == str(source_id)), None)
+    assert src is not None, "Seeded source not found in list response"
+    assert src["health_status"] == "degraded"
+    assert src["consecutive_failure_count"] == 3
+
+
+@pytest.mark.asyncio
+async def test_health_status_circuit_open_when_paused(client: AsyncClient, admin_token: str, db_session):
+    """sync_paused=True → health_status=circuit_open."""
+    from sqlalchemy import text
+    source_id = uuid.uuid4()
+    await db_session.execute(text("""
+        INSERT INTO data_sources
+          (id, name, source_type, connection_config, is_active,
+           sync_schedule, schedule_enabled, sync_paused,
+           consecutive_failure_count, created_by)
+        VALUES (:id, :name, 'rest_api', '{}', true,
+                NULL, true, true, 5,
+                (SELECT id FROM users LIMIT 1))
+    """), {"id": str(source_id), "name": f"health-paused-{source_id.hex[:8]}"})
+    await db_session.commit()
+
+    resp = await client.get("/datasources/", headers={"Authorization": f"Bearer {admin_token}"})
+    assert resp.status_code == 200
+    src = next((s for s in resp.json() if s["id"] == str(source_id)), None)
+    assert src is not None, "Seeded source not found in list response"
+    assert src["health_status"] == "circuit_open"
+
+
+@pytest.mark.asyncio
+async def test_health_status_healthy_default(client: AsyncClient, admin_token: str):
+    """A freshly created source has health_status=healthy."""
+    resp = await client.post(
+        "/datasources/",
+        json={"name": f"healthy-src-{uuid.uuid4().hex[:8]}", "source_type": "rest_api",
+              "connection_config": {}},
+        headers={"Authorization": f"Bearer {admin_token}"},
+    )
+    assert resp.status_code == 201
+    source_id = resp.json()["id"]
+
+    list_resp = await client.get("/datasources/", headers={"Authorization": f"Bearer {admin_token}"})
+    src = next((s for s in list_resp.json() if s["id"] == source_id), None)
+    assert src is not None
+    assert src["health_status"] == "healthy"
+    assert src["active_failure_count"] == 0

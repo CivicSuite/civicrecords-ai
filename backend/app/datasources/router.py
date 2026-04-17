@@ -87,11 +87,34 @@ async def create_datasource(data: DataSourceCreate, session: AsyncSession = Depe
 @router.get("/", response_model=list[DataSourceRead])
 async def list_datasources(session: AsyncSession = Depends(get_async_session), user: User = Depends(require_role(UserRole.STAFF))):
     from app.ingestion.cron_utils import compute_next_sync_at
+    from app.models.sync_failure import SyncFailure
+
     result = await session.execute(select(DataSource).order_by(DataSource.created_at.desc()))
     sources = result.scalars().all()
+
+    # One aggregated query for active failure counts — no N+1
+    failure_counts_result = await session.execute(
+        select(SyncFailure.source_id, func.count(SyncFailure.id).label("count"))
+        .where(SyncFailure.status.in_(["retrying", "permanently_failed"]))
+        .group_by(SyncFailure.source_id)
+    )
+    failure_counts: dict[str, int] = {
+        str(row.source_id): row.count for row in failure_counts_result
+    }
+
     output = []
     for source in sources:
         data = DataSourceRead.model_validate(source)
+        active_failures = failure_counts.get(str(source.id), 0)
+        data.active_failure_count = active_failures
+
+        if source.sync_paused:
+            data.health_status = "circuit_open"
+        elif source.consecutive_failure_count > 0 or active_failures > 0:
+            data.health_status = "degraded"
+        else:
+            data.health_status = "healthy"
+
         if source.sync_schedule and source.schedule_enabled and not source.sync_paused:
             data.next_sync_at = compute_next_sync_at(source.sync_schedule, source.last_sync_at)
         output.append(data)

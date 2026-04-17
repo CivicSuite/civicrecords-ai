@@ -1,6 +1,6 @@
 import uuid
 from datetime import datetime
-from pydantic import BaseModel, field_validator
+from pydantic import BaseModel, field_validator, model_validator
 from app.models.document import IngestionStatus, SourceType
 
 
@@ -34,9 +34,19 @@ class DataSourceRead(BaseModel):
     last_ingestion_at: datetime | None
     last_sync_at: datetime | None = None
     last_sync_status: str | None = None
+    last_error_message: str | None = None
+    consecutive_failure_count: int = 0
+    sync_paused: bool = False
+    health_status: str = "healthy"
+    active_failure_count: int = 0
     connector_type: str | None = None
     updated_at: datetime | None = None
     model_config = {"from_attributes": True}
+
+    @field_validator("health_status", mode="before")
+    @classmethod
+    def _default_health_status(cls, v):
+        return v if v is not None else "healthy"
 
 
 class DataSourceUpdate(BaseModel):
