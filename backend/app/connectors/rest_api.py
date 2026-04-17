@@ -163,6 +163,21 @@ class RestApiConnector(BaseConnector):
         except RetryExhausted as exc:
             raise RuntimeError(f"Request to {url} failed after retries: {exc}") from exc
 
+        # 429 Rate-limit: honor Retry-After header, cap at 600s (D10)
+        if response.status_code == 429:
+            import asyncio
+            retry_after = int(response.headers.get("Retry-After", "30"))
+            wait = min(retry_after, 600)
+            logger.warning(
+                "RestApiConnector: 429 rate-limited, waiting %ds (Retry-After: %s)",
+                wait, retry_after,
+            )
+            await asyncio.sleep(wait)
+            try:
+                response = await with_retry(_action, bypass_retry=bypass_retry)
+            except RetryExhausted as exc:
+                raise RuntimeError(f"Request to {url} failed after 429 retry: {exc}") from exc
+
         # Reactive 401 refresh — OAuth2 only
         if response.status_code == 401 and self._cfg.auth_method == "oauth2":
             logger.info("OAuth2 token expired, refreshing")
