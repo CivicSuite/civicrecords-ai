@@ -91,12 +91,21 @@ class TestMinIntervalValidation:
 
 class TestCheckScheduledSources:
 
+    async def _seed_user(self, db_session):
+        from sqlalchemy import text
+        await db_session.execute(text("""
+            INSERT INTO users (id, email, hashed_password, full_name, role, is_active, is_superuser, is_verified)
+            VALUES ('00000000-0000-0000-0000-000000000001', 'seed@test.local', 'x', 'Seed', 'admin', true, true, true)
+            ON CONFLICT (id) DO NOTHING
+        """))
+        await db_session.commit()
+
     @pytest.mark.asyncio
     async def test_schedule_disabled_not_triggered(self, db_session):
         """Source with valid cron but schedule_enabled=False → not triggered."""
         from app.ingestion.scheduler import _check_scheduled_sources_async
+        await self._seed_user(db_session)
         source_id = uuid.uuid4()
-        # Create source with schedule disabled
         from sqlalchemy import text
         await db_session.execute(text("""
             INSERT INTO data_sources
@@ -108,14 +117,15 @@ class TestCheckScheduledSources:
         """), {"id": str(source_id)})
         await db_session.commit()
 
-        with patch("app.ingestion.scheduler.task_ingest_source") as mock_task:
-            result = await _check_scheduled_sources_async(db_session)
+        with patch("app.ingestion.tasks.task_ingest_source") as mock_task:
+            await _check_scheduled_sources_async(db_session)
             mock_task.delay.assert_not_called()
 
     @pytest.mark.asyncio
     async def test_paused_source_not_triggered(self, db_session):
         """Source with valid cron but sync_paused=True → not triggered."""
         from app.ingestion.scheduler import _check_scheduled_sources_async
+        await self._seed_user(db_session)
         source_id = uuid.uuid4()
         from sqlalchemy import text
         await db_session.execute(text("""
@@ -128,6 +138,6 @@ class TestCheckScheduledSources:
         """), {"id": str(source_id)})
         await db_session.commit()
 
-        with patch("app.ingestion.scheduler.task_ingest_source") as mock_task:
-            result = await _check_scheduled_sources_async(db_session)
+        with patch("app.ingestion.tasks.task_ingest_source") as mock_task:
+            await _check_scheduled_sources_async(db_session)
             mock_task.delay.assert_not_called()

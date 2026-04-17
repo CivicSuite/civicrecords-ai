@@ -23,35 +23,17 @@ def setup_periodic_tasks(sender, **kwargs):
 
 @celery_app.task(name="civicrecords.check_scheduled_sources")
 def check_scheduled_sources():
-    """Check for data sources with schedule_minutes set and trigger ingestion if due."""
+    """Check each active, non-paused source with a cron schedule and trigger if overdue."""
     import asyncio
-    from datetime import datetime, timezone, timedelta
-    from sqlalchemy import select
     from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
     from app.config import settings
-    from app.models.document import DataSource
 
     async def _check():
         engine = create_async_engine(settings.database_url, echo=False)
         session_maker = async_sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
         try:
             async with session_maker() as session:
-                result = await session.execute(
-                    select(DataSource).where(
-                        DataSource.is_active.is_(True),
-                        DataSource.schedule_minutes.isnot(None),
-                    )
-                )
-                sources = result.scalars().all()
-                triggered = 0
-                for source in sources:
-                    now = datetime.now(timezone.utc)
-                    if source.last_ingestion_at is None or \
-                       (now - source.last_ingestion_at) > timedelta(minutes=source.schedule_minutes):
-                        from app.ingestion.tasks import task_ingest_source
-                        task_ingest_source.delay(source_id=str(source.id))
-                        triggered += 1
-                return {"checked": len(sources), "triggered": triggered}
+                return await _check_scheduled_sources_async(session)
         finally:
             await engine.dispose()
 
@@ -60,6 +42,44 @@ def check_scheduled_sources():
         return loop.run_until_complete(_check())
     finally:
         loop.close()
+
+
+async def _check_scheduled_sources_async(session) -> dict:
+    """Core scheduling logic, extracted for testability.
+
+    anchor = source.last_sync_at or epoch
+    next_scheduled = croniter(expr, anchor).get_next(datetime)
+    trigger if next_scheduled <= now()
+    """
+    from datetime import datetime, timezone
+    from sqlalchemy import select
+    from croniter import croniter
+    from app.models.document import DataSource
+    from app.ingestion.tasks import task_ingest_source
+
+    UTC = timezone.utc
+
+    result = await session.execute(
+        select(DataSource).where(
+            DataSource.is_active.is_(True),
+            DataSource.schedule_enabled.is_(True),
+            DataSource.sync_paused.is_(False),
+            DataSource.sync_schedule.isnot(None),
+        )
+    )
+    sources = result.scalars().all()
+    now = datetime.now(UTC)
+    triggered = 0
+
+    for source in sources:
+        anchor = source.last_sync_at or datetime(1970, 1, 1, tzinfo=UTC)
+        it = croniter(source.sync_schedule, anchor)
+        next_scheduled = it.get_next(datetime)
+        if next_scheduled <= now:
+            task_ingest_source.delay(str(source.id))
+            triggered += 1
+
+    return {"checked": len(sources), "triggered": triggered}
 
 
 @celery_app.task(name="civicrecords.cleanup_audit_logs")
