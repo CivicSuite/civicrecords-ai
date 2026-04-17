@@ -35,7 +35,7 @@ class SyncFailure(Base):
     resolved_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     dismissed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     dismissed_by: Mapped[uuid.UUID | None] = mapped_column(
-        UUID(as_uuid=True), nullable=True  # no FK — allows storing deleted user IDs
+        UUID(as_uuid=True), ForeignKey("users.id"), nullable=True
     )
 
     __table_args__ = (

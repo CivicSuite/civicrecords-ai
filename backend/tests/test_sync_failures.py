@@ -150,7 +150,10 @@ async def test_dismiss_sets_dismissed_status_not_deletes(db_session):
     db_session.add(failure)
     await db_session.commit()
 
-    user_id = uuid.uuid4()
+    # Look up the seeded admin user — matches pattern used by sibling tests
+    result = await db_session.execute(text("SELECT id FROM users LIMIT 1"))
+    user_id = result.scalar_one()
+
     failure.status = "dismissed"
     failure.dismissed_at = datetime.now(UTC)
     failure.dismissed_by = user_id
