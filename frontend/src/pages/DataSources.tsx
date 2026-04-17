@@ -15,6 +15,13 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Separator } from "@/components/ui/separator";
 import FileUpload from "@/components/FileUpload";
 import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
   Plus,
   FolderOpen,
   Upload,
@@ -83,17 +90,6 @@ function SourceCard({ source, onIngest, ingesting }: { source: DataSource; onIng
   );
 }
 
-function ComingSoonCard({ icon: Icon, title, phase }: { icon: React.ElementType; title: string; phase: string }) {
-  return (
-    <Card className="shadow-none opacity-60">
-      <CardContent className="p-5 text-center">
-        <Icon className="h-6 w-6 text-muted-foreground mx-auto mb-2" />
-        <p className="font-medium text-muted-foreground">{title}</p>
-        <p className="text-xs text-muted-foreground mt-1">Coming in {phase}</p>
-      </CardContent>
-    </Card>
-  );
-}
 
 export default function DataSources({ token }: { token: string }) {
   const [sources, setSources] = useState<DataSource[]>([]);
@@ -102,7 +98,18 @@ export default function DataSources({ token }: { token: string }) {
   const [showForm, setShowForm] = useState(false);
   const [wizardStep, setWizardStep] = useState(1);
   const [formData, setFormData] = useState({
-    name: "", sourceType: "manual_drop", host: "", port: "", path: "", username: "", password: "",
+    // common
+    name: "", sourceType: "manual_drop",
+    // imap / file_share
+    host: "", port: "", path: "", username: "", password: "",
+    // rest_api
+    base_url: "", endpoint_path: "/", auth_method: "none",
+    api_key: "", key_location: "header", key_header: "X-API-Key",
+    token: "", client_id: "", client_secret: "", token_url: "",
+    rest_username: "", rest_password: "",
+    pagination_style: "none", max_records: "1000",
+    // odbc
+    connection_string: "", table_name: "", pk_column: "", modified_column: "", batch_size: "500",
   });
   const [testResult, setTestResult] = useState<{ success: boolean; message: string } | null>(null);
   const [testing, setTesting] = useState(false);
@@ -124,7 +131,16 @@ export default function DataSources({ token }: { token: string }) {
 
   const resetWizard = () => {
     setWizardStep(1);
-    setFormData({ name: "", sourceType: "manual_drop", host: "", port: "", path: "", username: "", password: "" });
+    setFormData({
+      name: "", sourceType: "manual_drop",
+      host: "", port: "", path: "", username: "", password: "",
+      base_url: "", endpoint_path: "/", auth_method: "none",
+      api_key: "", key_location: "header", key_header: "X-API-Key",
+      token: "", client_id: "", client_secret: "", token_url: "",
+      rest_username: "", rest_password: "",
+      pagination_style: "none", max_records: "1000",
+      connection_string: "", table_name: "", pk_column: "", modified_column: "", batch_size: "500",
+    });
     setTestResult(null);
   };
 
@@ -237,6 +253,8 @@ export default function DataSources({ token }: { token: string }) {
                           { type: "imap", icon: Mail, label: "IMAP Email" },
                           { type: "file_share", icon: FolderOpen, label: "File Share" },
                           { type: "manual_drop", icon: Upload, label: "Manual Drop" },
+                          { type: "rest_api", icon: Globe, label: "REST API" },
+                          { type: "odbc", icon: Database, label: "ODBC / Database" },
                         ].map(({ type, icon: Icon, label }) => (
                           <button
                             key={type}
@@ -287,6 +305,145 @@ export default function DataSources({ token }: { token: string }) {
                         <p className="text-xs text-muted-foreground mt-1">The folder on the server where documents are stored.</p>
                       </div>
                     )}
+
+                    {/* REST API config */}
+                    {formData.sourceType === "rest_api" && (
+                      <div className="space-y-3">
+                        <div>
+                          <label className="text-sm font-medium">Base URL <span className="text-destructive">*</span></label>
+                          <Input value={formData.base_url} onChange={(e) => setFormData({ ...formData, base_url: e.target.value })} placeholder="https://api.example.gov" />
+                        </div>
+                        <div>
+                          <label className="text-sm font-medium">Endpoint Path</label>
+                          <Input value={formData.endpoint_path} onChange={(e) => setFormData({ ...formData, endpoint_path: e.target.value })} placeholder="/records" />
+                        </div>
+                        <div>
+                          <label className="text-sm font-medium">Authentication</label>
+                          <Select value={formData.auth_method} onValueChange={(v) => setFormData({ ...formData, auth_method: v ?? "" })}>
+                            <SelectTrigger className="mt-1">
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="none">None</SelectItem>
+                              <SelectItem value="api_key">API Key</SelectItem>
+                              <SelectItem value="bearer">Bearer Token</SelectItem>
+                              <SelectItem value="oauth2">OAuth 2.0 Client Credentials</SelectItem>
+                              <SelectItem value="basic">Basic Auth</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+
+                        {/* Conditional auth fields */}
+                        {formData.auth_method === "api_key" && (
+                          <div className="space-y-2 pl-3 border-l-2 border-muted">
+                            <div>
+                              <label className="text-sm font-medium">API Key <span className="text-destructive">*</span></label>
+                              <Input type="password" value={formData.api_key} onChange={(e) => setFormData({ ...formData, api_key: e.target.value })} placeholder="Enter API key" />
+                            </div>
+                            <div>
+                              <label className="text-sm font-medium">Key Location</label>
+                              <Select value={formData.key_location} onValueChange={(v) => setFormData({ ...formData, key_location: v ?? "" })}>
+                                <SelectTrigger className="mt-1">
+                                  <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="header">Header</SelectItem>
+                                  <SelectItem value="query">Query Parameter</SelectItem>
+                                </SelectContent>
+                              </Select>
+                            </div>
+                            <div>
+                              <label className="text-sm font-medium">Header / Parameter Name</label>
+                              <Input value={formData.key_header} onChange={(e) => setFormData({ ...formData, key_header: e.target.value })} placeholder="X-API-Key" />
+                            </div>
+                          </div>
+                        )}
+
+                        {formData.auth_method === "bearer" && (
+                          <div className="pl-3 border-l-2 border-muted">
+                            <label className="text-sm font-medium">Bearer Token <span className="text-destructive">*</span></label>
+                            <Input type="password" value={formData.token} onChange={(e) => setFormData({ ...formData, token: e.target.value })} placeholder="Enter bearer token" />
+                          </div>
+                        )}
+
+                        {formData.auth_method === "oauth2" && (
+                          <div className="space-y-2 pl-3 border-l-2 border-muted">
+                            <div>
+                              <label className="text-sm font-medium">Client ID <span className="text-destructive">*</span></label>
+                              <Input value={formData.client_id} onChange={(e) => setFormData({ ...formData, client_id: e.target.value })} placeholder="OAuth client ID" />
+                            </div>
+                            <div>
+                              <label className="text-sm font-medium">Client Secret <span className="text-destructive">*</span></label>
+                              <Input type="password" value={formData.client_secret} onChange={(e) => setFormData({ ...formData, client_secret: e.target.value })} placeholder="OAuth client secret" />
+                            </div>
+                            <div>
+                              <label className="text-sm font-medium">Token URL <span className="text-destructive">*</span></label>
+                              <Input value={formData.token_url} onChange={(e) => setFormData({ ...formData, token_url: e.target.value })} placeholder="https://auth.example.gov/oauth/token" />
+                            </div>
+                          </div>
+                        )}
+
+                        {formData.auth_method === "basic" && (
+                          <div className="space-y-2 pl-3 border-l-2 border-muted">
+                            <div>
+                              <label className="text-sm font-medium">Username <span className="text-destructive">*</span></label>
+                              <Input value={formData.rest_username} onChange={(e) => setFormData({ ...formData, rest_username: e.target.value })} placeholder="Username" />
+                            </div>
+                            <div>
+                              <label className="text-sm font-medium">Password <span className="text-destructive">*</span></label>
+                              <Input type="password" value={formData.rest_password} onChange={(e) => setFormData({ ...formData, rest_password: e.target.value })} placeholder="Password" />
+                            </div>
+                          </div>
+                        )}
+
+                        <div>
+                          <label className="text-sm font-medium">Pagination Style</label>
+                          <Select value={formData.pagination_style} onValueChange={(v) => setFormData({ ...formData, pagination_style: v ?? "" })}>
+                            <SelectTrigger className="mt-1">
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="none">None (single response)</SelectItem>
+                              <SelectItem value="page">Page-based (?page=N)</SelectItem>
+                              <SelectItem value="offset">Offset-based (?offset=N)</SelectItem>
+                              <SelectItem value="cursor">Cursor-based</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        <div>
+                          <label className="text-sm font-medium">Max Records</label>
+                          <Input type="number" value={formData.max_records} onChange={(e) => setFormData({ ...formData, max_records: e.target.value })} placeholder="1000" />
+                        </div>
+                      </div>
+                    )}
+
+                    {/* ODBC config */}
+                    {formData.sourceType === "odbc" && (
+                      <div className="space-y-3">
+                        <div>
+                          <label className="text-sm font-medium">Connection String <span className="text-destructive">*</span></label>
+                          <Input type="password" value={formData.connection_string} onChange={(e) => setFormData({ ...formData, connection_string: e.target.value })} placeholder="DSN=MyDSN;UID=user;PWD=..." />
+                          <p className="text-xs text-muted-foreground mt-1">Stored securely. Contains credentials — never logged or echoed.</p>
+                        </div>
+                        <div>
+                          <label className="text-sm font-medium">Table Name <span className="text-destructive">*</span></label>
+                          <Input value={formData.table_name} onChange={(e) => setFormData({ ...formData, table_name: e.target.value })} placeholder="public_records" />
+                        </div>
+                        <div>
+                          <label className="text-sm font-medium">Primary Key Column <span className="text-destructive">*</span></label>
+                          <Input value={formData.pk_column} onChange={(e) => setFormData({ ...formData, pk_column: e.target.value })} placeholder="id" />
+                        </div>
+                        <div>
+                          <label className="text-sm font-medium">Modified Timestamp Column <span className="text-muted-foreground text-xs">(optional)</span></label>
+                          <Input value={formData.modified_column} onChange={(e) => setFormData({ ...formData, modified_column: e.target.value })} placeholder="updated_at" />
+                        </div>
+                        <div>
+                          <label className="text-sm font-medium">Batch Size</label>
+                          <Input type="number" value={formData.batch_size} onChange={(e) => setFormData({ ...formData, batch_size: e.target.value })} placeholder="500" />
+                        </div>
+                      </div>
+                    )}
+
                     <div className="flex justify-between">
                       <Button type="button" variant="outline" onClick={() => setWizardStep(1)}>Back</Button>
                       <Button type="button" onClick={() => setWizardStep(3)}>Next</Button>
@@ -304,6 +461,24 @@ export default function DataSources({ token }: { token: string }) {
                         {formData.host && <p><span className="font-medium">Server:</span> {formData.host}:{formData.port || "993"}</p>}
                         {formData.path && <p><span className="font-medium">Path:</span> {formData.path}</p>}
                         {formData.username && <p><span className="font-medium">Username:</span> {formData.username}</p>}
+                        {formData.sourceType === "rest_api" && (
+                          <>
+                            {formData.base_url && <p><span className="font-medium">Base URL:</span> {formData.base_url}</p>}
+                            <p><span className="font-medium">Endpoint:</span> {formData.endpoint_path}</p>
+                            <p><span className="font-medium">Auth:</span> {formData.auth_method}</p>
+                            <p><span className="font-medium">Pagination:</span> {formData.pagination_style}</p>
+                            <p><span className="font-medium">Max Records:</span> {formData.max_records}</p>
+                          </>
+                        )}
+                        {formData.sourceType === "odbc" && (
+                          <>
+                            <p><span className="font-medium">Connection String:</span> ••••••••</p>
+                            {formData.table_name && <p><span className="font-medium">Table:</span> {formData.table_name}</p>}
+                            {formData.pk_column && <p><span className="font-medium">PK Column:</span> {formData.pk_column}</p>}
+                            {formData.modified_column && <p><span className="font-medium">Modified Column:</span> {formData.modified_column}</p>}
+                            <p><span className="font-medium">Batch Size:</span> {formData.batch_size}</p>
+                          </>
+                        )}
                       </CardContent>
                     </Card>
 
@@ -385,8 +560,22 @@ export default function DataSources({ token }: { token: string }) {
               <Button variant="outline" size="sm" className="mt-3" disabled>Configure Email</Button>
             </CardContent>
           </Card>
-          <ComingSoonCard icon={Database} title="Database (ODBC)" phase="Phase 3" />
-          <ComingSoonCard icon={Globe} title="API Endpoint" phase="Phase 3" />
+          <Card className="shadow-none">
+            <CardContent className="p-5 text-center">
+              <Database className="h-6 w-6 text-primary mx-auto mb-2" />
+              <p className="font-medium text-foreground">ODBC / Database</p>
+              <p className="text-xs text-muted-foreground mt-1">Connect any ODBC-compatible database</p>
+              <Button variant="outline" size="sm" className="mt-3" onClick={() => { setFormData((f) => ({ ...f, sourceType: "odbc" })); setShowForm(true); }}>Configure ODBC</Button>
+            </CardContent>
+          </Card>
+          <Card className="shadow-none">
+            <CardContent className="p-5 text-center">
+              <Globe className="h-6 w-6 text-primary mx-auto mb-2" />
+              <p className="font-medium text-foreground">REST API</p>
+              <p className="text-xs text-muted-foreground mt-1">Fetch records from any REST endpoint</p>
+              <Button variant="outline" size="sm" className="mt-3" onClick={() => { setFormData((f) => ({ ...f, sourceType: "rest_api" })); setShowForm(true); }}>Configure API</Button>
+            </CardContent>
+          </Card>
         </div>
       </div>
     </div>
