@@ -19,6 +19,13 @@ class DataSourceRead(BaseModel):
     created_by: uuid.UUID
     created_at: datetime
     last_ingestion_at: datetime | None
+    # P6a additions
+    connector_type: str | None = None
+    updated_at: datetime | None = None
+    sync_schedule: str | None = None
+    # P6b stubs — will be populated by scheduler in P6b
+    schedule_enabled: bool = False
+    next_sync_at: datetime | None = None
     model_config = {"from_attributes": True}
 
 class DataSourceUpdate(BaseModel):
