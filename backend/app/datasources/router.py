@@ -70,7 +70,14 @@ async def create_datasource(data: DataSourceCreate, session: AsyncSession = Depe
     existing = await session.execute(select(DataSource).where(DataSource.name == data.name))
     if existing.scalar_one_or_none():
         raise HTTPException(status_code=409, detail="Name already taken")
-    source = DataSource(name=data.name, source_type=data.source_type, connection_config=data.connection_config, schedule_minutes=data.schedule_minutes, created_by=user.id)
+    source = DataSource(
+        name=data.name,
+        source_type=data.source_type,
+        connection_config=data.connection_config,
+        sync_schedule=data.sync_schedule,
+        schedule_enabled=data.schedule_enabled,
+        created_by=user.id,
+    )
     session.add(source)
     await session.commit()
     await session.refresh(source)
@@ -79,8 +86,16 @@ async def create_datasource(data: DataSourceCreate, session: AsyncSession = Depe
 
 @router.get("/", response_model=list[DataSourceRead])
 async def list_datasources(session: AsyncSession = Depends(get_async_session), user: User = Depends(require_role(UserRole.STAFF))):
+    from app.ingestion.cron_utils import compute_next_sync_at
     result = await session.execute(select(DataSource).order_by(DataSource.created_at.desc()))
-    return result.scalars().all()
+    sources = result.scalars().all()
+    output = []
+    for source in sources:
+        data = DataSourceRead.model_validate(source)
+        if source.sync_schedule and source.schedule_enabled and not source.sync_paused:
+            data.next_sync_at = compute_next_sync_at(source.sync_schedule, source.last_sync_at)
+        output.append(data)
+    return output
 
 @router.patch("/{source_id}", response_model=DataSourceRead)
 async def update_datasource(source_id: uuid.UUID, data: DataSourceUpdate, session: AsyncSession = Depends(get_async_session), user: User = Depends(require_role(UserRole.ADMIN))):
@@ -91,8 +106,10 @@ async def update_datasource(source_id: uuid.UUID, data: DataSourceUpdate, sessio
         source.name = data.name
     if data.connection_config is not None:
         source.connection_config = data.connection_config
-    if data.schedule_minutes is not None:
-        source.schedule_minutes = data.schedule_minutes
+    if data.sync_schedule is not None:
+        source.sync_schedule = data.sync_schedule
+    if data.schedule_enabled is not None:
+        source.schedule_enabled = data.schedule_enabled
     if data.is_active is not None:
         source.is_active = data.is_active
     await session.commit()

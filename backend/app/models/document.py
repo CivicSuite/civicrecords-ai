@@ -35,7 +35,6 @@ class DataSource(Base):
     name: Mapped[str] = mapped_column(String(255), unique=True)
     source_type: Mapped[SourceType] = mapped_column(Enum(SourceType, name="source_type", create_type=False, values_callable=lambda e: [m.value for m in e]))
     connection_config: Mapped[dict] = mapped_column(JSONB, default=dict)
-    schedule_minutes: Mapped[int | None] = mapped_column(Integer, nullable=True)
     is_active: Mapped[bool] = mapped_column(Boolean, default=True)
     created_by: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("users.id"))
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())

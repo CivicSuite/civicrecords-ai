@@ -1,38 +1,59 @@
 import uuid
 from datetime import datetime
-from pydantic import BaseModel
+from pydantic import BaseModel, field_validator
 from app.models.document import IngestionStatus, SourceType
+
 
 class DataSourceCreate(BaseModel):
     name: str
     source_type: SourceType
     connection_config: dict = {}
-    schedule_minutes: int | None = None
+    sync_schedule: str | None = None
+    schedule_enabled: bool = True
+
+    @field_validator("sync_schedule")
+    @classmethod
+    def validate_sync_schedule(cls, v: str | None) -> str | None:
+        if v is not None:
+            from app.ingestion.cron_utils import validate_cron_expression
+            validate_cron_expression(v)
+        return v
+
 
 class DataSourceRead(BaseModel):
     id: uuid.UUID
     name: str
     source_type: SourceType
     connection_config: dict
-    schedule_minutes: int | None
+    sync_schedule: str | None = None
+    schedule_enabled: bool = True
+    next_sync_at: datetime | None = None
     is_active: bool
     created_by: uuid.UUID
     created_at: datetime
     last_ingestion_at: datetime | None
-    # P6a additions
+    last_sync_at: datetime | None = None
+    last_sync_status: str | None = None
     connector_type: str | None = None
     updated_at: datetime | None = None
-    sync_schedule: str | None = None
-    # P6b stubs — will be populated by scheduler in P6b
-    schedule_enabled: bool = False
-    next_sync_at: datetime | None = None
     model_config = {"from_attributes": True}
+
 
 class DataSourceUpdate(BaseModel):
     name: str | None = None
     connection_config: dict | None = None
-    schedule_minutes: int | None = None
+    sync_schedule: str | None = None
+    schedule_enabled: bool | None = None
     is_active: bool | None = None
+
+    @field_validator("sync_schedule")
+    @classmethod
+    def validate_sync_schedule(cls, v: str | None) -> str | None:
+        if v is not None:
+            from app.ingestion.cron_utils import validate_cron_expression
+            validate_cron_expression(v)
+        return v
+
 
 class DocumentRead(BaseModel):
     id: uuid.UUID
@@ -46,7 +67,10 @@ class DocumentRead(BaseModel):
     ingestion_error: str | None
     chunk_count: int
     ingested_at: datetime | None
+    connector_type: str | None = None
+    updated_at: datetime | None = None
     model_config = {"from_attributes": True}
+
 
 class DocumentChunkRead(BaseModel):
     id: uuid.UUID
@@ -56,6 +80,7 @@ class DocumentChunkRead(BaseModel):
     token_count: int
     page_number: int | None
     model_config = {"from_attributes": True}
+
 
 class IngestionStats(BaseModel):
     total_sources: int
