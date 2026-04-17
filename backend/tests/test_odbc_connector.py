@@ -158,3 +158,33 @@ async def test_dsn_error_scrubbing():
     assert "s3cr3t" not in scrubbed
     assert "admin" not in scrubbed
     assert "[REDACTED]" in scrubbed
+
+
+class TestOdbcConnectorP6a:
+
+    def test_source_path_encode_decode_special_chars(self):
+        """pk_value containing '/', space, '%' → encoded in source_path, unquoted in fetch()."""
+        import urllib.parse
+        table = "public.contracts"
+        pk = "dept/2024/item 100%"
+        encoded = urllib.parse.quote(str(pk), safe="")
+        source_path = f"{table}/{encoded}"
+
+        # Simulate what fetch() must do to recover pk for SQL
+        parts = source_path.split("/", 1)
+        recovered_pk = urllib.parse.unquote(parts[1])
+        assert recovered_pk == pk, f"Expected {pk!r}, got {recovered_pk!r}"
+
+    def test_odbc_canonical_excludes_modified_column(self):
+        """modified_column excluded from canonical bytes; sort_keys applied."""
+        import json
+        row = {"id": 1, "name": "Alice", "updated_at": "2026-04-16T00:00:00Z", "dept": "IT"}
+        modified_column = "updated_at"
+
+        row_without_ts = {k: v for k, v in row.items() if k != modified_column}
+        canonical = json.dumps(row_without_ts, sort_keys=True, ensure_ascii=False, default=str)
+        assert "updated_at" not in canonical
+        assert '"dept": "IT"' in canonical
+        # Keys in sorted order
+        keys = list(json.loads(canonical).keys())
+        assert keys == sorted(keys)

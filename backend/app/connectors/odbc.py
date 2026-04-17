@@ -2,6 +2,7 @@ import json
 import logging
 import re
 import time
+import urllib.parse
 from typing import Any, Optional
 
 try:
@@ -167,10 +168,12 @@ class OdbcConnector(BaseConnector):
                     )
                     continue
 
+                # URL-encode PK to safely handle '/', spaces, '%', and other special chars
+                encoded_pk = urllib.parse.quote(str(pk_value), safe="")
                 records.append(
                     DiscoveredRecord(
-                        source_path=f"{cfg.table_name}/{pk_value}",
-                        filename=f"{pk_value}.json",
+                        source_path=f"{cfg.table_name}/{encoded_pk}",
+                        filename=f"{encoded_pk}.json",
                         file_type="json",
                         file_size=len(content),
                         metadata={"pk": pk_value},
@@ -188,11 +191,11 @@ class OdbcConnector(BaseConnector):
         cfg = self._cfg
         assert self._connection is not None
 
-        # Extract pk from source_path: "table_name/pk_value"
+        # Extract and decode pk from source_path: "table_name/url_encoded_pk"
         parts = source_path.split("/", 1)
         if len(parts) != 2:
             raise ValueError(f"Invalid source_path format: {source_path!r}")
-        pk_value = parts[1]
+        pk_value = urllib.parse.unquote(parts[1])  # decode before SQL binding
 
         _validate_identifier(cfg.table_name, "table_name")
         _validate_identifier(cfg.pk_column, "pk_column")
@@ -212,17 +215,21 @@ class OdbcConnector(BaseConnector):
             raise FileNotFoundError(f"Record not found: {source_path}")
 
         row_dict = dict(zip(columns_meta, row))
-        content = json.dumps(row_dict, default=str).encode()
+
+        # Canonical serialization: exclude modified_column, sort keys
+        row_dict.pop(cfg.modified_column, None)
+        canonical = json.dumps(row_dict, sort_keys=True, ensure_ascii=False, default=str)
+        content = canonical.encode("utf-8")
 
         if len(content) > cfg.max_row_bytes:
             raise RuntimeError(
-                f"Row {pk_value} size {len(content)} exceeds "
+                f"Row {pk_value!r} size {len(content)} exceeds "
                 f"max_row_bytes={cfg.max_row_bytes}"
             )
 
         return FetchedDocument(
             source_path=source_path,
-            filename=f"{pk_value}.json",
+            filename=f"{urllib.parse.quote(str(pk_value), safe='')}.json",
             file_type="json",
             content=content,
             file_size=len(content),
