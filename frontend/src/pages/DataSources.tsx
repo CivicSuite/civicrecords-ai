@@ -29,6 +29,28 @@ import {
   Globe,
 } from "lucide-react";
 import { SourceCard, type DataSource } from "@/components/SourceCard";
+import { Checkbox } from "@/components/ui/checkbox";
+import { parseExpression } from "cron-parser";
+
+export function formatNextRun(cron: string): string {
+  try {
+    const interval = parseExpression(cron, { utc: true });
+    const next = interval.next().toDate();
+    const utcPart = next.toLocaleString("en-US", {
+      timeZone: "UTC",
+      month: "short", day: "numeric",
+      hour: "numeric", minute: "2-digit",
+      hour12: true,
+    });
+    const localPart = next.toLocaleString("en-US", {
+      hour: "numeric", minute: "2-digit",
+      hour12: true, timeZoneName: "short",
+    });
+    return `Next: ${utcPart} UTC (${localPart})`;
+  } catch {
+    return "";
+  }
+}
 
 const SCHEDULE_PRESETS: { label: string; cron: string | null }[] = [
   { label: "Every 15 minutes", cron: "*/15 * * * *" },
@@ -400,10 +422,11 @@ export default function DataSources({ token }: { token: string }) {
                   <>
                     <div className="space-y-2 border rounded-md p-3">
                       <label className="flex items-center gap-2 text-sm font-medium">
-                        <input
-                          type="checkbox"
+                        <Checkbox
                           checked={formData.schedule_enabled}
-                          onChange={(e) => setFormData({ ...formData, schedule_enabled: e.target.checked })}
+                          onCheckedChange={(checked) =>
+                            setFormData({ ...formData, schedule_enabled: Boolean(checked) })
+                          }
                         />
                         Enable automatic sync
                       </label>
@@ -436,6 +459,14 @@ export default function DataSources({ token }: { token: string }) {
                           <p className="text-xs text-muted-foreground font-mono">
                             {formData.sync_schedule}
                           </p>
+                          {formData.sync_schedule && (
+                            <p
+                              data-testid="cron-preview"
+                              className="text-xs text-muted-foreground"
+                            >
+                              {formatNextRun(formData.sync_schedule)}
+                            </p>
+                          )}
                         </div>
                       )}
                     </div>

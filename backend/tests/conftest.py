@@ -37,104 +37,41 @@ test_session_maker = async_sessionmaker(test_engine, class_=AsyncSession, expire
 
 @pytest.fixture
 def setup_db():
-    """Create and drop tables using sync engine to avoid async conflicts."""
+    """Create schema via alembic upgrade head, seed admin, drop all on teardown.
+
+    Uses a subprocess so alembic's asyncio.run() gets a fresh event loop and
+    settings.database_url resolves to the test DB without touching the live DB.
+    Migration 001 creates the user_role enum (create_type=True), so no pre-create needed.
+    """
+    import sys
+    import subprocess
+    from pathlib import Path
+
+    backend_dir = str(Path(__file__).parent.parent)
     sync_engine = create_engine(_sync_url, echo=False)
-    with sync_engine.connect() as conn:
+
+    # Nuclear reset: drop and recreate the public schema so every table, type,
+    # index, and alembic_version is gone — including migration-only tables like
+    # _migration_015_report that are absent from Base.metadata.
+    with sync_engine.connect().execution_options(isolation_level="AUTOCOMMIT") as conn:
+        conn.execute(sa.text("DROP SCHEMA public CASCADE"))
+        conn.execute(sa.text("CREATE SCHEMA public"))
         conn.execute(sa.text("CREATE EXTENSION IF NOT EXISTS vector"))
-        conn.commit()
-    # Ensure the user_role enum type exists with ALL current values before
-    # create_all() runs.  The SQLAlchemy model uses create_type=False so
-    # create_all() will not create the type itself — it must pre-exist.
-    # We create the type if absent, or add missing values if it already exists.
-    # NOTE: We do NOT use DROP TYPE CASCADE — that drops dependent table columns.
-    _all_role_values = ('admin', 'staff', 'reviewer', 'read_only', 'liaison', 'public')
-    with sync_engine.connect() as conn:
-        type_exists = conn.execute(sa.text(
-            "SELECT 1 FROM pg_type WHERE typname = 'user_role'"
-        )).fetchone() is not None
-        if not type_exists:
-            conn.execute(sa.text(
-                "CREATE TYPE user_role AS ENUM "
-                "('admin', 'staff', 'reviewer', 'read_only', 'liaison', 'public')"
-            ))
-            conn.commit()
-        else:
-            existing = {
-                row[0] for row in conn.execute(sa.text(
-                    "SELECT e.enumlabel FROM pg_enum e "
-                    "JOIN pg_type t ON e.enumtypid = t.oid "
-                    "WHERE t.typname = 'user_role'"
-                ))
-            }
-            conn.commit()
-            for val in _all_role_values:
-                if val not in existing:
-                    # ADD VALUE cannot run inside a transaction block
-                    with sync_engine.connect().execution_options(
-                        isolation_level="AUTOCOMMIT"
-                    ) as ac_conn:
-                        ac_conn.execute(sa.text(
-                            f"ALTER TYPE user_role ADD VALUE '{val}'"
-                        ))
-    # Drop all tables first to guarantee a clean schema on every test run.
-    # This prevents stale columns/tables from broken previous runs.
-    Base.metadata.drop_all(sync_engine)
-    Base.metadata.create_all(sync_engine)
-    # Add generated tsvector column (migration 004 adds this, but create_all doesn't)
-    with sync_engine.connect() as conn:
-        conn.execute(sa.text("""
-            ALTER TABLE document_chunks
-            ADD COLUMN IF NOT EXISTS content_tsvector tsvector
-            GENERATED ALWAYS AS (to_tsvector('english', content_text)) STORED
-        """))
-        conn.commit()
-    # Add migration 014 columns and partial UNIQUE indexes (create_all doesn't create these)
-    with sync_engine.connect() as conn:
-        conn.execute(sa.text("""
-            ALTER TABLE documents
-            ADD COLUMN IF NOT EXISTS connector_type VARCHAR(20),
-            ADD COLUMN IF NOT EXISTS updated_at TIMESTAMPTZ
-        """))
-        conn.execute(sa.text("""
-            DO $$
-            BEGIN
-                IF NOT EXISTS (
-                    SELECT 1 FROM pg_indexes
-                    WHERE indexname = 'uq_documents_structured_path'
-                ) THEN
-                    CREATE UNIQUE INDEX uq_documents_structured_path
-                    ON documents (source_id, source_path)
-                    WHERE connector_type IN ('rest_api', 'odbc');
-                END IF;
-            END$$
-        """))
-        conn.execute(sa.text("""
-            DO $$
-            BEGIN
-                IF NOT EXISTS (
-                    SELECT 1 FROM pg_indexes
-                    WHERE indexname = 'uq_documents_binary_hash'
-                ) THEN
-                    CREATE UNIQUE INDEX uq_documents_binary_hash
-                    ON documents (source_id, file_hash)
-                    WHERE connector_type IS NULL OR connector_type NOT IN ('rest_api', 'odbc');
-                END IF;
-            END$$
-        """))
-        conn.execute(sa.text("""
-            DO $$
-            BEGIN
-                IF NOT EXISTS (
-                    SELECT 1 FROM pg_constraint
-                    WHERE conname = 'chk_source_path_length'
-                ) THEN
-                    ALTER TABLE documents
-                    ADD CONSTRAINT chk_source_path_length
-                    CHECK (source_path IS NULL OR length(source_path) <= 2048);
-                END IF;
-            END$$
-        """))
-        conn.commit()
+
+    # Run all migrations in a subprocess (avoids asyncio.run() conflicting with
+    # pytest-asyncio's event loop; DATABASE_URL points at the test DB).
+    result = subprocess.run(
+        [sys.executable, "-m", "alembic", "upgrade", "head"],
+        cwd=backend_dir,
+        env={**os.environ, "DATABASE_URL": TEST_DATABASE_URL},
+        capture_output=True,
+        text=True,
+    )
+    if result.returncode != 0:
+        raise RuntimeError(
+            f"alembic upgrade head failed:\n{result.stderr}\n{result.stdout}"
+        )
+
     # Seed one admin user so tests using (SELECT id FROM users LIMIT 1) get a valid FK.
     with sync_engine.connect() as conn:
         conn.execute(sa.text("""
@@ -148,8 +85,13 @@ def setup_db():
             ON CONFLICT DO NOTHING
         """))
         conn.commit()
+
     yield
-    Base.metadata.drop_all(sync_engine)
+
+    # Teardown: nuclear reset so the next test starts clean.
+    with sync_engine.connect().execution_options(isolation_level="AUTOCOMMIT") as conn:
+        conn.execute(sa.text("DROP SCHEMA public CASCADE"))
+        conn.execute(sa.text("CREATE SCHEMA public"))
     sync_engine.dispose()
 
 
