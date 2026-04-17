@@ -216,8 +216,9 @@ class OdbcConnector(BaseConnector):
 
         row_dict = dict(zip(columns_meta, row))
 
-        # Canonical serialization: exclude modified_column, sort keys
-        row_dict.pop(cfg.modified_column, None)
+        # Canonical serialization: exclude modified_column (if set), sort keys
+        if cfg.modified_column is not None:
+            row_dict.pop(cfg.modified_column, None)
         canonical = json.dumps(row_dict, sort_keys=True, ensure_ascii=False, default=str)
         content = canonical.encode("utf-8")
 
