@@ -1,6 +1,10 @@
+import asyncio
 import logging
+import re as _re
+import time
 import uuid
 from pathlib import Path
+from typing import Any
 
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, File
 from pydantic import BaseModel
@@ -13,6 +17,16 @@ from app.database import get_async_session
 from app.models.document import DataSource, Document, DocumentChunk, IngestionStatus, SourceType
 from app.models.user import User, UserRole
 from app.schemas.document import DataSourceCreate, DataSourceRead, DataSourceUpdate, IngestionStats
+
+_CRED_SCRUB = _re.compile(
+    r"(api_key|token|client_secret|password|connection_string)\s*=\s*\S+",
+    _re.IGNORECASE,
+)
+
+
+def _scrub_error(msg: str) -> str:
+    """Remove credential values from error message strings."""
+    return _CRED_SCRUB.sub(r"\1=[REDACTED]", msg)
 
 logger = logging.getLogger(__name__)
 
@@ -154,17 +168,22 @@ class TestConnectionRequest(BaseModel):
     Security: credentials in this request body are never persisted, never
     written to audit logs, and never returned in the response.
     """
-    source_type: str  # imap/file_share/manual_drop
+    source_type: str  # imap/file_share/manual_drop/rest_api/odbc
     host: str | None = None
     port: int | None = None
     path: str | None = None
     username: str | None = None
     password: str | None = None
+    # Connector configs for rest_api and odbc
+    rest_api_config: dict[str, Any] | None = None
+    odbc_config: dict[str, Any] | None = None
 
 
 class TestConnectionResponse(BaseModel):
     success: bool
     message: str
+    latency_ms: int | None = None
+    status: str | None = None
 
 
 @router.post("/test-connection", response_model=TestConnectionResponse)
@@ -211,5 +230,44 @@ async def test_connection(
         if target.exists() and target.is_dir():
             return TestConnectionResponse(success=True, message="Drop folder accessible")
         return TestConnectionResponse(success=False, message="Drop folder not accessible")
+
+    elif body.source_type in ("rest_api", "odbc"):
+        config_dict = body.rest_api_config if body.source_type == "rest_api" else body.odbc_config
+        if not config_dict:
+            return TestConnectionResponse(
+                success=False,
+                message=f"{body.source_type} requires a config object in "
+                        f"{'rest_api_config' if body.source_type == 'rest_api' else 'odbc_config'}",
+            )
+        from app.connectors import get_connector
+        connector = None
+        try:
+            connector = get_connector(body.source_type, config_dict)
+            t0 = time.monotonic()
+            async with asyncio.timeout(10):
+                await connector.authenticate()
+                result = await connector.health_check()
+            latency_ms = int((time.monotonic() - t0) * 1000)
+            if result.status.value == "healthy":
+                return TestConnectionResponse(
+                    success=True,
+                    message="Connection successful",
+                    latency_ms=result.latency_ms if result.latency_ms is not None else latency_ms,
+                    status="healthy",
+                )
+            else:
+                err = _scrub_error(result.error_message or result.status.value)
+                return TestConnectionResponse(success=False, message=f"Connection unhealthy: {err}")
+        except TimeoutError:
+            return TestConnectionResponse(
+                success=False, message="Connection timed out after 10 seconds"
+            )
+        except Exception as exc:
+            return TestConnectionResponse(
+                success=False, message=_scrub_error(str(exc))
+            )
+        finally:
+            if connector is not None:
+                connector.close()
 
     return TestConnectionResponse(success=False, message=f"Unknown source type: {body.source_type}")
