@@ -48,7 +48,7 @@ def _extract_dotted(obj: Any, path: str | None) -> Any:
         if segment not in obj:
             raise KeyError(
                 f"_extract_dotted: key '{segment}' not found in object. "
-                f"Available keys: {list(obj.keys())}"
+                f"Available keys (first 10): {list(obj.keys())[:10]}"
             )
         obj = obj[segment]
     return obj
@@ -278,6 +278,13 @@ class RestApiConnector(BaseConnector):
         record = _extract_dotted(parsed, self._cfg.data_key)
         canonical = json.dumps(record, sort_keys=True, ensure_ascii=False, default=str)
         content = canonical.encode("utf-8")
+
+        # Second size check for canonical content (default=str can enlarge output)
+        if len(content) > self._cfg.max_response_bytes:
+            raise RuntimeError(
+                f"Canonical content size {len(content)} exceeds "
+                f"max_response_bytes={self._cfg.max_response_bytes}"
+            )
 
         return FetchedDocument(
             source_path=source_path,
