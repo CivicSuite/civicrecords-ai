@@ -1,5 +1,7 @@
 import asyncio
+import logging
 import uuid
+from datetime import datetime, timezone
 from pathlib import Path
 
 from celery.signals import worker_process_init
@@ -9,6 +11,8 @@ from app.worker import celery_app
 from app.ingestion.pipeline import ingest_file, ingest_directory
 from app.audit.logger import write_audit_log
 from app.config import settings
+
+logger = logging.getLogger(__name__)
 
 _engine = None
 _session_maker = None
@@ -83,7 +87,7 @@ def task_ingest_file(
         raise self.retry(exc=exc, countdown=30)
 
 
-@celery_app.task(name="civicrecords.ingest_source", bind=True)
+@celery_app.task(name="civicrecords.ingest_source", bind=True, soft_time_limit=3600, time_limit=4200)
 def task_ingest_source(self, source_id: str, user_id: str | None = None):
     async def _ingest():
         async with get_worker_session() as session:
@@ -129,13 +133,73 @@ def task_ingest_source(self, source_id: str, user_id: str | None = None):
     return _run_async(_ingest())
 
 
+async def run_connector_sync(connector, source_id: str, session=None, db=None) -> dict:
+    """Core connector sync loop: discover → fetch → ingest, with cursor-on-success semantics.
+
+    - Calls connector.close() in a finally block regardless of success/failure.
+    - Writes last_sync_cursor and last_sync_at ONLY after ALL fetch() calls succeed.
+    - Logs failed fetches with structured fields: error_class, record_id, status_code, retry_count.
+
+    Args:
+        connector: An authenticated BaseConnector instance.
+        source_id: UUID string of the DataSource row.
+        session: AsyncSession (preferred kwarg name).
+        db: Alias for session (test compatibility).
+    """
+    from app.models.document import DataSource
+
+    db_session = session or db
+    if db_session is None:
+        raise ValueError("run_connector_sync requires a db session (session= or db= kwarg)")
+
+    source = await db_session.get(DataSource, uuid.UUID(source_id) if isinstance(source_id, str) else source_id)
+    if not source:
+        raise ValueError(f"DataSource not found: {source_id}")
+
+    discovered = await connector.discover()
+    ingested = 0
+    errors = 0
+
+    try:
+        for record in discovered:
+            try:
+                fetched = await connector.fetch(record.source_path)
+                doc = await ingest_file_from_bytes(
+                    session=db_session,
+                    content=fetched.content,
+                    filename=fetched.filename,
+                    file_type=fetched.file_type,
+                    source_id=source.id,
+                )
+                if doc:
+                    ingested += 1
+            except Exception as exc:
+                logger.error(
+                    "Fetch failed",
+                    extra={
+                        "error_class": type(exc).__name__,
+                        "record_id": record.source_path,
+                        "status_code": getattr(exc, "status_code", None),
+                        "retry_count": getattr(exc, "retry_count", 0),
+                    },
+                )
+                errors += 1
+                raise
+
+        # Cursor-on-success: only advance after ALL fetches complete without error
+        source.last_sync_cursor = str(datetime.now(timezone.utc))
+        source.last_sync_at = datetime.now(timezone.utc)
+        await db_session.commit()
+
+    finally:
+        connector.close()
+
+    return {"ingested": ingested, "errors": errors, "discovered": len(discovered)}
+
+
 async def _ingest_email_source(session, source, user_id: str | None) -> dict:
     """Ingest documents from an IMAP email source via the connector protocol."""
-    import logging
-    from datetime import datetime, timezone
     from app.connectors import imap_email as _imap_mod
-
-    logger = logging.getLogger(__name__)
 
     connector = _imap_mod.ImapEmailConnector(source.connection_config)
 
@@ -149,42 +213,56 @@ async def _ingest_email_source(session, source, user_id: str | None) -> dict:
     skipped = 0
     errors = 0
 
-    for record in discovered:
-        try:
-            fetched = await connector.fetch(record.source_path)
+    try:
+        for record in discovered:
+            try:
+                fetched = await connector.fetch(record.source_path)
 
-            # Extract safe attachments
-            safe_attachments = connector.extract_safe_attachments(fetched.content)
+                # Extract safe attachments
+                safe_attachments = connector.extract_safe_attachments(fetched.content)
 
-            # Also ingest the email body itself as a document
-            email_doc = await ingest_file_from_bytes(
-                session=session,
-                content=fetched.content,
-                filename=fetched.filename,
-                file_type="eml",
-                source_id=source.id,
-            )
-            if email_doc:
-                ingested += 1
-
-            # Ingest each safe attachment
-            for attachment in safe_attachments:
-                att_doc = await ingest_file_from_bytes(
+                # Also ingest the email body itself as a document
+                email_doc = await ingest_file_from_bytes(
                     session=session,
-                    content=attachment.content,
-                    filename=attachment.filename,
-                    file_type=attachment.file_type,
+                    content=fetched.content,
+                    filename=fetched.filename,
+                    file_type="eml",
                     source_id=source.id,
                 )
-                if att_doc:
+                if email_doc:
                     ingested += 1
 
-        except Exception as exc:
-            logger.error("Failed to ingest email %s: %s", record.source_path, exc)
-            errors += 1
+                # Ingest each safe attachment
+                for attachment in safe_attachments:
+                    att_doc = await ingest_file_from_bytes(
+                        session=session,
+                        content=attachment.content,
+                        filename=attachment.filename,
+                        file_type=attachment.file_type,
+                        source_id=source.id,
+                    )
+                    if att_doc:
+                        ingested += 1
 
-    source.last_ingestion_at = datetime.now(timezone.utc)
-    await session.commit()
+            except Exception as exc:
+                logger.error(
+                    "Fetch failed",
+                    extra={
+                        "error_class": type(exc).__name__,
+                        "record_id": record.source_path,
+                        "status_code": getattr(exc, "status_code", None),
+                        "retry_count": getattr(exc, "retry_count", 0),
+                    },
+                )
+                errors += 1
+
+        # Cursor-on-success: only write after all fetches complete without unhandled error
+        source.last_sync_at = datetime.now(timezone.utc)
+        source.last_sync_cursor = str(datetime.now(timezone.utc))
+        await session.commit()
+
+    finally:
+        connector.close()
 
     stats = {"ingested": ingested, "skipped": skipped, "errors": errors, "discovered": len(discovered)}
 
@@ -203,11 +281,7 @@ async def _ingest_email_source(session, source, user_id: str | None) -> dict:
 
 async def _ingest_manual_drop_source(session, source, user_id: str | None) -> dict:
     """Ingest documents from a watched drop folder via the ManualDropConnector."""
-    import logging
-    from datetime import datetime, timezone
     from app.connectors import manual_drop as _drop_mod
-
-    logger = logging.getLogger(__name__)
 
     connector = _drop_mod.ManualDropConnector(source.connection_config)
 
@@ -220,28 +294,43 @@ async def _ingest_manual_drop_source(session, source, user_id: str | None) -> di
     ingested = 0
     errors = 0
 
-    for record in discovered:
-        try:
-            fetched = await connector.fetch(record.source_path)
+    try:
+        for record in discovered:
+            try:
+                fetched = await connector.fetch(record.source_path)
 
-            doc = await ingest_file_from_bytes(
-                session=session,
-                content=fetched.content,
-                filename=fetched.filename,
-                file_type=fetched.file_type,
-                source_id=source.id,
-            )
-            if doc:
-                ingested += 1
-                # Archive the processed file
-                connector.archive_file(record.source_path)
+                doc = await ingest_file_from_bytes(
+                    session=session,
+                    content=fetched.content,
+                    filename=fetched.filename,
+                    file_type=fetched.file_type,
+                    source_id=source.id,
+                )
+                if doc:
+                    ingested += 1
+                    # Archive the processed file
+                    connector.archive_file(record.source_path)
 
-        except Exception as exc:
-            logger.error("Failed to ingest drop file %s: %s", record.source_path, exc)
-            errors += 1
+            except Exception as exc:
+                logger.error(
+                    "Fetch failed",
+                    extra={
+                        "error_class": type(exc).__name__,
+                        "record_id": record.source_path,
+                        "status_code": getattr(exc, "status_code", None),
+                        "retry_count": getattr(exc, "retry_count", 0),
+                    },
+                )
+                errors += 1
 
-    source.last_ingestion_at = datetime.now(timezone.utc)
-    await session.commit()
+        # Cursor-on-success: only write after all fetches complete without unhandled error
+        source.last_ingestion_at = datetime.now(timezone.utc)
+        source.last_sync_at = datetime.now(timezone.utc)
+        source.last_sync_cursor = str(datetime.now(timezone.utc))
+        await session.commit()
+
+    finally:
+        connector.close()
 
     stats = {"ingested": ingested, "errors": errors, "discovered": len(discovered)}
 
