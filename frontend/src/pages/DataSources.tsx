@@ -545,7 +545,7 @@ export default function DataSources({ token }: { token: string }) {
       {/* Connected sources */}
       <div>
         <h3 className="text-label uppercase text-muted-foreground mb-3">Connected Sources</h3>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
           {sources.map((s) => (
             <SourceCard
               key={s.id}
@@ -555,7 +555,7 @@ export default function DataSources({ token }: { token: string }) {
             />
           ))}
           {sources.length === 0 && (
-            <Card className="shadow-none md:col-span-3">
+            <Card className="shadow-none md:col-span-2 xl:col-span-3">
               <CardContent className="p-8 text-center">
                 <p className="text-muted-foreground">No sources configured yet. Upload documents above or add a directory source.</p>
               </CardContent>

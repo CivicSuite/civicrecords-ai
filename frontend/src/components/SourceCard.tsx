@@ -101,8 +101,8 @@ export function SourceCard({
           </Badge>
         </div>
 
-        {/* Right panel */}
-        <div className="flex-1 p-4 space-y-3">
+        {/* Right panel — min-w-0 lets flex-1 shrink below min-content at narrow widths */}
+        <div className="flex-1 min-w-0 p-4 space-y-3">
           <div className="flex items-start justify-between">
             <div>
               <h3 className="font-semibold text-base">{source.name}</h3>
@@ -129,8 +129,8 @@ export function SourceCard({
             </div>
           </div>
 
-          {/* Actions */}
-          <div className="flex gap-2">
+          {/* Actions — wrap onto second row when card is narrow (1024px × 3-col grid) */}
+          <div className="flex flex-wrap gap-2">
             <Button
               size="sm"
               variant="outline"
