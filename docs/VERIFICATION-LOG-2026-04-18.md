@@ -4,7 +4,7 @@ Paired with [AUDIT-REPORT-2026-04-18.docx](./AUDIT-REPORT-2026-04-18.docx). Ever
 
 Commits:
 - `3c57cd0` — F-01 through F-09 (backend + docs + artifact)
-- `<pending>` — P-01 (SourceCard/DataSources layout fixes + verification log)
+- `bce7514` — P-01 (SourceCard/DataSources layout fixes + verification log)
 
 ## F-01 — test_unpause_source assertion
 
