@@ -59,13 +59,36 @@ async def test_retry_after_header_respected():
 
 
 @pytest.mark.asyncio
-async def test_max_wait_ceiling_exceeded_raises_immediately():
-    """Retry-After > 30s ceiling should fail immediately without sleeping."""
-    action = AsyncMock(return_value=httpx.Response(429, headers={"Retry-After": "35"}))
+async def test_retry_after_honored_up_to_600s_cap():
+    """Retry-After values ≤ 600 are honored (D10 spec); > 600 are capped to 600.
+    This replaces the old ceiling=30s behavior which was incorrect per spec."""
+    # Retry-After: 35 → honor 35s, retry, succeed on second call
+    call_count = 0
+    async def action():
+        nonlocal call_count
+        call_count += 1
+        if call_count == 1:
+            return httpx.Response(429, headers={"Retry-After": "35"})
+        return httpx.Response(200)
+
     with patch("app.connectors.retry.asyncio.sleep", new_callable=AsyncMock) as mock_sleep:
-        with pytest.raises(RetryExhausted):
-            await with_retry(action)
-    mock_sleep.assert_not_called()
+        result = await with_retry(action)
+    assert result.status_code == 200
+    mock_sleep.assert_called_once_with(35.0)
+
+    # Retry-After: 9999 → capped to 600s
+    calls_9999 = 0
+    async def action_9999():
+        nonlocal calls_9999
+        calls_9999 += 1
+        if calls_9999 == 1:
+            return httpx.Response(429, headers={"Retry-After": "9999"})
+        return httpx.Response(200)
+
+    with patch("app.connectors.retry.asyncio.sleep", new_callable=AsyncMock) as mock_sleep:
+        result = await with_retry(action_9999)
+    assert result.status_code == 200
+    mock_sleep.assert_called_once_with(600.0)
 
 
 @pytest.mark.asyncio

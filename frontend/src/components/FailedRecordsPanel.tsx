@@ -77,7 +77,7 @@ export function FailedRecordsPanel({
   }
 
   return (
-    <div className="border-t p-4 bg-muted/30 space-y-3">
+    <div className="border-t p-4 bg-muted/30 space-y-3" aria-live="polite" aria-atomic="false">
       {/* Circuit open banner */}
       {syncPaused && (
         <div className="flex items-center justify-between rounded border border-amber-300 bg-amber-50 px-3 py-2">
@@ -104,7 +104,7 @@ export function FailedRecordsPanel({
 
       {/* Error state */}
       {panelState === "error" && (
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2" role="alert">
           <p className="text-sm text-destructive">
             Failed to load sync failures. {errorMsg}
           </p>

@@ -127,7 +127,7 @@ async def unpause_source(
         raise HTTPException(status_code=404, detail="Data source not found")
     source.sync_paused = False
     source.sync_paused_at = None
-    source.sync_paused_reason = None
+    source.sync_paused_reason = "grace_period"  # triggers threshold=2 on next sync run
     source.consecutive_failure_count = 0
     await db.commit()
     return {"status": "ok", "grace_period": True}

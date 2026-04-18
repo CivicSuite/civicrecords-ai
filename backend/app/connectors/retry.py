@@ -56,18 +56,36 @@ async def with_retry(
             response = await action()
             if response.status_code == 429:
                 retry_after_raw = response.headers.get("Retry-After")
-                retry_after = float(retry_after_raw) if retry_after_raw else None
-                delay = _compute_delay(attempt, retry_after)
-                if delay is None or attempt == _MAX_ATTEMPTS - 1:
-                    raise RetryExhausted(
-                        f"Rate limited after {attempt + 1} attempt(s); "
-                        f"Retry-After={retry_after}"
+                try:
+                    retry_after: float | None = float(retry_after_raw) if retry_after_raw else None
+                except (ValueError, TypeError):
+                    retry_after = None
+                if retry_after is not None:
+                    # Honor Retry-After header, cap at 600s per D10 spec
+                    wait = min(retry_after, 600.0)
+                    if attempt == _MAX_ATTEMPTS - 1:
+                        raise RetryExhausted(
+                            f"Rate limited after {attempt + 1} attempt(s); "
+                            f"Retry-After={retry_after}"
+                        )
+                    logger.warning(
+                        "Rate limited (429), waiting %.1fs (Retry-After: %s, attempt %d/%d)",
+                        wait, retry_after_raw, attempt + 1, _MAX_ATTEMPTS,
                     )
-                logger.warning(
-                    "Rate limited (429), retrying in %.1fs (attempt %d/%d)",
-                    delay, attempt + 1, _MAX_ATTEMPTS,
-                )
-                await asyncio.sleep(delay)
+                    await asyncio.sleep(wait)
+                else:
+                    # No valid Retry-After — fall back to exponential backoff
+                    delay = _compute_delay(attempt)
+                    if delay is None or attempt == _MAX_ATTEMPTS - 1:
+                        raise RetryExhausted(
+                            f"Rate limited after {attempt + 1} attempt(s); "
+                            f"no valid Retry-After header"
+                        )
+                    logger.warning(
+                        "Rate limited (429, no Retry-After), retrying in %.1fs (attempt %d/%d)",
+                        delay, attempt + 1, _MAX_ATTEMPTS,
+                    )
+                    await asyncio.sleep(delay)
                 continue
             if response.status_code >= 500:
                 delay = _compute_delay(attempt)

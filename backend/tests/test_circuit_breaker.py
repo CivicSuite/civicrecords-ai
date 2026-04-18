@@ -249,3 +249,118 @@ async def test_retry_success_with_zero_new_records_resets_counter(db_session):
 
     row = await db_session.get(SyncFailure, failure_id)
     assert row.status == "resolved"
+
+
+# ---------------------------------------------------------------------------
+# P7 adversarial — grace period re-pause path
+# ---------------------------------------------------------------------------
+
+@pytest.mark.asyncio
+async def test_grace_period_trips_circuit_at_2_failures_not_5(db_session):
+    """After admin unpauses (grace_period sentinel), 2 consecutive all-fail runs
+    must re-pause the source — NOT 5 (the normal threshold).
+
+    This verifies the grace-period fast-feedback path: admins know within 2
+    sync ticks if their fix didn't work, instead of waiting for 5 more failures.
+    """
+    from app.models.document import DataSource
+    from app.connectors.base import DiscoveredRecord
+    from sqlalchemy import text
+
+    source_id = uuid.uuid4()
+    # Simulate a source that was just unpaused — consecutive_failure_count=0,
+    # sync_paused=False, sync_paused_reason="grace_period" (set by /unpause endpoint).
+    await db_session.execute(text("""
+        INSERT INTO data_sources
+          (id, name, source_type, connection_config, is_active,
+           sync_schedule, schedule_enabled, sync_paused,
+           consecutive_failure_count, sync_paused_reason, created_by)
+        VALUES (:id, 'grace-reopen', 'rest_api', '{}', true,
+                '0 2 * * *', true, false, 0, 'grace_period',
+                (SELECT id FROM users LIMIT 1))
+    """), {"id": str(source_id)})
+    await db_session.commit()
+
+    discovered = [
+        DiscoveredRecord(source_path="https://api.example.com/records/1",
+                         filename="1.json", file_type="json", file_size=10),
+    ]
+
+    mock_connector = AsyncMock()
+    mock_connector.connector_type = "rest_api"
+    mock_connector.discover = AsyncMock(return_value=discovered)
+    mock_connector.fetch = AsyncMock(side_effect=IOError("still broken"))
+    mock_connector.close = MagicMock()
+
+    from app.ingestion.sync_runner import run_connector_sync_with_retry
+
+    # First failure — counter becomes 1, threshold=2, not yet tripped
+    await run_connector_sync_with_retry(
+        connector=mock_connector,
+        source_id=str(source_id),
+        session=db_session,
+    )
+    source = await db_session.get(DataSource, source_id)
+    assert source.sync_paused is False, "Should NOT be paused after only 1 grace-period failure"
+    assert source.consecutive_failure_count == 1
+
+    # Second failure — counter becomes 2, threshold=2, circuit opens
+    mock_connector.close = MagicMock()
+    await run_connector_sync_with_retry(
+        connector=mock_connector,
+        source_id=str(source_id),
+        session=db_session,
+    )
+    source = await db_session.get(DataSource, source_id)
+    assert source.sync_paused is True, "Grace period exhausted: should be re-paused after 2 failures"
+    assert source.consecutive_failure_count == 2
+
+
+@pytest.mark.asyncio
+async def test_grace_period_clears_on_success(db_session):
+    """After unpause (grace_period sentinel), a successful sync clears the sentinel
+    so the source returns to normal 5-failure threshold.
+    """
+    from app.models.document import DataSource
+    from app.connectors.base import DiscoveredRecord, FetchedDocument
+    from sqlalchemy import text
+
+    source_id = uuid.uuid4()
+    await db_session.execute(text("""
+        INSERT INTO data_sources
+          (id, name, source_type, connection_config, is_active,
+           sync_schedule, schedule_enabled, sync_paused,
+           consecutive_failure_count, sync_paused_reason, created_by)
+        VALUES (:id, 'grace-clear', 'rest_api', '{}', true,
+                '0 2 * * *', true, false, 0, 'grace_period',
+                (SELECT id FROM users LIMIT 1))
+    """), {"id": str(source_id)})
+    await db_session.commit()
+
+    discovered = [
+        DiscoveredRecord(source_path="https://api.example.com/records/1",
+                         filename="1.json", file_type="json", file_size=10),
+    ]
+
+    mock_connector = AsyncMock()
+    mock_connector.connector_type = "rest_api"
+    mock_connector.discover = AsyncMock(return_value=discovered)
+    mock_connector.fetch = AsyncMock(return_value=FetchedDocument(
+        source_path="https://api.example.com/records/1",
+        filename="1.json", file_type="json", content=b'{"id":1}', file_size=7, metadata={},
+    ))
+    mock_connector.close = MagicMock()
+
+    from app.ingestion.sync_runner import run_connector_sync_with_retry
+    with patch("app.ingestion.sync_runner.ingest_structured_record", new=AsyncMock(return_value=MagicMock())):
+        await run_connector_sync_with_retry(
+            connector=mock_connector,
+            source_id=str(source_id),
+            session=db_session,
+        )
+
+    source = await db_session.get(DataSource, source_id)
+    assert source.sync_paused is False
+    assert source.consecutive_failure_count == 0
+    # Grace sentinel must be cleared — normal 5-failure threshold restored
+    assert source.sync_paused_reason is None

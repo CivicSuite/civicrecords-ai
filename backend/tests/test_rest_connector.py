@@ -488,3 +488,128 @@ class TestRestApiConnectorP6a:
         # The record ID segment must be URL-encoded
         assert urllib.parse.quote(record_id, safe="") in path
         assert "/" not in path.split(endpoint + "/")[1]  # no raw slash in ID segment
+
+
+# ---------------------------------------------------------------------------
+# P7 adversarial — Retry-After header edge cases
+# ---------------------------------------------------------------------------
+
+from unittest.mock import AsyncMock, patch
+
+
+class TestRetryAfterAdversarial:
+    """Malformed Retry-After headers must not crash the worker.
+
+    The real 429 handling lives in with_retry() (retry.py), not _make_request().
+    These tests exercise that path via the connector's discover() call.
+    """
+
+    @pytest.mark.asyncio
+    @respx.mock
+    async def test_retry_after_non_numeric_string_uses_backoff_not_crash(self):
+        """Retry-After: 'banana' → must not raise ValueError; falls back to
+        exponential backoff and retries successfully."""
+        config = make_config()
+        connector = RestApiConnector(config)
+        await connector.authenticate()
+
+        call_count = 0
+
+        def side_effect(request, route):
+            nonlocal call_count
+            call_count += 1
+            if call_count == 1:
+                return httpx.Response(
+                    429, headers={"Retry-After": "banana"}, json={}
+                )
+            return httpx.Response(200, json=[{"id": "1"}])
+
+        respx.get("https://api.example.gov/records").mock(side_effect=side_effect)
+
+        with patch("asyncio.sleep", new=AsyncMock()) as mock_sleep:
+            records = await connector.discover()
+
+        # No ValueError — fell back to exponential backoff and retried
+        assert len(records) == 1
+        # Sleep was called once with exponential backoff value (not a specific number,
+        # just some positive float — not 0, not a crash)
+        assert mock_sleep.call_count == 1
+        sleep_arg = mock_sleep.call_args[0][0]
+        assert sleep_arg > 0
+
+    @pytest.mark.asyncio
+    @respx.mock
+    async def test_retry_after_empty_string_uses_backoff(self):
+        """Retry-After: '' → empty string treated as missing; uses exponential backoff."""
+        config = make_config()
+        connector = RestApiConnector(config)
+        await connector.authenticate()
+
+        call_count = 0
+
+        def side_effect(request, route):
+            nonlocal call_count
+            call_count += 1
+            if call_count == 1:
+                return httpx.Response(429, json={})  # no Retry-After header at all
+            return httpx.Response(200, json=[])
+
+        respx.get("https://api.example.gov/records").mock(side_effect=side_effect)
+
+        with patch("asyncio.sleep", new=AsyncMock()) as mock_sleep:
+            records = await connector.discover()
+
+        assert records == []
+        assert mock_sleep.call_count == 1
+
+    @pytest.mark.asyncio
+    @respx.mock
+    async def test_retry_after_large_value_capped_at_600s(self):
+        """Retry-After: 9999 → capped at 600s per D10 spec."""
+        config = make_config()
+        connector = RestApiConnector(config)
+        await connector.authenticate()
+
+        call_count = 0
+
+        def side_effect(request, route):
+            nonlocal call_count
+            call_count += 1
+            if call_count == 1:
+                return httpx.Response(
+                    429, headers={"Retry-After": "9999"}, json={}
+                )
+            return httpx.Response(200, json=[])
+
+        respx.get("https://api.example.gov/records").mock(side_effect=side_effect)
+
+        with patch("asyncio.sleep", new=AsyncMock()) as mock_sleep:
+            await connector.discover()
+
+        mock_sleep.assert_called_once_with(600.0)
+
+    @pytest.mark.asyncio
+    @respx.mock
+    async def test_retry_after_numeric_string_honored(self):
+        """Retry-After: '20' → sleeps 20s (within 30s backoff ceiling)."""
+        config = make_config()
+        connector = RestApiConnector(config)
+        await connector.authenticate()
+
+        call_count = 0
+
+        def side_effect(request, route):
+            nonlocal call_count
+            call_count += 1
+            if call_count == 1:
+                return httpx.Response(
+                    429, headers={"Retry-After": "20"}, json={}
+                )
+            return httpx.Response(200, json=[])
+
+        respx.get("https://api.example.gov/records").mock(side_effect=side_effect)
+
+        with patch("asyncio.sleep", new=AsyncMock()) as mock_sleep:
+            await connector.discover()
+
+        mock_sleep.assert_called_once_with(20.0)

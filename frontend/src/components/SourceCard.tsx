@@ -43,7 +43,7 @@ function ScheduleLabel({ source }: { source: DataSource }) {
   if (source.sync_paused) {
     return (
       <span className="text-amber-600 text-sm font-medium">
-        ⚠ Paused — check failed records
+        ⚠️ Paused — check failed records
       </span>
     );
   }
@@ -87,8 +87,12 @@ export function SourceCard({
              source.source_type === "imap_email"  ? "📧" : "📁"}
           </div>
           <div className="flex items-center gap-1">
-            <span className={`w-2 h-2 rounded-full ${health.dot}`} />
-            <span className="text-xs">{health.label}</span>
+            <span
+              className={`w-2 h-2 rounded-full ${health.dot}`}
+              aria-label={`Health: ${health.label}`}
+              role="img"
+            />
+            <span className="text-xs" aria-hidden="true">{health.label}</span>
           </div>
           <Badge variant="outline" className="text-xs">
             {source.source_type}
@@ -130,11 +134,16 @@ export function SourceCard({
               variant="outline"
               disabled={isSyncing}
               onClick={triggerSync}
+              aria-label={isSyncing
+                ? (elapsedSeconds > 0 ? `Syncing, ${formatElapsed(elapsedSeconds)} elapsed` : "Syncing in progress")
+                : "Sync Now"}
             >
               {isSyncing ? (
                 <>
-                  <Loader2 className="w-4 h-4 mr-1 animate-spin" />
-                  {elapsedSeconds > 0 ? `Syncing for ${formatElapsed(elapsedSeconds)}…` : "Syncing…"}
+                  <Loader2 className="w-4 h-4 mr-1 animate-spin" aria-hidden="true" />
+                  <span aria-live="polite" aria-atomic="true">
+                    {elapsedSeconds > 0 ? `Syncing for ${formatElapsed(elapsedSeconds)}…` : "Syncing…"}
+                  </span>
                 </>
               ) : (
                 "Sync Now"
@@ -158,7 +167,9 @@ export function SourceCard({
 
       {/* Failed records panel */}
       {failuresOpen && (
-        <FailedRecordsPanel sourceId={source.id} syncPaused={source.sync_paused} />
+        <div role="region" aria-label={`Failed records for ${source.name}`} aria-live="polite">
+          <FailedRecordsPanel sourceId={source.id} syncPaused={source.sync_paused} />
+        </div>
       )}
     </Card>
   );

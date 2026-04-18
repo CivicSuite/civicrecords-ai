@@ -191,12 +191,14 @@ async def run_connector_sync_with_retry(
         if any_success:
             source.consecutive_failure_count = 0
             source.last_sync_status = "partial" if failed > 0 else "success"
+            if source.sync_paused_reason == "grace_period":
+                source.sync_paused_reason = None
         elif failed > 0 and not any_success:
             source.consecutive_failure_count += 1
             source.last_error_at = datetime.now(UTC)
             source.last_sync_status = "failed"
 
-            threshold = 2 if getattr(source, "_grace_period_active", False) else _CIRCUIT_OPEN_THRESHOLD
+            threshold = 2 if source.sync_paused_reason == "grace_period" else _CIRCUIT_OPEN_THRESHOLD
             if source.consecutive_failure_count >= threshold:
                 source.sync_paused = True
                 source.sync_paused_at = datetime.now(UTC)

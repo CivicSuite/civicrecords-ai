@@ -166,7 +166,10 @@ class RestApiConnector(BaseConnector):
         # 429 Rate-limit: honor Retry-After header, cap at 600s (D10)
         if response.status_code == 429:
             import asyncio
-            retry_after = int(response.headers.get("Retry-After", "30"))
+            try:
+                retry_after = int(response.headers.get("Retry-After", "30"))
+            except (ValueError, TypeError):
+                retry_after = 30
             wait = min(retry_after, 600)
             logger.warning(
                 "RestApiConnector: 429 rate-limited, waiting %ds (Retry-After: %s)",
