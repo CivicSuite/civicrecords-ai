@@ -29,12 +29,11 @@ depends_on: Union[str, Sequence[str], None] = None
 
 
 def upgrade() -> None:
-    # ALTER TYPE … ADD VALUE cannot run inside a transaction block in Postgres.
-    # Commit any implicit transaction first, then run the DDL outside a transaction.
-    connection = op.get_bind()
-    connection.execute(sa.text("COMMIT"))
-    connection.execute(sa.text("ALTER TYPE user_role ADD VALUE IF NOT EXISTS 'liaison'"))
-    connection.execute(sa.text("ALTER TYPE user_role ADD VALUE IF NOT EXISTS 'public'"))
+    # PostgreSQL 12+ allows ALTER TYPE ... ADD VALUE IF NOT EXISTS inside a transaction.
+    # The project targets PostgreSQL 17, so the prior COMMIT workaround (which breaks
+    # asyncpg's protocol-level transaction management) is not needed.
+    op.execute(sa.text("ALTER TYPE user_role ADD VALUE IF NOT EXISTS 'liaison'"))
+    op.execute(sa.text("ALTER TYPE user_role ADD VALUE IF NOT EXISTS 'public'"))
 
 
 def downgrade() -> None:
