@@ -1,729 +1,1067 @@
 # CivicRecords AI — User Manual
 
-**For Municipal Records Staff**
-Version 1.0.0 · April 2026
+**Version 1.1+ · April 2026**
 
 ---
 
-> This manual is written for you — the person sitting at a desk, answering records requests, and trying to get your work done. You do not need to be technical to use this software. If you can use a search engine, you can use CivicRecords AI.
+> This manual serves three audiences. Jump to your section:
+> - **[Section A — End-User Guide](#section-a--end-user-guide)** — City clerks, records officers, and staff who process requests daily. No technical background required.
+> - **[Section B — Technical Reference](#section-b--technical-reference)** — IT administrators, system integrators, and power users who configure and maintain the system.
+> - **[Section C — Architectural Reference](#section-c--architectural-reference)** — Developers and architects who need to understand how the system is built and why.
 
 ---
 
-## Table of Contents
+# Section A — End-User Guide
 
-1. [What is CivicRecords AI?](#1-what-is-civicrecords-ai)
-2. [Getting Started](#2-getting-started)
-3. [Onboarding Your City](#3-onboarding-your-city)
-4. [City Profile](#4-city-profile)
-5. [Searching Documents](#5-searching-documents)
-6. [Managing Records Requests](#6-managing-records-requests)
-7. [Reviewing and Approving Requests](#7-reviewing-and-approving-requests)
-8. [Exemption Detection](#8-exemption-detection)
-9. [Managing Data Sources](#9-managing-data-sources)
-10. [User Management](#10-user-management)
-11. [Discovery Dashboard (Preview)](#11-discovery-dashboard-preview)
-12. [Troubleshooting](#12-troubleshooting)
-13. [Glossary](#13-glossary)
+*Written for staff who receive, process, and fulfill open records requests. You do not need to understand the technology to use this manual.*
 
 ---
 
-## 1. What is CivicRecords AI?
+## A.1 What Is CivicRecords AI?
 
-When a resident, journalist, or attorney sends your office an open records request — asking for emails, contracts, meeting minutes, or other city documents — you have to find the right records, check them for sensitive information, and prepare a response. Depending on how many documents your city has, that search can take hours or days.
+CivicRecords AI is a tool your city uses to respond to public records requests — the formal requests that residents, journalists, and attorneys submit asking for government documents.
 
-**CivicRecords AI is a search assistant that helps you do that work faster.**
+Before this tool, staff had to search through file shares, email archives, and multiple databases by hand, then review every document one by one to check for sensitive information. That process could take hours or days for a single request.
 
-Here is what it does in plain terms:
+CivicRecords AI automates the searching, surfaces the most relevant documents, flags information that may be legally protected, and tracks every request from start to finish.
 
-- It reads and indexes your city's documents — PDFs, Word files, spreadsheets, emails, and more — so you can search through all of them at once using plain English.
-- When you get a records request, it helps you find the relevant documents quickly.
-- It flags documents that might contain sensitive information (like Social Security numbers or personal data) that could be exempt from disclosure.
-- It helps you track each request from the moment it arrives until the day you send the response, including any fees involved.
-- It can generate a draft response letter for staff review before it goes out.
-- It keeps a complete record of everything that happened — who searched for what, who made what decisions — so your office is protected if anyone ever questions your process.
+**What you can do with it:**
+- Search across all your city's connected documents using plain English questions
+- Create and manage records requests from intake through fulfillment
+- Review documents flagged for potentially sensitive information (you always make the final call — the system never releases or redacts anything automatically)
+- Generate AI-assisted response letters
+- Track deadlines and request status in real time
 
 **What it does not do:**
-
-- It does not make decisions for you. Every exemption flag, every draft response, every document you include or exclude — you decide. The software is a helper, not a decision-maker.
-- It does not send anything automatically. Nothing goes out the door without a human pressing a final "approve" button.
-- It does not connect to the internet. Everything stays inside your city's network. No resident data ever leaves the building.
-- It is not a replacement for your city attorney or your judgment.
-
-Think of it as a very fast research assistant who has read every document your city has on file and is standing by to help you find things.
+- Release documents without human approval
+- Redact information automatically
+- Replace your legal judgment — it assists it
 
 ---
 
-## 2. Getting Started
+## A.2 Signing In
 
-### Opening the Application
+1. Open your browser and go to the address your IT department provided (typically `http://[your-city-server]:8080`).
+2. Enter your email address and password.
+3. Click **Sign In**.
 
-CivicRecords AI runs in your web browser — the same way you might use your city's email or an online form. You do not need to install anything on your computer.
+If you cannot sign in, contact your system administrator. Passwords are not stored in this system — your administrator must reset your account.
 
-Open your web browser (Chrome, Firefox, or Edge all work) and type the address your IT department gave you into the address bar. It will look something like:
+**Your role determines what you see:**
+- **Admin** — Full access: all departments, sources, users, and settings
+- **Staff** — Your department's requests and documents only
+- **Liaison** — Read-only view of your department's requests
 
-```
-http://civicrecords.cityname.gov
-```
-
-or
-
-```
-http://10.1.2.3:8080
-```
-
-Ask your IT department if you are not sure what address to use.
-
-### Logging In
-
-When you arrive at the login page, you will see the CivicRecords AI logo badge and two fields:
-
-- **Email** — the email address your administrator set up for your account
-- **Password** — the password you were given (you should change this to something personal on your first login)
-
-Type your email and password, then click **Log In**.
-
-If you see a message saying your credentials are incorrect, double-check that Caps Lock is not on. If you still cannot log in, see [Troubleshooting](#12-troubleshooting) or contact your administrator.
-
-### Navigating the Application
-
-After you log in, you will see the **sidebar** on the left side of every screen. This is your main navigation menu. It is organized into three groups:
-
-**Workflow** — The day-to-day tools you use to process records requests:
-- **Search** — Find documents across your city's indexed files
-- **Requests** — Track and manage open records requests
-- **Exemptions** — Review flagged content across all requests
-
-**Setup** — Tools for connecting your city's data:
-- **Data Sources** — Connect document folders and other integrations
-- **Ingestion** — Monitor the document indexing process
-
-**Administration** — Tools for managing the system (administrators only):
-- **Users** — Create and manage user accounts
-- **Settings** — Configure system-wide options
-
-When you first land after logging in, the sidebar also shows summary cards with how many open requests are in progress, how many are approaching their deadline, and any items waiting for your attention.
-
-The exact items you see in the sidebar depend on your role. If you are a standard staff member, you will not see the Administration group — those items are for administrators only.
+If you see less than you expect, your role or department assignment may need to be updated. Contact your administrator.
 
 ---
 
-## 3. Onboarding Your City
+## A.3 The Dashboard
 
-When CivicRecords AI is first set up for your city, an administrator will be guided through a brief onboarding wizard before anything else is available. If you are that administrator, this section explains what to expect.
+After signing in, you see the main dashboard. The left sidebar has these sections:
 
-### The Onboarding Wizard
+| Section | What it does |
+|---|---|
+| **Search** | Search all connected city documents |
+| **Requests** | Open records request inbox and lifecycle |
+| **Sources** | Connected data systems (Admin only) |
+| **Exemptions** | Flagged content for human review |
+| **Admin** | User accounts, departments, settings |
 
-The onboarding wizard walks you through three phases. Think of it as a short setup interview that helps the system understand your city before you start processing requests.
-
-**Phase 1: City Profile**
-
-You will enter basic information about your city:
-
-- City name, state, and county
-- Primary contact name and email for the records office
-- The open records law your city operates under (for example, CORA for Colorado)
-- Your statutory response deadline (for example, 7 business days)
-
-This information appears on your City Profile page (see Section 4) and is used to calculate deadlines automatically.
-
-**Phase 2: Systems**
-
-You will identify what kinds of document systems your city uses:
-
-- File servers or shared drives
-- Email systems (Exchange, Gmail, etc.)
-- Databases or case management software
-- Any other places city records are stored
-
-You do not connect these systems during this phase — you are just telling the system what exists. Connections are set up later in Data Sources (see Section 9).
-
-**Phase 3: Gap Map**
-
-Based on what you told the system in Phase 2, the wizard will generate a **Gap Map** — a visual summary of which systems are connected, which are not yet connected, and which are on the roadmap. This helps your office know at a glance whether your searches are comprehensive or whether certain document repositories are still missing from the system.
-
-Once you complete all three phases, the wizard closes and you land on your City Profile page.
+The top of the screen shows your name, role, and a notification bell for pending items.
 
 ---
 
-## 4. City Profile
+## A.4 Searching Documents
 
-The **City Profile** page is a permanent home for your city's key information. You can access it from the sidebar at any time. Administrators can edit it; staff members can view it.
+Search is the fastest way to find documents responsive to a records request.
 
-### What the City Profile Shows
+**To search:**
+1. Click **Search** in the left sidebar.
+2. Type your question in plain English. For example:
+   - *"contracts with Apex Roofing signed after 2022"*
+   - *"incident reports from the Riverside District in March 2024"*
+   - *"employee termination records for public works department"*
+3. Press **Enter** or click **Search**.
 
-**City Details** — The basic information entered during onboarding: city name, state, county, contact, applicable open records law, and response deadline.
+**Reading results:**
+- Each result shows the document title, the source system it came from, a relevance score, and a text excerpt.
+- Click a result to open it.
+- The **AI Summary** toggle (if enabled) shows a one-paragraph summary of the document — useful for quickly deciding if it's responsive before opening the full file.
 
-**Connected Systems** — A list of every document system that has been set up in Data Sources, with its current connection status (connected, error, not yet configured).
+**Filters:**
+- Use the date range filter to narrow results by when documents were created or modified.
+- Use the source filter to search only specific connected systems.
 
-**Gap Map** — The same visual summary from onboarding, kept up to date as you add or remove data sources. Green items are connected. Gray items are identified but not yet connected. This is a quick reference for your records officers to understand what the system can and cannot search.
-
----
-
-## 5. Searching Documents
-
-The search screen is where you go to find documents. Click **Search** in the sidebar.
-
-### How to Type a Query
-
-You do not need to use special codes or exact phrases. Just type what you are looking for in plain English, the same way you would ask a question to a colleague.
-
-**Examples of good queries:**
-
-- `contracts with ABC Paving from 2023`
-- `emails about the Main Street water line repair`
-- `city council minutes mentioning the budget amendment`
-- `police department use of force policy`
-
-Type your query in the search box and press **Enter** or click the **Search** button.
-
-### What Results Look Like
-
-After a moment, you will see a list of results. Each result shows:
-
-- **Document name** — the filename and where it came from
-- **An excerpt** — a short passage from the document showing the part that matched your search, with the relevant words highlighted
-- **A confidence score** — a number from 0 to 100 (sometimes shown as a percentage)
-- **Source information** — the file path or folder where the document lives
-
-You can click on any result to see more of that document.
-
-### What the Confidence Score Means
-
-The confidence score tells you how closely the system thinks that document matches your search. Think of it like a relevance rating:
-
-- **80–100** — Very likely relevant. The document closely matches what you searched for.
-- **50–79** — Possibly relevant. Worth looking at, but may or may not be what you need.
-- **Below 50** — Less likely relevant. The system found some connection but it may be a stretch.
-
-A high confidence score does not mean a document is definitely responsive to a records request — that is your judgment call. It just means the search engine thinks it is a strong match.
-
-### Using Filters
-
-On the right side of the search screen (or above the results, depending on your screen), you will see filter options. Filters help you narrow down results when you have too many.
-
-- **Date range** — Only show documents from a certain time period (for example, "January 2022 to December 2023")
-- **Department** — Only show documents from a specific department or folder
-- **File type** — Only show PDFs, or only Word documents, etc.
-- **Source** — If your city has multiple document collections, you can search just one
-
-To use a filter, click on it and select your options. The results will update automatically.
-
-### What "Generate AI Summary" Does
-
-At the top of your search results, you may see a button that says **Generate AI Summary** or **Summarize Results**. When you click it, the system will read the top results and write a short paragraph summarizing what it found.
-
-**This is a draft. It requires your review.**
-
-The summary is generated by the AI and may not be perfectly accurate. It is a starting point to help you orient yourself — not a finished product. You should always read the actual documents before deciding whether they are responsive.
-
-Every AI-generated summary will be clearly labeled: *"AI-generated draft requiring human review."* That label is there on purpose and cannot be removed.
-
-### Refining Your Search
-
-If your first search did not return what you were looking for, try:
-
-- Using different words (for example, "road repair" instead of "street maintenance")
-- Being more specific ("Miller Park playground equipment purchase 2022" instead of "playground")
-- Being less specific if you got zero results
-- Adjusting the date filter if the document might be older or newer than you expected
-
-You can also ask follow-up questions in the search box to refine results within the same session.
+**Export:**
+- Click **Export CSV** to download the result list. The CSV includes document titles, sources, relevance scores, and source paths — useful for documenting your search process in the request record.
 
 ---
 
-## 6. Managing Records Requests
-
-The **Requests** screen is where you track every open records request your office receives. Click **Requests** in the sidebar.
+## A.5 Managing Records Requests
 
 ### Creating a New Request
 
-When a new records request arrives (by mail, email, fax, or in person), you need to log it in the system right away. Click the **New Request** button (usually in the upper right corner of the Requests screen).
+1. Click **Requests** → **New Request**.
+2. Fill in the form:
+   - **Requester name and contact information**
+   - **Request description** — what the requester is asking for
+   - **Date received**
+   - **Legal deadline** — your jurisdiction's response deadline (e.g., 3 business days for CORA, 5 business days for most state FOIA equivalents)
+3. Click **Create Request**.
 
-You will see a form with the following fields:
+The request is assigned a reference number and enters the **Intake** status.
 
-**Requester Name** — The full name of the person or organization making the request. This is required.
+### The Request Lifecycle
 
-**Requester Email** — Their email address, if you have it. This is used for communications.
+Requests move through ten statuses. You advance a request manually — the system never skips a status automatically.
 
-**Date Received** — The date the request arrived at your office. This is important because your statutory deadline is calculated from this date.
-
-**Statutory Deadline** — The date by which you must respond. Your IT administrator may have pre-configured this to calculate automatically based on your state's law (for example, 7 business days in some states, 10 in others). If it does not calculate automatically, enter the deadline by hand.
-
-**Description** — A summary of what the requester is asking for. You can paste in the exact language from their request. Be thorough — this description is what you will use to guide your search.
-
-Click **Save** or **Create Request** when you are done. The request is now in the system with a status of **Received**.
-
-### What the Fields Mean
-
-| Field | What it's for |
+| Status | Meaning |
 |---|---|
-| Requester Name | Identifies who made the request for your records |
-| Requester Email | How to contact them with your response |
-| Date Received | Starts your legal clock for response deadlines |
-| Statutory Deadline | The date you must respond by under state law |
-| Description | What records they are asking for |
-| Assigned To | Which staff member is handling this request |
+| **Intake** | Request received and logged |
+| **Clarification** | Waiting for additional information from the requester |
+| **Assigned** | Assigned to a staff member for processing |
+| **Search** | Staff is searching for responsive documents |
+| **Review** | Documents found; under legal review |
+| **Drafting** | Response letter being prepared |
+| **Approval** | Waiting for supervisor or legal approval |
+| **Fulfillment** | Documents and letter sent to requester |
+| **Closure** | Request complete and closed |
 
-### How the Status Workflow Works
+To advance a request: open it → click **Advance Status** → select the next status → confirm.
 
-Every request moves through a series of stages. You can see the current status on each request card. Here is what each status means:
+### Searching Within a Request
 
-**Received** — You have logged the request but have not started searching yet. The clock is running.
+From inside a request, click **Run Search** to search for responsive documents. The system uses the request description to generate an initial query, which you can edit. Results are saved to the request record for audit purposes.
 
-**Clarification Needed** — The request is unclear or too broad to search effectively. You need more information from the requester before you can proceed. Use this status when you are waiting on a reply from them.
+### Adding Documents to a Request
 
-**Assigned** — The request has been assigned to a specific staff member who will handle it.
+After searching, mark documents as **Responsive** or **Non-Responsive**. Only documents marked responsive will appear in the response package.
 
-**Searching** — You are actively searching for responsive documents. Change the status to this when you start your search work.
+### Request Timeline
 
-**In Review** — You have found documents and are reviewing them to decide what to include, what to exclude, and whether any exemptions apply.
-
-**Drafted** — You have prepared a draft response letter and it is ready for supervisor review.
-
-**Approved** — A supervisor has reviewed and approved the response.
-
-**Ready for Release** — The response has been approved and is queued to go out.
-
-**Sent** — The response has been sent to the requester.
-
-**Fulfilled** — The requester has confirmed they received everything they needed. The request is complete.
-
-**Closed** — The request has been closed without fulfillment (for example, the requester withdrew it, or the request was denied and the appeal period has passed).
-
-To move a request from one status to the next, open the request and look for the **Update Status** button or a dropdown menu showing the current status. Select the next status and click **Save**.
-
-Moving a request backward (for example, from "Drafted" back to "In Review") is also possible if you need to make changes.
-
-### The Request Detail View
-
-When you open a request, you will see the main details at the top, followed by three tabbed sections:
-
-**Timeline** — A chronological log of every action taken on this request: when it was created, when the status changed, when documents were attached, when flags were reviewed, and any notes added along the way. This is your complete audit trail for this request.
-
-**Messages** — A running log of communications related to this request. If you sent a clarification question to the requester, or a note to your supervisor, it is recorded here. Messages are internal unless explicitly marked otherwise.
-
-**Fees** — A record of any fees assessed for this request. Many states allow governments to charge for the cost of searching and copying records. You can log fee amounts here, note whether they have been collected, and attach receipts or fee waiver decisions.
-
-### Attaching Documents from Search
-
-When you find a document in your search that is responsive to a specific request, you can attach it directly to that request.
-
-**Here is how:**
-
-1. Open the request you are working on.
-2. Click **Search for Documents** (inside the request screen). This opens a search panel connected to this request.
-3. Run your search the same way as described in Section 5.
-4. When you find a relevant document, click **Attach to Request** next to that result.
-5. You will be asked to enter a short note about why this document is relevant (for example: "This is the contract referenced in the requester's description"). Enter your note and click **Attach**.
-
-The document now appears in the **Attached Documents** list on the request. You can mark each attached document as:
-
-- **Included** — You intend to release this document
-- **Excluded** — You are not releasing this document (and you should note why)
-- **Pending** — You have not decided yet
-
-### Generating a Response Letter
-
-When you are ready to prepare your formal response, click **Generate Response Letter** on the request. The system will draft a letter based on:
-
-- The requester's name and contact information
-- What they asked for
-- Which documents you are including or excluding
-- Any exemptions that were accepted
-
-**This is a draft. Review it carefully before submitting.**
-
-The letter will be labeled as AI-generated and must be reviewed by a staff member before the request can advance to supervisor review. You can edit the letter directly on screen. Common things to check: make sure the tone is professional, confirm that exclusions are explained correctly, and verify the deadline language is accurate for your state.
-
-### Tracking Fees
-
-If your city charges for records requests, use the **Fees** tab on each request to track what was assessed and what was collected.
-
-To add a fee:
-
-1. Open the request and click the **Fees** tab.
-2. Click **Add Fee**.
-3. Enter the amount, the reason (for example, "Search time: 2 hours at $15/hr" or "Copying: 47 pages at $0.25/page"), and the date assessed.
-4. Click **Save**.
-
-You can also record fee waivers here if the requester qualified for one (for example, media exemptions or indigency waivers). Log the reason for the waiver so it is part of the permanent record.
-
-### Submitting for Review
-
-When you are satisfied with the documents you have gathered, the fees are logged, the response letter is drafted, and any exemption decisions are made (see Section 8), you are ready to submit the request for supervisor review.
-
-1. Make sure the request status is **In Review** or **Drafted**.
-2. Open the request.
-3. Click **Submit for Review**.
-4. Add any notes you want the reviewer to see (for example, "I excluded the HR file because of the personnel exemption — see flag #3").
-5. Click **Submit**.
-
-The request will move to **Drafted** status and appear in your supervisor's review queue.
+Every action on a request is recorded in the **Timeline** tab: who did what, and when. This is your audit trail.
 
 ---
 
-## 7. Reviewing and Approving Requests
+## A.6 Exemption Detection and Review
 
-This section is for supervisors, department heads, and city attorneys who review staff work before responses go out.
+Exemption detection finds content that may be legally protected from release — personal identification numbers, medical information, law enforcement-specific data, and state statutory exemptions.
 
-### How to See Requests Awaiting Review
+**Important:** The system flags content for your review. It does not redact or withhold anything. Every flag requires your decision.
 
-When you log in, your dashboard will show a count of requests waiting for your review. You can also click **Requests** in the sidebar and filter by status: select **Drafted** from the status filter to see only requests that need your attention.
+### How Flags Work
 
-Each request card shows:
-- The requester's name
-- What they are asking for
-- The deadline
-- Who prepared the response
-- Any notes from the staff member
+When the system analyzes a document, it may produce flags:
 
-### Reviewing a Request
+- **Tier 1 — Pattern matches:** Social Security numbers, credit card numbers, phone numbers, email addresses, bank account numbers, and driver's license formats (all 50 states and DC).
+- **Tier 2 — Statutory keywords:** Phrases matching exemption language in your state's open records law (180 rules covering all 50 states and DC).
+- **Tier 3 — LLM review (optional):** If enabled, an AI model reviews flagged content and adds context.
 
-Click on a request to open it. You will see:
+### Reviewing a Flag
 
-- The full description of what was requested
-- All attached documents, marked as included, excluded, or pending
-- Any exemption flags that were reviewed (see Section 8)
-- The draft response letter (if one was generated)
-- Notes from the staff member who prepared it
-- The Timeline showing the full history of the request
-- Any fees assessed on the Fees tab
+1. Open the request → click **Exemption Review**.
+2. Each flag shows:
+   - The flagged text excerpt
+   - The exemption rule that triggered it
+   - The page or document location
+3. Choose:
+   - **Confirm** — This information is exempt; do not include it in the release.
+   - **Dismiss** — This is not actually sensitive; include it in the release.
+   - **Escalate** — Flag for legal review before deciding.
 
-Take your time reviewing each attached document. You can click on a document to view it or the relevant excerpt. Check that:
-
-- The right documents are included
-- Anything excluded has a valid reason
-- Exemption flags were reviewed properly
-- The response letter (if any) is accurate
-- Fees (if any) are correctly documented
-
-### How to Approve
-
-If everything looks correct, click the **Approve** button. You may be asked to enter a brief note confirming your approval (for example, "Reviewed and approved — all exemptions properly noted"). Click **Confirm Approval**.
-
-The request status will change to **Approved**, then to **Ready for Release**. The staff member will be notified. The final step — marking it as **Sent** — happens after the response is actually delivered to the requester.
-
-### How to Reject (Send Back for Revision)
-
-If you find a problem — a missing document, an exemption that was not flagged, or a response letter that needs changes — click **Request Revision** (or **Reject**).
-
-You must enter **review notes** explaining what needs to be fixed. Be specific: "Please re-check the 2022 folder for contract amendments" is more helpful than "needs more work."
-
-The request will move back to **In Review** status and the staff member will see your notes.
-
-### What Review Notes Are
-
-Review notes are the written explanation a reviewer leaves when sending a request back for revision. They are:
-
-- Required whenever you reject or request changes
-- Visible to the staff member who prepared the response
-- Permanently logged in the audit trail
-- Your way of communicating exactly what needs to change
-
-Think of them as the sticky note you would leave on a paper file — except this one is saved forever.
+All decisions are recorded with a timestamp and your name.
 
 ---
 
-## 8. Exemption Detection
+## A.7 Response Letters
 
-### What Exemptions Are
+CivicRecords AI can draft a response letter for each request.
 
-Not every document in a city's files can be released to the public. State law (FOIA, CORA, and their equivalents) defines categories of information that are protected. These are called **exemptions**.
+1. Open a request in **Drafting** status.
+2. Click **Generate Draft Letter**.
+3. The system creates a draft using the request details, the documents being released, and any exemptions confirmed.
+4. Edit the draft as needed — the AI output is a starting point, not a final document.
+5. Click **Save Letter** to attach it to the request record.
 
-Common examples:
-- Personal information (like Social Security numbers or medical records)
-- Personnel files (employee evaluations, disciplinary records)
-- Active law enforcement investigations
-- Attorney-client privileged communications
-- Certain financial records and trade secrets
-
-When you respond to a records request, you have to check whether any of the responsive documents contain exempt information. If they do, you may need to redact (black out) that information or withhold the document entirely. That decision is always yours — and usually needs your city attorney's input for anything complicated.
-
-### How the System Flags Potential Exemptions
-
-CivicRecords AI has a built-in system that automatically scans documents for content that might be exempt. When it finds something, it creates an **exemption flag**.
-
-Flags are not decisions. They are the system's way of saying: *"Hey, you should look at this part of this document."*
-
-You will see flags appear:
-- On the document view (highlighted passages)
-- On the request page, in an "Exemption Flags" section
-- In the **Exemptions** section of the sidebar
-
-Each flag shows:
-- What triggered it (for example, "SSN pattern detected" or "personnel file keyword")
-- The exact text that was flagged
-- A confidence level
-- The document and page where it was found
-
-### The Exemptions Screen: Two Tabs
-
-When you click **Exemptions** in the sidebar, you will see a tabbed interface with two views:
-
-**Rules** — A list of all the exemption detection rules configured in your system. Each rule shows its name, category, description, and how many flags it has generated. Administrators can edit or add rules from this tab.
-
-**Flags for Review** — All exemption flags that currently need a human decision, across all requests. You can filter this list by request, by flag category, or by flag status. This is the queue you work through when reviewing exemptions.
-
-### How to Review Flags
-
-To review a flag, open the request or go to the **Exemptions** screen and click the **Flags for Review** tab. For each flag, you have two choices:
-
-**Accept** — You agree that this content is potentially exempt and you will take that into account (redact it, withhold the document, or note it in your response). Click **Accept Flag**.
-
-**Reject** — You reviewed the flagged content and determined it is not actually exempt (for example, a Social Security number that turned out to be a permit number formatted similarly). Click **Reject Flag** and enter a brief note explaining why.
-
-You must take an action on every flag before a request can be submitted for review. No flag can be left in "flagged" status — the system requires a human decision on each one.
-
-All flag decisions are logged permanently in the audit trail.
-
-### What the Built-In Rules Catch
-
-The system comes with automatic detection rules for common categories of sensitive information. These rules scan for patterns in the text of your documents.
-
-**PII (Personally Identifiable Information) rules:**
-
-- **Social Security Numbers** — Detects 9-digit numbers in formats like `XXX-XX-XXXX` or `XXXXXXXXX`
-- **Phone numbers** — Detects phone number patterns in documents
-- **Email addresses** — Detects email addresses that may identify private individuals
-
-**Statutory phrase detection:**
-
-- Keywords associated with personnel matters
-- Keywords associated with law enforcement investigation exemptions
-- Attorney-client privilege markers
-- Other state-specific statutory phrases (configured by your administrator)
-
-The LLM (AI language model) also does a secondary pass to catch things the rules might miss, and may flag passages that look legally sensitive even if they do not match a specific pattern.
-
-### What the Acceptance Rate Dashboard Shows
-
-In the **Exemptions** section of the sidebar, administrators and supervisors can see a dashboard that shows how exemption flags are being handled across all requests.
-
-It shows:
-- How many flags were generated vs. how many were accepted or rejected
-- Breakdown by flag category (PII, personnel, law enforcement, etc.)
-- Trends over time
-- Which rules are generating the most flags
-
-This helps your office understand whether the detection rules are well-calibrated. If a particular rule is flagging things too aggressively (most flags get rejected), your administrator can adjust it. If too few flags are accepted, the rules may not be sensitive enough.
+All generated letters include an **AI Content Disclosure** statement as required by the Colorado AI Act (CAIA) and similar state regulations. Do not remove this disclosure.
 
 ---
 
-## 9. Managing Data Sources
+## A.8 Fees
 
-This section is primarily for administrators and IT staff, but records officers may also use it to connect new document folders.
+If your jurisdiction charges fees for records requests:
 
-### What a Data Source Is
-
-A data source is any collection of documents you want CivicRecords AI to search through. Each data source is shown as a **card** on the Data Sources page, making it easy to see everything at a glance and check the status of each connection.
-
-### Types of Data Sources
-
-The system supports connecting different types of document repositories. Each source card shows its type and integration status:
-
-- **File Directory** — Folders or shared drives on your city's file server. This is the most common source type and is available now.
-- **Email** — City email systems (Exchange, Google Workspace, etc.). On the integration roadmap for a future release.
-- **Database** — Structured databases or case management systems. On the integration roadmap for a future release.
-- **API** — External systems that provide a data API. On the integration roadmap for a future release.
-
-Cards for future integrations will show a "Coming Soon" or "Roadmap" badge so you can see what is planned without being able to accidentally configure something that is not yet available.
-
-### How to Add a Document Directory
-
-1. Click **Data Sources** in the sidebar.
-2. Click **Add Data Source**.
-3. Fill in the form:
-   - **Name** — A friendly name for this source (for example: "City Clerk Archives 2015–2023")
-   - **Type** — Select "File Directory"
-   - **Path** — The folder path on the server (your IT person will give you this, for example: `\\fileserver\cityrecords\clerk`)
-   - **Schedule** — How often to check for new or changed documents (for example, "Every night at midnight")
-4. Click **Save**.
-
-The system will add this source to its list. The first time it runs, it will read and index every document in that folder. This can take a while depending on how many documents there are.
-
-### How to Trigger Ingestion
-
-Normally, ingestion (the process of reading and indexing documents) runs on the schedule you set. But if you just added new documents and want the system to pick them up right away, you can trigger it manually:
-
-1. Go to **Data Sources**.
-2. Find the source card you want to update.
-3. Click **Run Now** (or **Trigger Ingestion**) on that card.
-
-The system will start processing in the background. You do not need to wait on the page — you can navigate away and check back later.
-
-### What the Ingestion Dashboard Shows
-
-Click **Ingestion** in the sidebar to see the ingestion monitor. For each source, you will see:
-
-- **Status** — Running, Completed, Queued, or Error
-- **Last run** — Shown as a relative timestamp (for example, "2 hours ago" or "Yesterday at 11:45 PM")
-- **Documents processed** — How many files were read
-- **New documents** — How many new files were found since last run
-- **Errors** — Any files the system could not read, and why
-
-Document filenames in the ingestion log are shown as their original, readable names — you will not see technical IDs or system-generated prefixes in the file list.
-
-If you see errors, note the file names and pass them to your IT department. Common causes are password-protected files, corrupted files, or file types the system cannot read.
-
-The dashboard also shows the overall health of your knowledge base: how many documents are indexed in total and when the last full ingestion ran.
+1. Open the request → click the **Fees** tab.
+2. Enter fee line items (search time, copying, etc.).
+3. Record payment when received.
+4. The system tracks outstanding fees and can include a fee statement in the response letter.
 
 ---
 
-## 10. User Management
+## A.9 Common Questions
 
-This section is for administrators only.
+**Q: I can't find a document I know exists.**
+The document may not be connected to the system yet. Check with your administrator which systems are currently synced. If the system is connected but a document is missing, try a different search phrase — the AI search engine matches on meaning, not just exact words.
 
-### How to Create New Users
+**Q: A flag was triggered on a document that clearly isn't sensitive.**
+Click **Dismiss** on that flag. The system learns nothing from your dismissal — it only records your decision in the audit log.
 
-1. Click **Users** in the sidebar (only visible to administrators).
-2. Click **Add User**.
-3. A dialog will appear. Fill in:
-   - **Full Name**
-   - **Email Address** — This is their login username
-   - **Role** — Choose from the four roles described below
-4. Click **Create User**.
+**Q: I advanced a request to the wrong status.**
+Contact your administrator. Status changes are logged and can be manually corrected with an admin account. There is no automatic "back" button — the audit trail must remain intact.
 
-The new user will receive an email (if your system is configured for email) or you will need to share their temporary password with them directly. They should change their password on first login.
+**Q: The deadline passed and the request is still open.**
+Overdue requests appear with a red deadline indicator. You can still process them normally. Document the delay in the request timeline.
 
-### What the Four Roles Mean
-
-**Admin**
-The administrator can do everything: manage users, configure data sources, adjust exemption rules, view all requests, and change system settings. This role should be given to your IT administrator and possibly your records officer. There should be very few admins.
-
-**Staff**
-The standard role for records clerks and the people who handle day-to-day request work. Staff can search documents, create and manage requests, attach documents, review exemption flags, and submit requests for supervisor review. They cannot manage users or change system configuration.
-
-**Reviewer**
-For supervisors, department heads, and city attorneys who review completed requests before responses go out. Reviewers can see all requests in the "Drafted" queue, approve or reject them, and add review notes. They can also search documents. They cannot create requests or manage users.
-
-**Read-Only**
-For people who need to be able to look at the system but should not be able to change anything. Useful for auditors, oversight staff, or elected officials who want visibility without the ability to accidentally modify a request.
-
-| Can do this | Admin | Staff | Reviewer | Read-Only |
-|---|---|---|---|---|
-| Search documents | Yes | Yes | Yes | Yes |
-| View requests | Yes | Yes | Yes | Yes |
-| Create/edit requests | Yes | Yes | No | No |
-| Submit for review | Yes | Yes | No | No |
-| Approve/reject requests | Yes | No | Yes | No |
-| Review exemption flags | Yes | Yes | Yes | No |
-| Manage data sources | Yes | No | No | No |
-| Manage users | Yes | No | No | No |
-| Change system settings | Yes | No | No | No |
+**Q: I see a "Circuit Open" or "Paused" badge on a data source.**
+This means the system lost connection to that data source after repeated failures. Contact your IT administrator. You can still search documents that were previously synced — only new documents from that source will be missing.
 
 ---
 
-## 11. Discovery Dashboard (Preview)
+## A.10 Glossary
 
-The **Discovery Dashboard** is a feature coming in v1.1. When it arrives, it will give records officers a proactive intelligence view of your document collection — surfacing patterns, flagging topics that frequently appear in requests, and helping your office get ahead of records issues before requests arrive.
-
-In v1.0.0, you may see a preview card or placeholder for this section. No data is displayed yet — this is a look at what is coming.
-
-If you have ideas for what you would like to see in the Discovery Dashboard, share them with your CivicRecords AI administrator. The development team welcomes feedback from the people who use the system every day.
-
----
-
-## 12. Troubleshooting
-
-### "I can't log in"
-
-**Check first:**
-- Is Caps Lock on? Passwords are case-sensitive.
-- Are you using the right email address? Try the full email, not just your first name.
-- Is the address in your browser correct? Check with IT if you are unsure.
-
-**If you still cannot log in:**
-Contact your CivicRecords AI administrator. They can reset your password. If your administrator is also locked out, contact your IT department — they can reset accounts directly on the server.
-
-You cannot reset your own password from the login screen in the current version. Your administrator must do it for you.
+| Term | Plain English meaning |
+|---|---|
+| **Open records request** | A formal request from a member of the public for government documents. Also called FOIA, CORA, or your state's equivalent. |
+| **Exemption** | A legal reason why certain information does not have to be released. Examples: Social Security numbers, active criminal investigation details, attorney-client communications. |
+| **PII** | Personal Identifiable Information — data that could identify a specific person, like a Social Security number or home address. |
+| **Responsive document** | A document that directly answers what the requester asked for. |
+| **Data source** | A connected system that CivicRecords AI can search — a file folder, database, or web API. |
+| **Ingestion / Sync** | The process of reading documents from a data source and making them searchable. |
+| **Redaction** | Blacking out exempt information before releasing a document. CivicRecords AI flags candidates; staff perform the actual redaction. |
+| **Audit log** | A permanent, tamper-evident record of every action taken in the system. Required for legal compliance. |
+| **Circuit breaker** | A safety feature that pauses syncing from a data source if it fails repeatedly, preventing runaway errors. |
+| **AI Summary** | A short paragraph generated by the AI describing what a document contains. Used to quickly assess relevance — not a legal summary. |
 
 ---
 
-### "Search returns no results"
+---
 
-**Possible reasons:**
+# Section B — Technical Reference
 
-1. **The documents have not been ingested yet.** If your IT department just set up the system or added a new folder, the indexing process may not have run yet. Go to Data Sources and check the ingestion status. If it shows "Never run" or "Queued," ask your IT person to trigger ingestion.
-
-2. **Try different search terms.** The system searches meaning, not just exact words. If you searched "road maintenance contract" try also "street repair agreement" or "paving services."
-
-3. **Your filters may be too narrow.** If you set a date range or department filter, try removing it and searching again.
-
-4. **The document type may not be supported.** Some files — like password-protected PDFs or certain older formats — cannot be indexed. Ask IT to check the ingestion error log for that data source.
-
-5. **The document may simply not exist** in the ingested sources. The system can only find what it has been given access to.
+*For IT administrators, system integrators, and power users who install, configure, and maintain CivicRecords AI.*
 
 ---
 
-### "Ingestion is stuck"
+## B.1 System Requirements
 
-If you go to Data Sources and a source shows "Running" for a very long time (more than a few hours for a normal-sized folder), something may have gone wrong.
+| Component | Minimum | Recommended |
+|---|---|---|
+| CPU | 8 cores | 16 cores |
+| RAM | 32 GB | 64 GB |
+| Disk | 50 GB free | 2+ TB NVMe |
+| OS | Windows 10/11, macOS 13+, Ubuntu 22.04+, Debian 12+ | Ubuntu 22.04 LTS |
+| Runtime | Docker Desktop (Windows/macOS) or Docker Engine (Linux) | Docker Engine 24+ |
 
-**What to do:**
-1. Note the data source name and when it started running.
-2. Contact your IT department.
-3. Tell them: "The ingestion for [source name] has been running since [time] and does not seem to be finishing."
-
-IT will check the worker logs and can restart the process if needed. Do not try to click "Run Now" again while it shows "Running" — wait for IT to investigate first.
-
----
-
-### "I see 'Bad Gateway' or a blank screen"
-
-This means the application server is not responding. This is not something you caused — it is a server issue.
-
-**What to do:**
-1. Wait 30 seconds and refresh the page.
-2. If it is still showing the error, try logging out and back in.
-3. If it persists, contact your IT department and tell them: "CivicRecords AI is showing a Bad Gateway error."
-
-IT will need to check whether the backend services are running. The fix usually involves restarting the application, which takes a few minutes.
+**GPU (optional but recommended):**
+- NVIDIA (CUDA) — Windows and Linux
+- AMD (ROCm) — Linux only
+- AMD/Intel (DirectML) — Windows
+- CPU fallback is supported but significantly slower for LLM inference
 
 ---
 
-## 13. Glossary
+## B.2 Installation
 
-**Open Records Request**
-A formal written request from a member of the public asking your government office to provide copies of specific records. State laws require governments to respond within a set time period and to release records unless a specific exemption applies.
+**Windows:**
+```powershell
+git clone https://github.com/scottconverse/civicrecords-ai.git
+cd civicrecords-ai
+.\install.ps1
+```
 
-**FOIA (Freedom of Information Act)**
-The federal law that gives the public the right to request records from federal government agencies. Many states have their own equivalent laws (like Colorado's CORA). The term "FOIA" is often used informally to refer to any open records request, even at the local level.
+**macOS / Linux:**
+```bash
+git clone https://github.com/scottconverse/civicrecords-ai.git
+cd civicrecords-ai
+bash install.sh
+```
 
-**CORA (Colorado Open Records Act)**
-Colorado's state open records law. CivicRecords AI is designed to the CORA standard, which is one of the strictest in the country — meaning if it works correctly under CORA, it works for most other states too.
+The installer:
+1. Creates `.env` from `.env.example` (prompts for required values)
+2. Pulls Docker images (~8–12 GB first time)
+3. Pulls the Ollama model (`nomic-embed-text` always; `gemma4` or your configured model)
+4. Starts all 7 Docker Compose services
+5. Runs database migrations
+6. Creates the initial admin account
 
-**Exemption**
-A category of information that state law says the government does not have to (or sometimes must not) release. Common examples: personnel files, medical records, ongoing criminal investigations, attorney-client privileged communications, and Social Security numbers. Exemptions vary by state. Your city attorney is the authority on which exemptions apply in your situation.
-
-**Redaction**
-The process of blacking out or removing specific text from a document before releasing it. For example, if a document contains an employee's Social Security number but everything else is releasable, you would redact (cover) just that number before sending the document to the requester. CivicRecords AI helps you identify what might need redaction, but the actual redacting is done by your staff.
-
-**Ingestion**
-The process by which CivicRecords AI reads your documents and prepares them to be searched. During ingestion, the system opens each file, extracts the text, breaks it into pieces, and stores it in a way that makes fast searching possible. Think of it like a librarian cataloging every book in a library so you can find things quickly.
-
-**Chunking**
-During ingestion, each document is broken into smaller pieces called "chunks." This is necessary because the AI works better with smaller pieces of text than with entire 50-page contracts. When you search, the system finds the relevant chunk and shows you where in the document it came from.
-
-**Embedding**
-After chunking, each piece of text is converted into a set of numbers that represents its meaning. These numbers are called an "embedding." The embedding lets the system compare meanings rather than just matching exact words. That is why you can search for "road maintenance" and find a document that says "street repair" — the meanings are similar even if the words are different.
-
-**Vector Search**
-The search method that uses embeddings to find documents by meaning. When you type a query, the system converts your query into an embedding and looks for document chunks with similar embeddings. This is different from a regular keyword search (which only finds exact words). CivicRecords AI uses both methods together for better results.
-
-**PII (Personally Identifiable Information)**
-Any information that can identify a specific person. Examples: a person's name combined with their address, Social Security numbers, driver's license numbers, medical record numbers, and financial account numbers. Many exemptions in open records law are designed to protect PII. CivicRecords AI has built-in rules to automatically flag common PII patterns like SSNs and phone numbers.
-
-**Audit Log**
-A permanent, tamper-evident record of everything that has happened in the system. Every search, every request update, every exemption decision, every login — all of it is recorded with a timestamp and the name of the person who did it. The audit log exists because open records laws require governments to be accountable for how they process records requests. You may be asked to produce the audit log if your office's process is ever questioned.
-
-**Gap Map**
-A visual summary of which document systems your city has connected to CivicRecords AI and which are not yet connected. The Gap Map helps records officers understand whether their searches are comprehensive and shows what is on the roadmap for future integration.
-
-**Response Letter**
-A formal letter generated by the system as a draft for staff review. The letter summarizes what the requester asked for, what is being provided, what (if anything) is being withheld, and the legal basis for any withholding. Staff must review and approve the letter before it is sent.
+After installation, open `http://localhost:8080` in your browser.
 
 ---
 
-*CivicRecords AI is open-source software licensed under Apache 2.0. For technical documentation, installation instructions, and developer guides, see the project repository.*
+## B.3 Environment Variables
 
-*This manual covers version 1.0.0 of the system. If you are using a newer version and something does not match what you see on screen, check with your administrator for an updated manual.*
+All configuration lives in `.env` in the repo root. Never commit this file.
+
+| Variable | Required | Default | Description |
+|---|---|---|---|
+| `DATABASE_URL` | Yes | — | PostgreSQL connection string (asyncpg format) |
+| `JWT_SECRET` | Yes | — | Random string ≥ 32 chars for JWT signing |
+| `FIRST_ADMIN_EMAIL` | Yes | — | Initial admin account email |
+| `FIRST_ADMIN_PASSWORD` | Yes | — | Initial admin account password |
+| `OLLAMA_BASE_URL` | No | `http://ollama:11434` | Ollama API endpoint |
+| `REDIS_URL` | No | `redis://redis:6379/0` | Redis connection string |
+| `SMTP_HOST` | No | — | SMTP server for email notifications |
+| `SMTP_PORT` | No | `587` | SMTP port |
+| `SMTP_USERNAME` | No | — | SMTP auth username |
+| `SMTP_PASSWORD` | No | — | SMTP auth password |
+| `AUDIT_RETENTION_DAYS` | No | `1095` | Audit log retention (3 years default) |
+
+---
+
+## B.4 Docker Services
+
+Seven services run via Docker Compose:
+
+| Service | Image | Port | Role |
+|---|---|---|---|
+| `postgres` | postgres:17 + pgvector | 5432 | Primary database + vector store |
+| `redis` | redis:7.2 | 6379 | Celery broker and result backend |
+| `ollama` | ollama/ollama | 11434 | Local LLM inference |
+| `api` | civicrecords-ai/api | 8000 | FastAPI backend |
+| `worker` | civicrecords-ai/api | — | Celery async task worker |
+| `beat` | civicrecords-ai/api | — | Celery beat scheduler |
+| `frontend` | civicrecords-ai/frontend | 8080 | nginx + React SPA |
+
+**Common operations:**
+```bash
+# Start all services
+docker compose up -d
+
+# Stop all services
+docker compose down
+
+# View logs
+docker compose logs -f api
+docker compose logs -f worker
+
+# Run database migrations manually
+docker compose exec api alembic upgrade head
+
+# Restart a single service
+docker compose restart worker
+```
+
+---
+
+## B.5 Connector Types and Configuration
+
+CivicRecords AI uses a standardized connector framework. Each connector must implement: `authenticate()`, `discover()`, `fetch()`, and `health_check()`.
+
+### B.5.1 File System Connector
+
+Reads files from a local or network-mounted directory.
+
+```json
+{
+  "source_type": "filesystem",
+  "connection_config": {
+    "root_path": "/mnt/city-documents",
+    "file_extensions": [".pdf", ".docx", ".xlsx", ".csv", ".txt"],
+    "recursive": true,
+    "max_file_size_mb": 50
+  }
+}
+```
+
+| Field | Description |
+|---|---|
+| `root_path` | Absolute path visible to the Docker container |
+| `file_extensions` | List of extensions to ingest (omit for all supported types) |
+| `recursive` | Traverse subdirectories |
+| `max_file_size_mb` | Files larger than this are skipped |
+
+**Supported file types:** PDF, DOCX, XLSX, CSV, TXT, HTML, EML. Scanned PDFs processed via Gemma 4 multimodal + Tesseract OCR fallback.
+
+### B.5.2 REST API Connector
+
+Connects to any REST API that returns JSON, XML, or CSV.
+
+```json
+{
+  "source_type": "rest_api",
+  "connection_config": {
+    "base_url": "https://api.tyler-munis.example.gov",
+    "endpoint_path": "/v1/contracts",
+    "auth_method": "api_key",
+    "key_header": "X-API-Key",
+    "key_location": "header",
+    "api_key": "your-api-key-here",
+    "pagination_style": "page",
+    "page_param": "page",
+    "limit_param": "per_page",
+    "page_size": 100,
+    "results_field": "data",
+    "id_field": "id",
+    "response_format": "json",
+    "max_records": 50000,
+    "max_response_bytes": 10485760
+  }
+}
+```
+
+**Auth methods:** `none`, `api_key` (header or query), `bearer`, `oauth2` (client credentials), `basic`
+
+**Pagination styles:** `none`, `page`, `offset`, `cursor`
+
+**OAuth2 configuration:**
+```json
+{
+  "auth_method": "oauth2",
+  "token_url": "https://auth.example.gov/token",
+  "client_id": "your-client-id",
+  "client_secret": "your-client-secret"
+}
+```
+
+**Rate limiting:** The connector honors `Retry-After` response headers, sleeping up to 600 seconds before retrying (D10 spec). Malformed headers fall back to exponential backoff.
+
+### B.5.3 ODBC Connector
+
+Connects to SQL databases via pyodbc (SQL Server, MySQL, PostgreSQL, Oracle, SQLite).
+
+```json
+{
+  "source_type": "odbc",
+  "connection_config": {
+    "dsn": "DRIVER={ODBC Driver 17 for SQL Server};SERVER=10.0.1.5;DATABASE=TylerNewWorld;UID=readonly_user;PWD=password",
+    "query": "SELECT id, document_title, document_text, created_date FROM documents WHERE department_code = 'PD'",
+    "id_column": "id",
+    "text_columns": ["document_title", "document_text"],
+    "batch_size": 500
+  }
+}
+```
+
+**Security:** Queries are validated against an allowlist of safe SQL patterns. Only `SELECT` statements are permitted. Parameters are never interpolated into query strings.
+
+---
+
+## B.6 Scheduled Sync
+
+Each data source can be synced on a schedule using standard 5-field cron expressions.
+
+```
+┌───────────── minute (0–59)
+│ ┌───────────── hour (0–23)
+│ │ ┌───────────── day of month (1–31)
+│ │ │ ┌───────────── month (1–12)
+│ │ │ │ ┌───────────── day of week (0–6, Sunday=0)
+│ │ │ │ │
+0 2 * * *     # Every day at 2:00 AM UTC
+*/30 * * * *  # Every 30 minutes
+0 */6 * * *   # Every 6 hours
+```
+
+**Constraints:**
+- Minimum interval: 5 minutes (enforced by validation)
+- Minimum re-run interval: 7 days rolling window (prevents accidentally-tight schedules)
+- All schedules are evaluated in UTC; the UI shows your local timezone for reference
+- Set `schedule_enabled = false` to pause scheduling without clearing the schedule expression
+
+---
+
+## B.7 Sync Failure Tracking and Circuit Breaker
+
+### Failure States
+
+Individual records track their own failure state:
+
+| Status | Meaning |
+|---|---|
+| `retrying` | Failed at least once; will retry on next sync |
+| `permanently_failed` | Failed ≥ 5 times or is ≥ 7 days old; no longer retried automatically |
+| `resolved` | Was failing; successfully ingested on a later sync |
+| `tombstone` | Admin-dismissed; excluded from future syncs |
+
+### Circuit Breaker
+
+The circuit breaker tracks *full-run* failures — when every single record in a sync run fails.
+
+- After **5 consecutive full-run failures**: source is auto-paused (`sync_paused = true`), admin is notified, health status shows **Circuit Open**
+- To recover: fix the underlying issue → click **Unpause →** on the source card
+- After unpausing: the source enters **grace period** (threshold = 2 consecutive full-run failures to re-trip). This gives fast feedback if the fix didn't work.
+- A successful sync after unpausing resets the threshold to normal (5)
+
+### Health Status
+
+Each source card shows a colored health indicator:
+
+| Color | Status | Meaning |
+|---|---|---|
+| 🟢 Green | Healthy | Syncing normally |
+| 🟡 Amber | Degraded | Some record failures, but sync is running |
+| 🔴 Red | Paused | Circuit open; manual intervention required |
+
+### Failed Records Panel
+
+Click **View failures** on any source card with failures to open the panel:
+- See each failed record's path, error message, retry count, and status
+- **Retry** individual records or use **Retry all permanently failed** for bulk retry
+- **Dismiss** records you don't want ingested (adds a tombstone; preserved in audit log)
+
+---
+
+## B.8 API Reference
+
+The FastAPI backend exposes a REST API documented at `http://localhost:8000/docs` (Swagger UI) and `http://localhost:8000/redoc`.
+
+**Authentication:** All endpoints require a JWT bearer token.
+
+```bash
+# Obtain a token
+curl -X POST http://localhost:8000/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{"email": "admin@example.gov", "password": "yourpassword"}'
+
+# Use the token
+curl http://localhost:8000/datasources \
+  -H "Authorization: Bearer <token>"
+```
+
+**Key endpoint groups:**
+
+| Prefix | Description |
+|---|---|
+| `/auth/` | Login, token refresh, password management |
+| `/datasources/` | CRUD for data sources, sync triggers, failure management |
+| `/documents/` | Document search, retrieval, export |
+| `/requests/` | Records request lifecycle |
+| `/exemptions/` | Flag review and management |
+| `/admin/` | Users, departments, model registry |
+| `/compliance/` | Compliance templates download |
+| `/health` | Service health check |
+
+**Service accounts:** Create dedicated API accounts with limited roles for programmatic access (e.g., a requester portal integration). Manage in Admin → Service Accounts.
+
+---
+
+## B.9 Model Registry
+
+CivicRecords AI uses two model types:
+
+| Type | Default | Notes |
+|---|---|---|
+| **Embedding** | `nomic-embed-text` | Always required; very lightweight |
+| **Chat/Vision** | `gemma4:27b` (recommended) | Used for document analysis, AI summaries, and OCR on scanned PDFs |
+
+**To change models:**
+1. Go to **Admin → Model Registry**
+2. Select the model type
+3. Enter the Ollama model identifier (e.g., `mistral:7b`, `llama3:8b`)
+4. Click **Save** — the change takes effect on the next task that requires that model
+
+**To pull a new model:**
+```bash
+docker compose exec ollama ollama pull gemma4:27b
+```
+
+---
+
+## B.10 Backup and Maintenance
+
+**Database backup:**
+```bash
+docker compose exec postgres pg_dump -U civicrecords civicrecords | gzip > backup_$(date +%Y%m%d).sql.gz
+```
+
+**Restore:**
+```bash
+gunzip -c backup_20260101.sql.gz | docker compose exec -T postgres psql -U civicrecords civicrecords
+```
+
+**Disk space:** Document content and embeddings grow with your document set. Monitor with:
+```bash
+docker compose exec postgres psql -U civicrecords -c "SELECT pg_size_pretty(pg_database_size('civicrecords'));"
+```
+
+**Audit log retention:** Set `AUDIT_RETENTION_DAYS` in `.env`. Default is 1095 (3 years). A Celery beat task trims old records nightly.
+
+**Data sovereignty verification:**
+```bash
+# Linux/macOS
+bash scripts/verify-sovereignty.sh
+
+# Windows
+.\scripts\verify-sovereignty.ps1
+```
+Runs netstat and confirms no outbound connections are active. Present output to your network security team.
+
+---
+
+## B.11 Troubleshooting
+
+**Services won't start:**
+```bash
+docker compose logs postgres   # Check DB initialization
+docker compose logs ollama     # Check model download
+docker compose ps              # Check which services are unhealthy
+```
+
+**API returns 500:**
+```bash
+docker compose logs api --tail=50
+```
+
+**Worker not processing tasks:**
+```bash
+docker compose logs worker --tail=50
+docker compose restart worker
+```
+
+**Ollama model not found:**
+```bash
+docker compose exec ollama ollama list       # See installed models
+docker compose exec ollama ollama pull gemma4:27b  # Pull if missing
+```
+
+**Frontend shows blank page:**
+Check browser console for errors. Most common cause: API is unreachable. Verify `docker compose ps` shows `api` as healthy.
+
+**Database migration failed:**
+```bash
+docker compose exec api alembic current     # See current revision
+docker compose exec api alembic history     # See migration history
+docker compose exec api alembic upgrade head  # Rerun migrations
+```
+
+---
+
+---
+
+# Section C — Architectural Reference
+
+*For developers and architects who need to understand the system's structure, data flow, and design decisions.*
+
+---
+
+## C.1 System Overview
+
+CivicRecords AI runs as seven Docker Compose services communicating over an internal Docker network. All data stays on the host machine — no external dependencies after initial setup.
+
+```mermaid
+graph TB
+    subgraph Browser["Browser (React 18 + shadcn/ui)"]
+        UI[Admin SPA]
+    end
+
+    subgraph Frontend["nginx :8080"]
+        SPA[Static Assets]
+    end
+
+    subgraph API["FastAPI :8000"]
+        Auth[Auth / JWT]
+        Routes[Routers]
+        Search[Search Engine]
+        Pipeline[Ingestion Pipeline]
+    end
+
+    subgraph Workers["Celery"]
+        Worker[Task Worker]
+        Beat[Beat Scheduler]
+    end
+
+    subgraph Data["Data Layer"]
+        PG[(PostgreSQL 17\n+ pgvector)]
+        Redis[(Redis 7.2)]
+    end
+
+    subgraph AI["AI Layer"]
+        Ollama[Ollama LLM/Embed]
+    end
+
+    subgraph Sources["City Data Sources"]
+        FS[File System]
+        REST[REST APIs]
+        DB[SQL Databases\nvia ODBC]
+    end
+
+    UI --> Frontend
+    Frontend --> API
+    API --> PG
+    API --> Redis
+    API --> Ollama
+    Worker --> PG
+    Worker --> Redis
+    Worker --> Ollama
+    Worker --> Sources
+    Beat --> Redis
+```
+
+**Design principles:**
+- **Local-first:** All inference, storage, and processing on-premises. No cloud calls.
+- **Human-in-the-loop:** No automatic releases, redactions, or status advances.
+- **Audit by default:** Every state change writes an immutable audit log entry.
+- **Idempotent ingestion:** Re-syncing the same document is safe; deduplication prevents duplicates.
+
+---
+
+## C.2 Data Model
+
+```mermaid
+classDiagram
+    class DataSource {
+        +UUID id
+        +String name
+        +SourceType source_type
+        +JSON connection_config
+        +bool is_active
+        +bool sync_paused
+        +String sync_paused_reason
+        +int consecutive_failure_count
+        +String health_status
+        +UUID department_id
+        +authenticate()
+        +discover()
+        +fetch()
+        +health_check()
+    }
+
+    class Document {
+        +UUID id
+        +String source_path
+        +String content_hash
+        +String file_type
+        +int file_size
+        +String parsed_text
+        +UUID source_id
+    }
+
+    class Chunk {
+        +UUID id
+        +UUID document_id
+        +int chunk_index
+        +String text
+        +Vector embedding
+        +int token_count
+    }
+
+    class SyncFailure {
+        +UUID id
+        +UUID source_id
+        +String source_path
+        +String error_message
+        +String error_class
+        +int retry_count
+        +String status
+        +DateTime first_failed_at
+    }
+
+    class SyncRunLog {
+        +UUID id
+        +UUID source_id
+        +DateTime started_at
+        +DateTime finished_at
+        +String status
+        +int records_attempted
+        +int records_succeeded
+        +int records_failed
+    }
+
+    class Request {
+        +UUID id
+        +String reference_number
+        +String requester_name
+        +String description
+        +RequestStatus status
+        +DateTime legal_deadline
+        +UUID department_id
+        +UUID assigned_to
+    }
+
+    class ExemptionFlag {
+        +UUID id
+        +UUID document_id
+        +UUID request_id
+        +String flag_type
+        +String matched_text
+        +String rule_name
+        +String decision
+        +UUID decided_by
+    }
+
+    class User {
+        +UUID id
+        +String email
+        +UserRole role
+        +UUID department_id
+        +bool is_active
+    }
+
+    class Department {
+        +UUID id
+        +String name
+        +String code
+    }
+
+    class AuditLog {
+        +UUID id
+        +String action
+        +UUID actor_id
+        +JSON payload
+        +String previous_hash
+        +String entry_hash
+    }
+
+    DataSource "1" --> "many" Document
+    DataSource "1" --> "many" SyncFailure
+    DataSource "1" --> "many" SyncRunLog
+    Document "1" --> "many" Chunk
+    Document "1" --> "many" ExemptionFlag
+    Request "1" --> "many" ExemptionFlag
+    User "many" --> "1" Department
+    DataSource "many" --> "1" Department
+    Request "many" --> "1" Department
+```
+
+**Key design decisions:**
+- **Content hash deduplication:** Documents are keyed by `source_path` for structured connectors (REST API, ODBC) and by `content_hash` for binary files. Re-syncing an unchanged document is a no-op.
+- **Chunk + Embedding:** Each document is split into ~512-token chunks. Each chunk has its own pgvector embedding. Search queries both the vector index and PostgreSQL full-text index, then merges with reciprocal rank fusion.
+- **Hash-chained audit log:** Each `AuditLog` row includes the SHA-256 hash of the previous row. Tamper detection is O(n) chain verification.
+
+---
+
+## C.3 Ingestion Pipeline
+
+```mermaid
+sequenceDiagram
+    participant Beat as Celery Beat
+    participant Worker as Celery Worker
+    participant Connector as Connector
+    participant Pipeline as Ingestion Pipeline
+    participant DB as PostgreSQL
+
+    Beat->>Worker: trigger_sync(source_id) [cron]
+    Worker->>DB: SELECT data_source WHERE id=source_id
+    Worker->>Connector: authenticate()
+    Worker->>DB: SELECT retrying SyncFailures (Layer 2 retry)
+    loop For each retrying failure
+        Worker->>Connector: fetch(source_path)
+        alt Success
+            Worker->>Pipeline: ingest(content)
+            Pipeline->>DB: UPDATE SyncFailure status=resolved
+        else Failure
+            Worker->>DB: UPDATE SyncFailure retry_count++
+        end
+    end
+    Worker->>Connector: discover(since=last_cursor)
+    loop For each discovered record
+        Worker->>Connector: fetch(source_path)
+        alt Success
+            Worker->>Pipeline: parse → chunk → embed → upsert
+            Pipeline->>DB: INSERT/UPDATE Document, Chunk, Embedding
+        else Failure
+            Worker->>DB: INSERT SyncFailure (status=retrying)
+        end
+    end
+    Worker->>DB: UPDATE DataSource last_sync_at, cursor
+    alt All records failed
+        Worker->>DB: consecutive_failure_count++
+        alt Count >= threshold
+            Worker->>DB: sync_paused=true (circuit open)
+        end
+    else Any record succeeded
+        Worker->>DB: consecutive_failure_count=0
+    end
+    Worker->>DB: INSERT SyncRunLog
+```
+
+**Two-layer retry:**
+- **Layer 1 (task-level):** The Celery task uses exponential backoff with jitter for transient connection errors (handled by `with_retry()` in `retry.py`).
+- **Layer 2 (record-level):** Individual record failures are persisted as `SyncFailure` rows and retried on subsequent sync ticks, up to 5 retries over 7 days.
+
+**Idempotency contract:**
+- Structured records (REST API, ODBC): keyed by `source_path`. Same path → UPDATE in-place, chunks and embeddings replaced atomically.
+- Binary records (filesystem): keyed by `content_hash`. Same hash → no-op.
+- Race conditions: `SELECT FOR UPDATE` on the document row + partial unique indexes prevent duplicate inserts under concurrent workers.
+
+---
+
+## C.4 Records Request Lifecycle
+
+```mermaid
+sequenceDiagram
+    participant Staff as Staff User
+    participant API as FastAPI
+    participant DB as PostgreSQL
+    participant AI as Ollama
+
+    Staff->>API: POST /requests (requester info, description)
+    API->>DB: INSERT Request (status=intake)
+    API->>DB: INSERT AuditLog (action=request_created)
+
+    Staff->>API: PUT /requests/{id}/status (assigned)
+    API->>DB: UPDATE Request status=assigned
+    API->>DB: INSERT AuditLog
+
+    Staff->>API: POST /requests/{id}/search
+    API->>AI: embed(description)
+    API->>DB: pgvector similarity search + FTS merge
+    API->>DB: INSERT SearchLog (query, result_count, document_ids)
+    API-->>Staff: ranked document list
+
+    Staff->>API: POST /requests/{id}/documents (mark responsive)
+    API->>DB: INSERT RequestDocument (responsive=true)
+
+    Staff->>API: POST /requests/{id}/exemptions/analyze
+    API->>DB: Run PII patterns + statutory keyword rules
+    API->>AI: (optional) LLM secondary review
+    API->>DB: INSERT ExemptionFlag[] (decision=pending)
+
+    Staff->>API: PUT /exemptions/{flag_id} (confirm/dismiss)
+    API->>DB: UPDATE ExemptionFlag decision=confirmed/dismissed
+    API->>DB: INSERT AuditLog (decision, actor, timestamp)
+
+    Staff->>API: POST /requests/{id}/letter/generate
+    API->>AI: draft_letter(request_context, exemptions)
+    API-->>Staff: draft letter text
+
+    Staff->>API: PUT /requests/{id}/status (fulfillment)
+    API->>DB: UPDATE Request status=fulfillment
+    API->>DB: INSERT AuditLog
+```
+
+**Human-in-the-loop enforcement:** The API refuses status transitions that skip required steps. A request cannot move from `intake` directly to `fulfillment` — every intermediate status must be visited. This is enforced at the API layer, not just the UI.
+
+---
+
+## C.5 Sync Failure and Circuit Breaker State Machine
+
+```mermaid
+stateDiagram-v2
+    [*] --> Healthy : source created / sync successful
+
+    Healthy --> Degraded : fetch failure logged\n(SyncFailure: retrying)
+    Degraded --> Healthy : subsequent sync succeeds\nconsecutive_failure_count reset to 0
+
+    Degraded --> Degraded : retry attempt fails\n(retry_count < 5 AND age < 7 days)
+    Degraded --> PermanentlyFailed : IntegrityError OR\nretry_count ≥ 5 OR age ≥ 7 days
+
+    Healthy --> CircuitOpen : 5 consecutive FULL-RUN failures\n(sync_paused = true)
+    Degraded --> CircuitOpen : 5 consecutive FULL-RUN failures\n(sync_paused = true)
+
+    CircuitOpen --> Healthy : admin unpauses source\nAND next sync succeeds\n(grace threshold = 2)
+    CircuitOpen --> CircuitOpen : admin unpauses\nbut sync still fails\n(grace threshold exhausted → re-paused)
+
+    PermanentlyFailed --> Dismissed : admin dismisses record\n(soft delete, audit trail preserved)
+    PermanentlyFailed --> Healthy : admin clicks Retry\nAND next sync succeeds
+```
+
+**Grace period implementation:** When an admin clicks **Unpause →**, the database column `sync_paused_reason` is set to `"grace_period"`. The sync runner reads this value and uses threshold=2 instead of threshold=5 for the next sync run. On successful sync, the sentinel is cleared. This provides fast feedback: if the underlying problem wasn't actually fixed, the circuit trips again after just 2 failures.
+
+---
+
+## C.6 Deployment Topology
+
+```mermaid
+graph TB
+    subgraph Host["City Server (on-premises)"]
+        subgraph Docker["Docker Compose Network"]
+            FE["frontend\nnginx :8080"]
+            API["api\nFastAPI :8000"]
+            W["worker\nCelery"]
+            B["beat\nCelery Beat"]
+            PG["postgres\nPostgreSQL 17\n+ pgvector :5432"]
+            R["redis\nRedis 7.2\n:6379"]
+            OL["ollama\nOllama :11434"]
+        end
+        subgraph Storage["Host Volumes"]
+            PGVol["postgres_data"]
+            OLVol["ollama_models"]
+            DocVol["document_mounts"]
+        end
+    end
+    subgraph Network["City Network"]
+        Browser["Staff Browser"]
+        MuniSystems["Municipal Systems\n(REST APIs, Databases,\nFile Shares)"]
+    end
+    Browser --> FE
+    FE --> API
+    API --> PG
+    API --> R
+    API --> OL
+    W --> PG
+    W --> R
+    W --> OL
+    W --> MuniSystems
+    B --> R
+    PG --- PGVol
+    OL --- OLVol
+    W --- DocVol
+```
+
+**Network isolation:** The Docker Compose network is internal. Only `frontend` (:8080) and `api` (:8000) are exposed to the host network. All inter-service communication is internal. No service initiates outbound internet connections after initial setup.
+
+---
+
+## C.7 Search Architecture
+
+Hybrid search combines two retrieval strategies and merges them with reciprocal rank fusion:
+
+```
+User Query
+    │
+    ├──► Semantic Search (pgvector)
+    │    Embed query → cosine similarity against Chunk.embedding
+    │    Returns: top-K chunks with similarity scores
+    │
+    └──► Keyword Search (PostgreSQL FTS)
+         to_tsquery(query) → ts_rank against Document.fts_vector
+         Returns: top-K documents with rank scores
+         │
+         ▼
+    Reciprocal Rank Fusion
+    score = Σ 1/(k + rank_i) for each result list
+         │
+         ▼
+    Deduplicate → Normalize scores 0–1
+         │
+         ▼
+    Optional: LLM Summary Generation (Ollama)
+         │
+         ▼
+    Return: ranked DocumentResult[] with source attribution
+```
+
+**Normalization:** Scores are normalized to [0, 1] within each result set before fusion, so semantic and keyword results are weighted equally regardless of their native score scales.
+
+**Source attribution:** Every result includes the originating `DataSource`, `source_path`, and `Document.id` for full traceability.
+
+---
+
+## C.8 Security Architecture
+
+**Authentication:** JWT tokens with configurable expiry. Tokens are signed with `JWT_SECRET` using HS256. Refresh tokens are stored in Redis with revocation support.
+
+**Authorization:** Role-based access control enforced at the API layer (FastAPI dependency injection):
+- `require_role(UserRole.ADMIN)` — admin-only endpoints
+- `require_role(UserRole.STAFF)` — staff and above
+- Department scoping injected via `get_current_user()` — all queries are automatically filtered to the user's department
+
+**Audit log integrity:** Each audit entry includes the SHA-256 hash of the previous entry (`previous_hash`). Full chain verification can detect any tampering. The chain can be verified with:
+```bash
+docker compose exec api python -m app.audit.verify_chain
+```
+
+**SQL injection prevention:** ODBC connector queries are validated against an allowlist pattern before execution. No user input is ever interpolated into query strings.
+
+**No secrets in code:** All credentials live in `.env` (gitignored). The `verify-sovereignty.sh` script confirms no outbound connections.
+
+---
+
+## C.9 Key Architectural Decisions
+
+| Decision | Choice | Rationale |
+|---|---|---|
+| LLM runtime | Ollama (local) | Data sovereignty requirement; no resident data leaves the network |
+| Vector store | pgvector (PostgreSQL extension) | Eliminates a separate vector database service; transactions span relational + vector data atomically |
+| Task queue | Celery + Redis | Mature, well-understood; supports scheduled sync (beat) and async ingestion |
+| Frontend | React 18 + shadcn/ui | Accessible component primitives; civic design tokens; TypeScript strict mode |
+| Audit log | Hash-chained PostgreSQL table | Tamper-evident without external dependencies; meets CAIA and state compliance requirements |
+| Connector protocol | authenticate/discover/fetch/health_check | Standard interface enables adding new source types without changing ingestion pipeline |
+| Embedding model | nomic-embed-text | High quality, small footprint (2 GB), runs on CPU if no GPU present |
+| OCR strategy | Gemma 4 multimodal primary, Tesseract fallback | Handles handwritten and low-quality scans; Tesseract as CPU-safe fallback |
+
+---
+
+*End of User Manual — CivicRecords AI v1.1+ · April 2026*
