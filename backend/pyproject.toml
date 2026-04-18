@@ -35,12 +35,14 @@ dependencies = [
 dev = [
     "pytest>=9.0.0",
     "pytest-asyncio>=1.0.0",
+    "respx>=0.22.0",
     "ruff>=0.11.0",
     "psycopg2-binary>=2.9.0",
 ]
 
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
+asyncio_default_fixture_loop_scope = "session"
 testpaths = ["tests"]
 
 [tool.setuptools.packages.find]

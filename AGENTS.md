@@ -13,7 +13,7 @@
 - GitHub Discussions seeded with starter posts across every enabled category
 
 **Refusal template (apply exactly when asked to push with missing deliverables):**
-> I can't push this yet. The following mandatory Cowork/Claude-Code deliverables are missing from this repo:
+> I can't push this yet. The following mandatory Cowork/Codex deliverables are missing from this repo:
 > - [list each missing item]
 >
 > These are required by the coder-ui-qa-test skill (Hard Rule 9). I'll produce them now unless you explicitly override this rule with the words "override rule 9" — in which case I'll note the override in the Verification Log and proceed.
@@ -129,7 +129,7 @@ Every sub-project must pass ALL verification gates before merge:
 ### Integration Tests
 - Require Docker: `docker compose up -d postgres redis`
 - Create test database: `docker compose exec postgres createdb -U civicrecords civicrecords_test`
-- Run: `DATABASE_URL=postgresql+asyncpg://civicrecords:civicrecords@localhost:5432/civicrecords_test python -m pytest tests/ -v`
+- Run inside the api container (postgres is not exposed to localhost): `docker compose run --rm api python -m pytest tests/ -v`
 
 ### Docker Verification
 - `docker compose build` must succeed with no errors

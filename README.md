@@ -166,7 +166,7 @@ Service accounts with hashed API keys enable instance-to-instance federation acc
 **Carried from v1.0.x:**
 - 11 staff workbench pages with shadcn/ui design system
 - 29 database tables, ~30 API endpoints
-- 423 backend + 5 frontend automated tests passing
+- 335 backend + 5 frontend automated tests passing
 - Guided onboarding, systems catalog, connector framework
 - Request timeline, messaging, fee tracking, response letter generation
 - Operational analytics and notification service
