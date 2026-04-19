@@ -11,7 +11,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.audit.logger import write_audit_log
 from app.notifications.service import queue_notification
 from app.config import settings
-from app.auth.dependencies import require_role, check_department_access
+from app.auth.dependencies import require_role, check_department_access, require_department_scope
 from app.database import get_async_session
 from app.models.city_profile import CityProfile
 from app.models.document import Document
@@ -574,7 +574,7 @@ async def get_timeline(
     req = await session.get(RecordsRequest, request_id)
     if not req:
         raise HTTPException(status_code=404, detail="Request not found")
-    check_department_access(user, req.department_id)
+    require_department_scope(user, req.department_id)
 
     result = await session.execute(
         select(RequestTimeline)
@@ -594,7 +594,7 @@ async def add_timeline_event(
     req = await session.get(RecordsRequest, request_id)
     if not req:
         raise HTTPException(status_code=404, detail="Request not found")
-    check_department_access(user, req.department_id)
+    require_department_scope(user, req.department_id)
 
     entry = RequestTimeline(
         request_id=request_id,
@@ -625,7 +625,7 @@ async def get_messages(
     req = await session.get(RecordsRequest, request_id)
     if not req:
         raise HTTPException(status_code=404, detail="Request not found")
-    check_department_access(user, req.department_id)
+    require_department_scope(user, req.department_id)
 
     result = await session.execute(
         select(RequestMessage)
@@ -645,7 +645,7 @@ async def add_message(
     req = await session.get(RecordsRequest, request_id)
     if not req:
         raise HTTPException(status_code=404, detail="Request not found")
-    check_department_access(user, req.department_id)
+    require_department_scope(user, req.department_id)
 
     message = RequestMessage(
         request_id=request_id,

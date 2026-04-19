@@ -227,3 +227,199 @@ async def test_admin_can_read_any_department_document(
         headers={"Authorization": f"Bearer {admin_token}"},
     )
     assert resp.status_code == 200, resp.text
+
+
+# ---------------------------------------------------------------------------
+# /analytics/operational — fail-closed department scope on aggregate metrics
+# ---------------------------------------------------------------------------
+
+async def _create_request_in_dept(client: AsyncClient, token: str, description: str) -> str:
+    """POST /requests/ with the given token and return the new request's id."""
+    resp = await client.post(
+        "/requests/",
+        json={"requester_name": "Test Requester", "description": description},
+        headers={"Authorization": f"Bearer {token}"},
+    )
+    assert resp.status_code in (200, 201), resp.text
+    return resp.json()["id"]
+
+
+@pytest.mark.asyncio
+async def test_analytics_operational_filters_by_department_for_non_admin(
+    client: AsyncClient,
+    staff_token_dept_a: str,
+    staff_token_dept_b: str,
+):
+    """Non-admin sees only counts from their own department. Dept B's single
+    request must not appear in Dept A's aggregate."""
+    await _create_request_in_dept(client, staff_token_dept_a, "A-only")
+    await _create_request_in_dept(client, staff_token_dept_b, "B-only")
+    await _create_request_in_dept(client, staff_token_dept_b, "B-only-2")
+
+    resp = await client.get(
+        "/analytics/operational",
+        headers={"Authorization": f"Bearer {staff_token_dept_a}"},
+    )
+    assert resp.status_code == 200, resp.text
+    data = resp.json()
+    # Only the one dept-A request contributes to the aggregate.
+    assert data["total_open"] + data["total_closed"] == 1, data
+
+
+@pytest.mark.asyncio
+async def test_analytics_operational_admin_sees_all_departments(
+    client: AsyncClient,
+    admin_token: str,
+    staff_token_dept_a: str,
+    staff_token_dept_b: str,
+):
+    await _create_request_in_dept(client, staff_token_dept_a, "A-open")
+    await _create_request_in_dept(client, staff_token_dept_b, "B-open")
+    resp = await client.get(
+        "/analytics/operational",
+        headers={"Authorization": f"Bearer {admin_token}"},
+    )
+    assert resp.status_code == 200, resp.text
+    data = resp.json()
+    assert data["total_open"] + data["total_closed"] == 2, data
+
+
+@pytest.mark.asyncio
+async def test_analytics_operational_denies_non_admin_with_null_department(
+    client: AsyncClient,
+    staff_token: str,  # plain staff -> no department
+):
+    resp = await client.get(
+        "/analytics/operational",
+        headers={"Authorization": f"Bearer {staff_token}"},
+    )
+    assert resp.status_code == 403, resp.text
+
+
+# ---------------------------------------------------------------------------
+# /requests/{id}/timeline + /messages — fail-closed migration
+# ---------------------------------------------------------------------------
+
+@pytest.mark.asyncio
+async def test_timeline_get_blocks_cross_department(
+    client: AsyncClient,
+    staff_token_dept_a: str,
+    staff_token_dept_b: str,
+):
+    req_b_id = await _create_request_in_dept(client, staff_token_dept_b, "B timeline")
+    resp = await client.get(
+        f"/requests/{req_b_id}/timeline",
+        headers={"Authorization": f"Bearer {staff_token_dept_a}"},
+    )
+    assert resp.status_code == 403, resp.text
+
+
+@pytest.mark.asyncio
+async def test_timeline_post_blocks_cross_department(
+    client: AsyncClient,
+    staff_token_dept_a: str,
+    staff_token_dept_b: str,
+):
+    req_b_id = await _create_request_in_dept(client, staff_token_dept_b, "B timeline post")
+    resp = await client.post(
+        f"/requests/{req_b_id}/timeline",
+        json={"event_type": "note", "description": "Should not land"},
+        headers={"Authorization": f"Bearer {staff_token_dept_a}"},
+    )
+    assert resp.status_code == 403, resp.text
+
+
+@pytest.mark.asyncio
+async def test_messages_get_blocks_cross_department(
+    client: AsyncClient,
+    staff_token_dept_a: str,
+    staff_token_dept_b: str,
+):
+    req_b_id = await _create_request_in_dept(client, staff_token_dept_b, "B messages")
+    resp = await client.get(
+        f"/requests/{req_b_id}/messages",
+        headers={"Authorization": f"Bearer {staff_token_dept_a}"},
+    )
+    assert resp.status_code == 403, resp.text
+
+
+@pytest.mark.asyncio
+async def test_messages_post_blocks_cross_department(
+    client: AsyncClient,
+    staff_token_dept_a: str,
+    staff_token_dept_b: str,
+):
+    req_b_id = await _create_request_in_dept(client, staff_token_dept_b, "B messages post")
+    resp = await client.post(
+        f"/requests/{req_b_id}/messages",
+        json={"message_text": "Should not land", "is_internal": False},
+        headers={"Authorization": f"Bearer {staff_token_dept_a}"},
+    )
+    assert resp.status_code == 403, resp.text
+
+
+@pytest.mark.asyncio
+async def test_timeline_messages_deny_non_admin_with_null_department(
+    client: AsyncClient,
+    staff_token: str,  # plain staff -> no department
+    staff_token_dept_a: str,
+):
+    """A null-dept non-admin must be denied even on a dept-A request that
+    they would normally not see anyway. The old check_department_access
+    returned silently here because it short-circuited on resource null-dept,
+    which this test would expose if the migration were incomplete."""
+    req_a_id = await _create_request_in_dept(client, staff_token_dept_a, "A probe")
+    for method, path in [
+        ("GET", f"/requests/{req_a_id}/timeline"),
+        ("GET", f"/requests/{req_a_id}/messages"),
+    ]:
+        resp = await client.get(path, headers={"Authorization": f"Bearer {staff_token}"})
+        assert resp.status_code == 403, f"{method} {path}: {resp.text}"
+
+
+# ---------------------------------------------------------------------------
+# Parameterized cross-endpoint enforcement — the T2A ratchet
+# ---------------------------------------------------------------------------
+
+@pytest.mark.asyncio
+async def test_parameterized_cross_department_access_denied(
+    client: AsyncClient,
+    staff_token_dept_a: str,
+    staff_token_dept_b: str,
+    dept_b: uuid.UUID,
+):
+    """Iterates the known set of T2A-scoped read/write endpoints and asserts
+    that a dept-A token is denied cross-department access on every one.
+
+    New dept-scoped endpoints added after T2A should be appended to this
+    list to prevent silent regression. If a route is intentionally global
+    (like /city-profile), it does not belong here.
+    """
+    # Seed one dept-B request and one dept-B document.
+    req_b_id = await _create_request_in_dept(client, staff_token_dept_b, "param probe")
+    doc_b_id = await _seed_document_with_dept(dept_b, "param_probe")
+
+    cases = [
+        ("GET",  f"/documents/{doc_b_id}",                   None),
+        ("GET",  f"/documents/{doc_b_id}/chunks",            None),
+        ("GET",  f"/requests/{req_b_id}",                    None),
+        ("GET",  f"/requests/{req_b_id}/timeline",           None),
+        ("POST", f"/requests/{req_b_id}/timeline",
+                 {"event_type": "note", "description": "nope"}),
+        ("GET",  f"/requests/{req_b_id}/messages",           None),
+        ("POST", f"/requests/{req_b_id}/messages",
+                 {"message_text": "nope", "is_internal": False}),
+    ]
+    headers = {"Authorization": f"Bearer {staff_token_dept_a}"}
+    failures = []
+    for method, path, body in cases:
+        if method == "GET":
+            resp = await client.get(path, headers=headers)
+        else:
+            resp = await client.post(path, headers=headers, json=body)
+        if resp.status_code != 403:
+            failures.append(f"{method} {path} -> {resp.status_code}: {resp.text[:120]}")
+    assert not failures, (
+        "Cross-department enforcement regressed on the following routes:\n  "
+        + "\n  ".join(failures)
+    )

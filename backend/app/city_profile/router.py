@@ -1,3 +1,20 @@
+"""City profile router.
+
+Design decision (T2A, 2026-04-19): city-profile is intentionally NOT
+department-scoped. The resource is a singleton per deployment — one row
+describing the entire city — and is shared configuration, not department-owned
+data. Access control:
+
+- GET  /city-profile  — any authenticated STAFF role or higher (read).
+- POST /city-profile  — ADMIN only (create the single row).
+- PATCH /city-profile — ADMIN only (update the single row).
+
+``require_department_scope`` is deliberately not applied here. Forcing it
+onto a null-department global record would be false rigor. If city-profile
+ever becomes department-partitioned in the future, this docstring should be
+updated in the same commit as the model change.
+"""
+
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
