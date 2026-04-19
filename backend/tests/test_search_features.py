@@ -1,5 +1,7 @@
 """Tests for search department filter and CSV export (Item 4 — Debt Sprint)."""
 
+from unittest.mock import AsyncMock, patch
+
 import pytest
 from httpx import AsyncClient
 
@@ -20,11 +22,17 @@ async def test_search_filters_include_departments(client: AsyncClient, admin_tok
 
 @pytest.mark.asyncio
 async def test_search_export_csv_returns_csv(client: AsyncClient, admin_token: str):
-    """GET /search/export?query=test&format=csv returns CSV with correct headers."""
-    resp = await client.get(
-        "/search/export?query=test&format=csv",
-        headers={"Authorization": f"Bearer {admin_token}"},
-    )
+    """GET /search/export?query=test&format=csv returns CSV with correct headers.
+
+    Mocks app.search.engine.embed_text so the test is hermetic — no outbound
+    HTTP to Ollama. Matches the pattern already used in test_search_api.py.
+    """
+    with patch("app.search.engine.embed_text", new_callable=AsyncMock) as mock_embed:
+        mock_embed.return_value = [0.1] * 768
+        resp = await client.get(
+            "/search/export?query=test&format=csv",
+            headers={"Authorization": f"Bearer {admin_token}"},
+        )
     assert resp.status_code == 200
     assert "text/csv" in resp.headers.get("content-type", "")
     lines = resp.text.strip().split("\n")
