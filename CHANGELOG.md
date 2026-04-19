@@ -9,6 +9,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 Post-v1.1.0 commits on `master`. No version bump yet.
 
+### Added
+- **GitHub Actions CI workflow (PR 0 of 2026-04-19 remediation plan):** `.github/workflows/ci.yml` runs pytest via `docker compose` (matching AGENTS.md Hard Rule 1a auditor commands exactly) and the frontend vitest suite + production build on every push and pull request to `master`. Includes a collected-vs-passed cross-check that catches the specific failure mode documented in CLAUDE.md Hard Rule 1e ("423 tests claimed, 278 actual") by failing the job on any test skip, xfail, error, or silent early exit. Workflow is hermetic — `.env` is synthesized per-run with `openssl rand -hex 32` for `JWT_SECRET`; no secrets live in the workflow or in Actions secrets. Ollama is skipped via `--no-deps` because tests mock it. See `.github/workflows/README.md` for the full rationale and local reproduction recipe.
+
 ### Fixed
 - **`/api/` prefix missing in `useSyncNow` and `FailedRecordsPanel` (`f24a3a7`, 2026-04-18):** Both hooks called `fetch('/datasources/...')` without the `/api/` prefix, routing to nginx's static handler instead of the backend — causing 405 errors on Sync Now trigger and all FailedRecordsPanel actions in production Docker. Migrated to `apiFetch` (with JWT token) and correct `/api/datasources/...` paths. Verified against live Docker: `POST /api/datasources/{id}/ingest` resolves to backend. 5/5 frontend tests passing.
 

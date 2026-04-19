@@ -77,6 +77,20 @@ npm run build  # Production build
 npx tsc --noEmit  # Type check
 ```
 
+### Continuous Integration
+
+Every push to `master` and every pull request runs the workflow in
+[`.github/workflows/ci.yml`](.github/workflows/ci.yml). It runs the same
+commands documented in AGENTS.md Hard Rule 1a, plus a cross-check that the
+number of tests pytest collects equals the number that pass (catches silent
+test loss from skips, xfails, or early exits). See
+[`.github/workflows/README.md`](.github/workflows/README.md) for the full
+rationale and how to reproduce a CI failure locally.
+
+If your PR fails CI, the `backend-logs-*` artifact attached to the run
+contains `collect.log`, `run.log`, and `compose.log` — usually enough to
+reproduce without re-running locally.
+
 ## How to Contribute
 
 ### Reporting Bugs

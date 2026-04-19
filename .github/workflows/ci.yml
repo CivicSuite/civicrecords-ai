@@ -1,0 +1,189 @@
+name: CI
+
+# PR 0 of the 2026-04-19 remediation plan (docs/REMEDIATION-PLAN-2026-04-19.md).
+# This is the ratchet. Until this workflow exists and is a required check on master,
+# every downstream fix is silently reversible. No other fix PR lands before this one
+# is merged and branch protection is enabled.
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+    branches: [master]
+  workflow_dispatch: {}
+
+# Cancel outdated runs on the same branch so the queue stays fresh.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+# The workflow has no secrets. Everything sensitive (JWT_SECRET, admin password) is
+# generated per-run with openssl and discarded when the runner is torn down.
+permissions:
+  contents: read
+
+jobs:
+  # -------------------------------------------------------------------------
+  # Backend — docker-compose parity with AGENTS.md Hard Rule 1a auditor protocol.
+  # The auditor runs:
+  #   docker compose run --rm api python -m pytest tests --collect-only -q
+  #   docker compose run --rm api python -m pytest tests -q
+  # CI runs the same commands so that "CI green" and "auditor green" mean the
+  # same thing. Ollama is skipped via --no-deps because tests mock it per
+  # CLAUDE.md ("mocked external services (Ollama)"); pulling the image on every
+  # run would add ~2 minutes for zero test coverage.
+  # -------------------------------------------------------------------------
+  backend:
+    name: Backend (pytest via docker compose)
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Generate hermetic .env for the compose stack
+        # docker-compose.yml reads env_file: .env. We synthesize a minimal,
+        # per-run .env with a real JWT_SECRET (config.py rejects insecure
+        # defaults at startup, so a placeholder value would fail).
+        #   - DATABASE_URL points at the isolated civicrecords_test database
+        #   - JWT_SECRET is 64 hex chars, generated per-run
+        #   - FIRST_ADMIN_PASSWORD is also random per-run
+        # Nothing here is secret across runs; the file is thrown away with the
+        # runner and never committed.
+        run: |
+          JWT_SECRET="$(openssl rand -hex 32)"
+          ADMIN_PW="$(openssl rand -hex 16)"
+          umask 077
+          cat > .env <<EOF
+          DATABASE_URL=postgresql+asyncpg://civicrecords:civicrecords@postgres:5432/civicrecords_test
+          JWT_SECRET=${JWT_SECRET}
+          FIRST_ADMIN_EMAIL=admin@ci.local
+          FIRST_ADMIN_PASSWORD=${ADMIN_PW}
+          OLLAMA_BASE_URL=http://ollama:11434
+          REDIS_URL=redis://redis:6379/0
+          AUDIT_RETENTION_DAYS=1095
+          TESTING=1
+          EOF
+
+      - name: Start dependencies (postgres + redis) and wait for healthy
+        # --wait blocks until the named services report healthy per their
+        # compose-defined healthchecks. Default timeout is 120s.
+        run: docker compose up -d --wait postgres redis
+
+      - name: Create isolated test database
+        # Tests run against civicrecords_test, not the default civicrecords DB,
+        # so a future integration test that touches data never contaminates
+        # a hypothetical dev DB that shares the same volume.
+        run: |
+          docker compose exec -T postgres \
+            createdb -U civicrecords civicrecords_test
+
+      - name: Build api image
+        run: docker compose build api
+
+      - name: pytest --collect-only — catches CLAUDE.md Hard Rule 1e failure mode
+        # The previous auditor accepted "423 tests passing" from a dev report;
+        # actual collection was 278. pytest exits nonzero on any collection
+        # error (import failures, syntax errors, missing fixtures). This step
+        # is the single most important gate: if it fails, the entire suite is
+        # lying about what it covers.
+        id: collect
+        run: |
+          set -o pipefail
+          docker compose run --rm --no-deps api \
+            python -m pytest tests --collect-only -q \
+            2>&1 | tee collect.log
+          collected=$(grep -oE '[0-9]+ tests? collected' collect.log \
+            | head -1 | grep -oE '[0-9]+')
+          if [ -z "$collected" ]; then
+            echo "::error::Could not parse a collection count from pytest output."
+            exit 1
+          fi
+          echo "count=${collected}" >> "$GITHUB_OUTPUT"
+          echo "Collected ${collected} tests."
+
+      - name: pytest — full backend suite
+        id: run
+        run: |
+          set -o pipefail
+          docker compose run --rm --no-deps api \
+            python -m pytest tests -q \
+            2>&1 | tee run.log
+
+      - name: Verify collected == passed (no silent test loss)
+        # Catches skips, xfails, errors, and tests that exit without running.
+        # feedback_never_skip_tests.md says no pytest.skip ever; this check
+        # enforces it mechanically. If collected > passed, the delta is
+        # either lying tests or swallowed failures.
+        run: |
+          collected="${{ steps.collect.outputs.count }}"
+          passed=$(grep -oE '[0-9]+ passed' run.log | tail -1 \
+            | grep -oE '[0-9]+')
+          echo "collected=${collected}"
+          echo "passed=${passed}"
+          if [ -z "$passed" ]; then
+            echo "::error::Could not parse a passed count from pytest output."
+            exit 1
+          fi
+          if [ "$collected" != "$passed" ]; then
+            echo "::error::Collection/run mismatch: collected=${collected} passed=${passed}."
+            echo "::error::This is the exact Hard Rule 1e failure mode."
+            echo "::error::Investigate: skipped tests, xfails, errors, or tests that exited early."
+            exit 1
+          fi
+
+      - name: Capture compose logs for diagnostics
+        if: always()
+        run: docker compose logs --no-color > compose.log 2>&1 || true
+
+      - name: Upload logs on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: backend-logs-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            collect.log
+            run.log
+            compose.log
+          retention-days: 14
+          if-no-files-found: warn
+
+      - name: Teardown
+        if: always()
+        run: docker compose down -v --remove-orphans
+
+  # -------------------------------------------------------------------------
+  # Frontend — vitest and production build on native Node.
+  # Vite 6 requires Node 20+. No engines field is declared in package.json,
+  # so the version is pinned here to match local-dev expectations.
+  # -------------------------------------------------------------------------
+  frontend:
+    name: Frontend (vitest + build)
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    defaults:
+      run:
+        working-directory: frontend
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node 22
+        # Matches the declared prerequisite in CONTRIBUTING.md ("Node.js 22+").
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install dependencies (frozen lockfile)
+        run: npm ci
+
+      - name: Run vitest suite
+        # package.json "test" is already `vitest run`, so no -- --run needed.
+        run: npm test
+
+      - name: Production build
+        run: npm run build
