@@ -36,3 +36,25 @@ class AdminUserCreate(schemas.BaseUserCreate):
 class UserUpdate(schemas.BaseUserUpdate):
     full_name: str | None = None
     role: UserRole | None = None
+
+
+class UserSelfUpdate(schemas.BaseUserUpdate):
+    """Schema for user self-update via PATCH /users/me.
+
+    Excludes role and department_id. Any payload containing those fields is
+    rejected at parse time (HTTP 422). Role and department changes require
+    admin privileges via /admin/users/{id}.
+    """
+    full_name: str | None = None
+
+    @model_validator(mode="before")
+    @classmethod
+    def reject_privileged_fields(cls, values):
+        if isinstance(values, dict):
+            forbidden = {"role", "department_id"} & set(values.keys())
+            if forbidden:
+                raise ValueError(
+                    f"Fields cannot be set via self-update: {sorted(forbidden)}. "
+                    "Role and department changes require admin."
+                )
+        return values
