@@ -19,6 +19,20 @@ Post-v1.1.0 commits on `master`. No version bump yet.
 - **CHANGELOG, UNIFIED-SPEC, installer button URLs (`ad44a86`, 2026-04-18):** CHANGELOG entries added for commits `301c4f3`/`c433beb`/`9c1d98b`/`23f0655` and moved into `[1.1.0]` where they belong. Stale "30s ceiling" corrected to "600s ceiling (D-FAIL-12)". UNIFIED-SPEC §17 test count updated to 432; priority 9 entry (Rule 9 deliverables) added; D-PROC-1 decision record added; §18 process criteria added; §19 Verification Log added at position 0. All 4 installer buttons in `docs/index.html` corrected from `/raw/master/` to `/releases/download/v1.1.0/`.
 
 ### Security
+- **T2B — `DataSourceRead.connection_config` credential exposure closed (2026-04-20):** `GET /datasources/` was accessible to all STAFF-and-above users and returned the full `DataSourceRead` schema, which included `connection_config: dict`. That JSONB blob contains every credential stored for the data source — REST API keys, bearer tokens, OAuth `client_secret`, ODBC `connection_string`, IMAP passwords — all readable by any authenticated staff member, not just admins who manage the sources.
+
+  **The fix:** `connection_config` removed from `DataSourceRead`. A new `DataSourceAdminRead` subclass adds it back; `DataSourceAdminRead` is used only by `POST /datasources/` and `PATCH /datasources/{id}`, both of which are already gated at `require_role(UserRole.ADMIN)`. `GET /datasources/` continues to use `DataSourceRead` (redacted) for all callers including admins.
+
+  **Schema audit checklist:** `docs/T2B-SCHEMA-AUDIT-2026-04-20.md` — every response schema in `backend/app/schemas/` swept for credentials, connection strings, tokens, OAuth client secrets, internal-only fields. One additional finding (`ServiceAccountCreated.api_key`) confirmed as intentional show-once pattern (admin-only POST, DB stores hash only, never returned on GET). Connector config schemas (`RestApiConfig`, `ODBCConfig`) confirmed as input-only; their credential fields are transitively covered by the `DataSourceRead` redaction.
+
+  **Tests added** in `backend/tests/test_datasources.py` (4 new, zero skips):
+  - `test_staff_list_datasources_no_connection_config` — STAFF GET `/datasources/` → all sensitive fields absent from every item in the response
+  - `test_admin_list_datasources_no_connection_config` — ADMIN GET `/datasources/` → `connection_config` absent (redacted shape applies to all callers on list)
+  - `test_admin_create_datasource_returns_connection_config` — ADMIN POST `/datasources/` → `connection_config` present and matches submitted config
+  - `test_admin_update_datasource_returns_connection_config` — ADMIN PATCH `/datasources/{id}` → `connection_config` present and matches updated config
+
+  **Scope limit (T2B closure note):** Runtime exposure of `connection_config` to non-admin users: **CLOSED**. Storage exposure (plaintext in DB, accessible via pg_dump, snapshots, Postgres superuser): **OPEN — tracked in Tier 6 of the remediation plan**. ENG-001 must not be marked fully closed until Tier 6 (at-rest encryption) lands.
+
 - **Info-leak follow-up — 404-vs-403 status code disclosure closed across the dept-scoped surface (2026-04-20):** Started as a narrow fix for the two child-before-parent handlers filed in `docs/FINDING-2026-04-19-info-leak-child-before-parent.md`. During the fix a codebase-wide audit surfaced the **same 404-vs-403 disclosure at the parent level** — every handler that loads a RecordsRequest or Document by path-param ID and then raises 403 via `require_department_scope` had the identical status-code side channel. Scope was expanded to cover all of it. Owner directive 2026-04-20: "wrong move" to leave the broader pattern for a future PR.
 
   **The pattern:** fake `request_id` → 404 "Request not found"; real `request_id` in another dept → 403. An authenticated cross-department caller could distinguish a leaked/guessed UUID's status via the difference. Same shape for documents, letters, flags.

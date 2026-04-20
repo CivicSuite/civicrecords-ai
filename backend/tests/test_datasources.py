@@ -96,3 +96,72 @@ async def test_health_status_healthy_default(client: AsyncClient, admin_token: s
     assert src is not None
     assert src["health_status"] == "healthy"
     assert src["active_failure_count"] == 0
+
+
+# --- T2B response-shape redaction tests ---
+SENSITIVE_FIELDS = {"connection_config", "api_key", "token", "password", "client_secret", "database_url"}
+
+
+@pytest.mark.asyncio
+async def test_staff_list_datasources_no_connection_config(client: AsyncClient, admin_token: str, staff_token: str):
+    """GET /datasources/ returns DataSourceRead (redacted) — connection_config absent for staff."""
+    await client.post(
+        "/datasources/",
+        json={"name": f"redact-test-{uuid.uuid4().hex[:8]}", "source_type": "rest_api",
+              "connection_config": {"api_key": "secret-value", "base_url": "https://example.com"}},
+        headers={"Authorization": f"Bearer {admin_token}"},
+    )
+    resp = await client.get("/datasources/", headers={"Authorization": f"Bearer {staff_token}"})
+    assert resp.status_code == 200
+    for src in resp.json():
+        for field in SENSITIVE_FIELDS:
+            assert field not in src, f"Sensitive field '{field}' found in staff list response"
+
+
+@pytest.mark.asyncio
+async def test_admin_list_datasources_no_connection_config(client: AsyncClient, admin_token: str):
+    """GET /datasources/ returns redacted shape even for admins — connection_config absent."""
+    resp = await client.get("/datasources/", headers={"Authorization": f"Bearer {admin_token}"})
+    assert resp.status_code == 200
+    for src in resp.json():
+        assert "connection_config" not in src, "connection_config must not appear in list response"
+
+
+@pytest.mark.asyncio
+async def test_admin_create_datasource_returns_connection_config(client: AsyncClient, admin_token: str):
+    """POST /datasources/ returns DataSourceAdminRead — connection_config present for admin."""
+    config = {"api_key": "secret-value", "base_url": "https://example.com"}
+    resp = await client.post(
+        "/datasources/",
+        json={"name": f"admin-create-{uuid.uuid4().hex[:8]}", "source_type": "rest_api",
+              "connection_config": config},
+        headers={"Authorization": f"Bearer {admin_token}"},
+    )
+    assert resp.status_code == 201
+    data = resp.json()
+    assert "connection_config" in data, "Admin create response must include connection_config"
+    assert data["connection_config"] == config
+
+
+@pytest.mark.asyncio
+async def test_admin_update_datasource_returns_connection_config(client: AsyncClient, admin_token: str):
+    """PATCH /datasources/{id} returns DataSourceAdminRead — connection_config present for admin."""
+    create_resp = await client.post(
+        "/datasources/",
+        json={"name": f"admin-patch-{uuid.uuid4().hex[:8]}", "source_type": "rest_api",
+              "connection_config": {"api_key": "old-secret"}},
+        headers={"Authorization": f"Bearer {admin_token}"},
+    )
+    assert create_resp.status_code == 201
+    source_id = create_resp.json()["id"]
+
+    new_config = {"api_key": "new-secret", "base_url": "https://updated.example.com"}
+    patch_resp = await client.patch(
+        f"/datasources/{source_id}",
+        json={"connection_config": new_config},
+        headers={"Authorization": f"Bearer {admin_token}"},
+    )
+    assert patch_resp.status_code == 200
+    data = patch_resp.json()
+    assert "connection_config" in data, "Admin update response must include connection_config"
+    assert data["connection_config"] == new_config

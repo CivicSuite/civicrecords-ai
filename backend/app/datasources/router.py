@@ -17,7 +17,7 @@ from app.auth.dependencies import require_role
 from app.database import get_async_session
 from app.models.document import DataSource, Document, DocumentChunk, IngestionStatus, SourceType
 from app.models.user import User, UserRole
-from app.schemas.document import DataSourceCreate, DataSourceRead, DataSourceUpdate, IngestionStats
+from app.schemas.document import DataSourceAdminRead, DataSourceCreate, DataSourceRead, DataSourceUpdate, IngestionStats
 
 async def _double_fetch_hashes(
     connector, first_source_path: str, data_key: str | None
@@ -65,7 +65,7 @@ logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/datasources", tags=["datasources"])
 
-@router.post("/", response_model=DataSourceRead, status_code=201)
+@router.post("/", response_model=DataSourceAdminRead, status_code=201)
 async def create_datasource(data: DataSourceCreate, session: AsyncSession = Depends(get_async_session), user: User = Depends(require_role(UserRole.ADMIN))):
     existing = await session.execute(select(DataSource).where(DataSource.name == data.name))
     if existing.scalar_one_or_none():
@@ -120,7 +120,7 @@ async def list_datasources(session: AsyncSession = Depends(get_async_session), u
         output.append(data)
     return output
 
-@router.patch("/{source_id}", response_model=DataSourceRead)
+@router.patch("/{source_id}", response_model=DataSourceAdminRead)
 async def update_datasource(source_id: uuid.UUID, data: DataSourceUpdate, session: AsyncSession = Depends(get_async_session), user: User = Depends(require_role(UserRole.ADMIN))):
     source = await session.get(DataSource, source_id)
     if not source:

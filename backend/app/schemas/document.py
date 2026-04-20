@@ -21,10 +21,10 @@ class DataSourceCreate(BaseModel):
 
 
 class DataSourceRead(BaseModel):
+    """Redacted datasource shape — safe for non-admin roles. connection_config omitted."""
     id: uuid.UUID
     name: str
     source_type: SourceType
-    connection_config: dict
     sync_schedule: str | None = None
     schedule_enabled: bool = True
     next_sync_at: datetime | None = None
@@ -47,6 +47,11 @@ class DataSourceRead(BaseModel):
     @classmethod
     def _default_health_status(cls, v):
         return v if v is not None else "healthy"
+
+
+class DataSourceAdminRead(DataSourceRead):
+    """Full datasource shape including connection_config. Returned only by admin-gated endpoints."""
+    connection_config: dict
 
 
 class DataSourceUpdate(BaseModel):
