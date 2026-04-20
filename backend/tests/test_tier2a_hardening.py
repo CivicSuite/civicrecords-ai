@@ -410,11 +410,22 @@ async def test_parameterized_cross_department_access_denied(
     # Seed one dept-B request and one dept-B document.
     req_b_id = await _create_request_in_dept(client, staff_token_dept_b, "param probe")
     doc_b_id = await _seed_document_with_dept(dept_b, "param_probe")
-    # Placeholder child IDs. The parent request is loaded and dept-checked
-    # BEFORE the child lookup runs, so 403 always fires before any child-not-
-    # found 404 — these UUIDs never actually have to resolve.
+
+    # Seed a real response letter on the dept-B request. The PATCH
+    # /response-letter/{letter_id} handler loads the letter BEFORE the
+    # parent request, so a placeholder id 404s before the dept check runs.
+    # Using a real letter_id guarantees the 403 is the dept check.
+    letter_resp = await client.post(
+        f"/requests/{req_b_id}/response-letter",
+        json={},
+        headers={"Authorization": f"Bearer {staff_token_dept_b}"},
+    )
+    assert letter_resp.status_code in (200, 201), letter_resp.text
+    letter_b_id = letter_resp.json()["id"]
+
+    # Placeholder child IDs for routes where the handler loads the parent
+    # request first (and dept check runs before any child lookup).
     placeholder_doc = str(uuid.uuid4())
-    placeholder_letter = str(uuid.uuid4())
 
     cases = [
         # documents (PR #16)
@@ -444,7 +455,7 @@ async def test_parameterized_cross_department_access_denied(
         # requests — response letter
         ("POST",   f"/requests/{req_b_id}/response-letter",               {}),
         ("GET",    f"/requests/{req_b_id}/response-letter",               None),
-        ("PATCH",  f"/requests/{req_b_id}/response-letter/{placeholder_letter}", {}),
+        ("PATCH",  f"/requests/{req_b_id}/response-letter/{letter_b_id}", {}),
         # requests — timeline + messages (PR #17)
         ("GET",    f"/requests/{req_b_id}/timeline",                      None),
         ("POST",   f"/requests/{req_b_id}/timeline",
