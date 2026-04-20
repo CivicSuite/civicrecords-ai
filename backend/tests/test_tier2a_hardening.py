@@ -398,10 +398,11 @@ async def test_parameterized_cross_department_access_denied(
     the department gate.
 
     Coverage after the T2A-cleanup PR: every ``require_department_scope``
-    call site in ``requests/router.py`` (16 sites), ``documents/router.py``
-    (2), and ``exemptions/router.py`` (2 of 3; the third — PATCH
-    /exemptions/flags/{flag_id} — needs a seeded flag and is covered by a
-    targeted test instead).
+    call site in ``requests/router.py`` (17 sites — includes fee-waiver
+    review, added after auditor feedback on the first cleanup pass),
+    ``documents/router.py`` (2), and ``exemptions/router.py`` (2 of 3; the
+    third — PATCH /exemptions/flags/{flag_id} — needs a seeded flag and is
+    covered by a targeted test instead).
 
     New dept-scoped endpoints added after this must be appended below to
     prevent silent regression. If a route is intentionally global (like
@@ -422,6 +423,16 @@ async def test_parameterized_cross_department_access_denied(
     )
     assert letter_resp.status_code in (200, 201), letter_resp.text
     letter_b_id = letter_resp.json()["id"]
+
+    # Seed a real fee waiver on the dept-B request so the review PATCH case
+    # exercises the dept check against a real waiver record, not a placeholder.
+    waiver_resp = await client.post(
+        f"/requests/{req_b_id}/fee-waiver",
+        json={"waiver_type": "other", "reason": "seed"},
+        headers={"Authorization": f"Bearer {staff_token_dept_b}"},
+    )
+    assert waiver_resp.status_code in (200, 201), waiver_resp.text
+    waiver_b_id = waiver_resp.json()["id"]
 
     # Placeholder child IDs for routes where the handler loads the parent
     # request first (and dept check runs before any child lookup).
@@ -452,6 +463,8 @@ async def test_parameterized_cross_department_access_denied(
                    {"page_count": 1, "fee_schedule_id": str(uuid.uuid4())}),
         ("POST",   f"/requests/{req_b_id}/fee-waiver",
                    {"waiver_type": "other", "reason": "nope"}),
+        ("PATCH",  f"/requests/{req_b_id}/fee-waiver/{waiver_b_id}",
+                   {"status": "approved", "review_notes": "nope"}),
         # requests — response letter
         ("POST",   f"/requests/{req_b_id}/response-letter",               {}),
         ("GET",    f"/requests/{req_b_id}/response-letter",               None),

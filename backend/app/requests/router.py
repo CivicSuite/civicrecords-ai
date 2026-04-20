@@ -857,6 +857,7 @@ async def review_fee_waiver(
     req = await session.get(RecordsRequest, request_id)
     if not req:
         raise HTTPException(status_code=404, detail="Request not found")
+    require_department_scope(user, req.department_id)
 
     waiver = await session.get(FeeWaiver, waiver_id)
     if not waiver or waiver.request_id != request_id:
