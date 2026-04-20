@@ -302,6 +302,76 @@ async def test_analytics_operational_denies_non_admin_with_null_department(
 
 
 # ---------------------------------------------------------------------------
+# Pattern D — list/aggregate endpoints that previously fell open on
+# null-user-dept because the filter was conditional on
+# `user.department_id is not None`. After fix, require_department_filter
+# raises 403 for non-admin + null user dept.
+# ---------------------------------------------------------------------------
+
+@pytest.mark.asyncio
+async def test_list_requests_denies_non_admin_with_null_department(
+    client: AsyncClient,
+    staff_token: str,  # plain staff -> no department
+):
+    """Before the fix, a null-dept non-admin calling GET /requests/ bypassed
+    the dept filter and saw every request in every department. After the fix,
+    require_department_filter raises 403."""
+    resp = await client.get(
+        "/requests/",
+        headers={"Authorization": f"Bearer {staff_token}"},
+    )
+    assert resp.status_code == 403, resp.text
+
+
+@pytest.mark.asyncio
+async def test_request_stats_denies_non_admin_with_null_department(
+    client: AsyncClient,
+    staff_token: str,  # plain staff -> no department
+):
+    """Before the fix, GET /requests/stats returned unscoped aggregate
+    counts for a null-dept non-admin. After the fix, 403."""
+    resp = await client.get(
+        "/requests/stats",
+        headers={"Authorization": f"Bearer {staff_token}"},
+    )
+    assert resp.status_code == 403, resp.text
+
+
+@pytest.mark.asyncio
+async def test_search_query_denies_non_admin_with_null_department(
+    client: AsyncClient,
+    staff_token: str,  # plain staff -> no department
+):
+    """Before the fix, POST /search/query returned cross-department hits
+    to a null-dept non-admin because the dept filter was skipped when
+    user.department_id was None. After the fix, 403 fires before any
+    search executes (and before any SearchSession row is created — the
+    dept check is now the first thing the handler does).
+
+    No Ollama mock needed: the 403 fires before hybrid_search is called.
+    """
+    resp = await client.post(
+        "/search/query",
+        json={"query": "anything", "limit": 5},
+        headers={"Authorization": f"Bearer {staff_token}"},
+    )
+    assert resp.status_code == 403, resp.text
+
+
+@pytest.mark.asyncio
+async def test_search_export_denies_non_admin_with_null_department(
+    client: AsyncClient,
+    staff_token: str,  # plain staff -> no department
+):
+    """Same as above for GET /search/export. 403 fires before hybrid_search."""
+    resp = await client.get(
+        "/search/export?query=anything&format=csv",
+        headers={"Authorization": f"Bearer {staff_token}"},
+    )
+    assert resp.status_code == 403, resp.text
+
+
+# ---------------------------------------------------------------------------
 # /requests/{id}/timeline + /messages — fail-closed migration
 # ---------------------------------------------------------------------------
 

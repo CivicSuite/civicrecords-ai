@@ -96,6 +96,36 @@ def has_department_access(user: User, resource_department_id: uuid.UUID | None) 
     return user.department_id == resource_department_id
 
 
+def require_department_filter(user: User) -> uuid.UUID | None:
+    """Resolve the department_id to apply as a WHERE-clause filter on list
+    or aggregate endpoints. Fails closed for non-admin users with no
+    department.
+
+    Returns:
+        ``None`` for admin users — no filter; they see every department.
+        ``user.department_id`` for non-admin users with a department assignment.
+
+    Raises:
+        HTTP 403 for non-admin users with ``user.department_id is None``.
+        This is the list/aggregate analog of
+        :func:`require_department_or_404` — for list endpoints there is no
+        specific resource ID to probe, so a semantic 403 is correct; the
+        404-unification rationale does not apply.
+
+    Use this in list/aggregate/search handlers to avoid the "if user.role
+    != UserRole.ADMIN and user.department_id is not None" fail-open pattern
+    that silently skips the dept filter for a null-dept non-admin.
+    """
+    if user.role == UserRole.ADMIN:
+        return None
+    if user.department_id is None:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Access denied: user is not assigned to a department",
+        )
+    return user.department_id
+
+
 def require_department_or_404(
     user: User,
     resource_department_id: uuid.UUID | None,

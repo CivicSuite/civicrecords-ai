@@ -11,7 +11,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.audit.logger import write_audit_log
 from app.notifications.service import queue_notification
 from app.config import settings
-from app.auth.dependencies import require_role, require_department_or_404
+from app.auth.dependencies import require_role, require_department_or_404, require_department_filter
 from app.database import get_async_session
 from app.models.city_profile import CityProfile
 from app.models.document import Document
@@ -139,9 +139,13 @@ async def list_requests(
 ):
     stmt = select(RecordsRequest).order_by(RecordsRequest.created_at.desc())
 
-    # Department scoping: non-admins see only their department
-    if user.role != UserRole.ADMIN and user.department_id is not None:
-        stmt = stmt.where(RecordsRequest.department_id == user.department_id)
+    # Department scoping via require_department_filter: fails closed with
+    # 403 for non-admin users with no department (prior code had
+    # `if ... and user.department_id is not None:` which silently skipped
+    # the filter for null-dept non-admins).
+    dept_filter = require_department_filter(user)
+    if dept_filter is not None:
+        stmt = stmt.where(RecordsRequest.department_id == dept_filter)
 
     if status:
         stmt = stmt.where(RecordsRequest.status == status)
@@ -157,9 +161,12 @@ async def request_stats(
     session: AsyncSession = Depends(get_async_session),
     user: User = Depends(require_role(UserRole.LIAISON)),
 ):
-    dept_filter = []
-    if user.role != UserRole.ADMIN and user.department_id is not None:
-        dept_filter = [RecordsRequest.department_id == user.department_id]
+    # Department scoping via require_department_filter: fails closed with
+    # 403 for non-admin users with no department (prior code had
+    # `if ... and user.department_id is not None:` which silently skipped
+    # the dept_filter for null-dept non-admins).
+    dept_id = require_department_filter(user)
+    dept_filter = [RecordsRequest.department_id == dept_id] if dept_id is not None else []
 
     total = (await session.execute(
         select(func.count(RecordsRequest.id)).where(*dept_filter)

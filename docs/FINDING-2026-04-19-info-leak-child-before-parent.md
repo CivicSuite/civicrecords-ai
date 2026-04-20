@@ -98,7 +98,51 @@ Three test files cover this:
 - `test_staff_gets_request_in_other_department_404` (renamed from `_403`) — cross-dept `GET /requests/{id}` → 404
 - `test_reviewer_cannot_approve_other_department` — cross-dept workflow action → 404
 
+## Second scope expansion — Pattern D list-endpoint fail-open
+
+During review of the expanded-scope PR, the auditor flagged two request endpoints (`GET /requests/` and `GET /requests/stats`) that still fell open for non-admin users with `user.department_id is None`. The handler shape was:
+
+```python
+# BEFORE (fail-open on null user dept)
+if user.role != UserRole.ADMIN and user.department_id is not None:
+    stmt = stmt.where(RecordsRequest.department_id == user.department_id)
+# else: no filter — null-dept non-admin sees every dept's rows
+```
+
+A codebase-wide sweep for this pattern found **4 affected handlers**, not 2:
+
+| File | Handler | Route |
+|---|---|---|
+| `backend/app/requests/router.py` | `list_requests` | `GET /requests/` |
+| `backend/app/requests/router.py` | `request_stats` | `GET /requests/stats` |
+| `backend/app/search/router.py` | `execute_search` | `POST /search/query` |
+| `backend/app/search/router.py` | `export_search_results` | `GET /search/export` |
+
+### Fix — `require_department_filter` helper
+
+Added in `backend/app/auth/dependencies.py`. Returns `None` for admin (no filter), raises 403 for non-admin with no department, returns `user.department_id` otherwise. The list/aggregate analog of `require_department_or_404` — for list endpoints there is no specific resource ID to probe, so a semantic 403 is correct.
+
+```python
+# AFTER (fail-closed)
+dept_filter = require_department_filter(user)  # 403 if non-admin + null dept
+if dept_filter is not None:
+    stmt = stmt.where(RecordsRequest.department_id == dept_filter)
+```
+
+All 4 call sites converted. One additional reorder in `execute_search`: the dept check now runs BEFORE `session.add(SearchSession(...))` — a null-dept non-admin no longer writes a SearchSession row before the 403 fires.
+
+### Regression tests
+
+4 new tests in `backend/tests/test_tier2a_hardening.py`:
+
+- `test_list_requests_denies_non_admin_with_null_department`
+- `test_request_stats_denies_non_admin_with_null_department`
+- `test_search_query_denies_non_admin_with_null_department`
+- `test_search_export_denies_non_admin_with_null_department`
+
+All four assert 403 from the `staff_token` fixture (non-admin, no department). No Ollama mock needed for search tests — the 403 fires before `hybrid_search` is ever called.
+
 ## Not in scope for this PR
 
-- Handlers where a semantic 403 is intentional (admin routes, role checks, list endpoints with WHERE-clause filtering). Unchanged.
 - `/city-profile` — intentionally global, admin-write only. No dept scoping.
+- Admin routes and role checks where 403 is semantically correct — unchanged.

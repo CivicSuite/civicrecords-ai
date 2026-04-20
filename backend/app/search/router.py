@@ -5,7 +5,7 @@ from sqlalchemy import select, func
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.audit.logger import write_audit_log
-from app.auth.dependencies import require_role
+from app.auth.dependencies import require_role, require_department_filter
 from app.database import get_async_session
 from app.models.departments import Department
 from app.models.document import DataSource, Document, DocumentChunk
@@ -31,6 +31,12 @@ async def execute_search(
     user: User = Depends(require_role(UserRole.LIAISON)),
 ):
     """Execute a hybrid search query. Optionally synthesize an LLM answer."""
+    # Dept scoping fail-closed guard runs FIRST — before any session load
+    # or insert. Otherwise a null-dept non-admin would create a SearchSession
+    # row (session.add + flush below) before the 403 fired, leaving orphan
+    # audit noise behind.
+    dept_filter_id = require_department_filter(user)
+
     # Get or create session
     if req.session_id:
         search_session = await session.get(SearchSession, req.session_id)
@@ -41,12 +47,11 @@ async def execute_search(
         session.add(search_session)
         await session.flush()
 
-    # Department scoping: ALL non-admin users (liaison, staff, reviewer, read_only) who have a
-    # department_id set are automatically scoped to their department. Any user-supplied
-    # department_id filter is overwritten — server authority over scoping is intentional.
+    # Department scoping: apply the resolved filter (server authority is
+    # intentional — any caller-supplied department_id is overwritten).
     effective_filters = dict(req.filters or {})
-    if user.role != UserRole.ADMIN and user.department_id is not None:
-        effective_filters["department_id"] = str(user.department_id)
+    if dept_filter_id is not None:
+        effective_filters["department_id"] = str(dept_filter_id)
 
     # Execute hybrid search
     hits = await hybrid_search(
@@ -282,11 +287,13 @@ async def export_search_results(
     if file_type:
         filters["file_type"] = file_type
 
-    # Department scoping: same server-authority rule as POST /search/query.
-    # Non-admin users with a department_id are silently scoped; any caller-supplied
-    # department_id is overwritten — this is intentional.
-    if user.role != UserRole.ADMIN and user.department_id is not None:
-        filters["department_id"] = str(user.department_id)
+    # Department scoping via require_department_filter: same fail-closed
+    # behavior as POST /search/query (non-admin without a department → 403).
+    # Server authority is intentional — any caller-supplied department_id
+    # filter is overwritten.
+    dept_filter_id = require_department_filter(user)
+    if dept_filter_id is not None:
+        filters["department_id"] = str(dept_filter_id)
 
     hits = await hybrid_search(session=session, query_text=query, limit=50, filters=filters or None)
 
