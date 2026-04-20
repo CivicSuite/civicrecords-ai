@@ -6,7 +6,7 @@ from sqlalchemy import select, func
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.audit.logger import write_audit_log
-from app.auth.dependencies import require_role, require_department_scope
+from app.auth.dependencies import require_role, require_department_scope, has_department_access
 from app.database import get_async_session
 from app.exemptions.engine import scan_request_documents
 from app.models.request import RecordsRequest
@@ -322,14 +322,18 @@ async def review_flag(
     session: AsyncSession = Depends(get_async_session),
     user: User = Depends(require_role(UserRole.STAFF)),
 ):
+    # 404-unification: this route has only flag_id in the path, so the flag
+    # must load before we can resolve its parent request. To prevent an
+    # information-disclosure side channel (404 for missing flag vs 403 for
+    # cross-department flag would let an attacker probe flag_id existence),
+    # every failure mode returns the same 404 "Flag not found" response.
+    # Also fixes a prior orphan-flag fail-open: the old code guarded the
+    # dept check behind ``if req:`` and silently skipped it when the parent
+    # request was missing.
     flag = await session.get(ExemptionFlag, flag_id)
-    if not flag:
+    req = await session.get(RecordsRequest, flag.request_id) if flag else None
+    if not flag or not req or not has_department_access(user, req.department_id):
         raise HTTPException(status_code=404, detail="Flag not found")
-
-    # Department check via the flag's request
-    req = await session.get(RecordsRequest, flag.request_id)
-    if req:
-        require_department_scope(user, req.department_id)
 
     if data.status not in (FlagStatus.ACCEPTED, FlagStatus.REJECTED, FlagStatus.REVIEWED):
         raise HTTPException(status_code=400, detail="Status must be accepted, rejected, or reviewed")

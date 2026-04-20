@@ -70,3 +70,27 @@ def require_department_scope(user: User, resource_department_id: uuid.UUID | Non
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Access denied: resource belongs to another department",
         )
+
+
+def has_department_access(user: User, resource_department_id: uuid.UUID | None) -> bool:
+    """Non-raising variant of ``require_department_scope``.
+
+    Returns ``True`` if the user would pass the same fail-closed rules,
+    ``False`` otherwise. Use this when the caller needs to unify the response
+    for "resource does not exist" and "resource exists but you cannot access
+    it" — for example, to prevent an information-disclosure side channel on
+    routes where the resource ID is the only path parameter.
+
+    Rules match ``require_department_scope`` exactly:
+    - Admin: True.
+    - Non-admin with ``user.department_id is None``: False.
+    - Non-admin with ``resource_department_id is None``: False.
+    - Non-admin otherwise: ``user.department_id == resource_department_id``.
+    """
+    if user.role == UserRole.ADMIN:
+        return True
+    if user.department_id is None:
+        return False
+    if resource_department_id is None:
+        return False
+    return user.department_id == resource_department_id

@@ -1167,14 +1167,18 @@ async def update_response_letter(
 
     Status changes to 'approved' require REVIEWER role.
     """
-    letter = await session.get(ResponseLetter, letter_id)
-    if not letter or letter.request_id != request_id:
-        raise HTTPException(status_code=404, detail="Response letter not found")
-
+    # Load parent request + dept-check BEFORE the letter lookup so a
+    # cross-department caller cannot distinguish "letter exists in another
+    # dept" (was 403) from "letter does not exist" (was 404) — both now
+    # return 403 via the dept gate before any child-existence check runs.
     req = await session.get(RecordsRequest, request_id)
     if not req:
         raise HTTPException(status_code=404, detail="Request not found")
     require_department_scope(user, req.department_id)
+
+    letter = await session.get(ResponseLetter, letter_id)
+    if not letter or letter.request_id != request_id:
+        raise HTTPException(status_code=404, detail="Response letter not found")
 
     # Validate status BEFORE any mutations
     if data.status is not None:
