@@ -154,6 +154,110 @@ jobs:
         run: docker compose down -v --remove-orphans
 
   # -------------------------------------------------------------------------
+  # T2C bootstrap-failure smoke test — proves the literal `docker compose`
+  # path fails fatally when FIRST_ADMIN_PASSWORD is left at the .env.example
+  # placeholder. This is the integration-test arm of T2C plan item #4: a
+  # fresh container start with the placeholder password must die at import
+  # time, before uvicorn ever binds a port. Complemented by the
+  # subprocess-level integration tests in test_bootstrap_integration.py
+  # which run inside the regular pytest job.
+  # -------------------------------------------------------------------------
+  bootstrap-failure:
+    name: T2C bootstrap-failure smoke test
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Synthesize a placeholder-password .env (the failure-mode env)
+        # Set FIRST_ADMIN_PASSWORD to the exact .env.example value. JWT_SECRET
+        # gets a real value so we are isolating the password validator failure.
+        # TESTING is intentionally NOT set; we want the validator to fire.
+        run: |
+          JWT_SECRET="$(openssl rand -hex 32)"
+          umask 077
+          cat > .env <<EOF
+          DATABASE_URL=postgresql+asyncpg://civicrecords:civicrecords@postgres:5432/civicrecords
+          JWT_SECRET=${JWT_SECRET}
+          FIRST_ADMIN_EMAIL=admin@ci.local
+          FIRST_ADMIN_PASSWORD=CHANGE-ME-on-first-login
+          OLLAMA_BASE_URL=http://ollama:11434
+          REDIS_URL=redis://redis:6379/0
+          AUDIT_RETENTION_DAYS=1095
+          EOF
+
+      - name: Build api image
+        run: docker compose build api
+
+      - name: docker compose run with placeholder password must exit non-zero
+        # Run a one-shot container that imports app.config — exactly what the
+        # api container does at startup. Capture stdout+stderr; assert the
+        # exit code is non-zero AND the error mentions FIRST_ADMIN_PASSWORD.
+        # `--no-deps` keeps the test focused on the import-time failure
+        # without spinning up postgres/redis (the validator fires before any
+        # DB connection is attempted).
+        run: |
+          set +e
+          docker compose run --rm --no-deps \
+            api python -c "from app.config import Settings; Settings()" \
+            > bootstrap.out 2> bootstrap.err
+          rc=$?
+          set -e
+          echo "exit=${rc}"
+          echo "--- stdout ---"; cat bootstrap.out
+          echo "--- stderr ---"; cat bootstrap.err
+          if [ "${rc}" = "0" ]; then
+            echo "::error::Bootstrap should have failed with placeholder password but exited 0."
+            exit 1
+          fi
+          if ! grep -q "FIRST_ADMIN_PASSWORD" bootstrap.out bootstrap.err; then
+            echo "::error::Bootstrap failed but did not mention FIRST_ADMIN_PASSWORD."
+            echo "::error::Check that the validator surfaced the right error."
+            exit 1
+          fi
+          echo "OK — placeholder password is fatal at startup."
+
+      - name: Sanity — strong password lets bootstrap exit 0
+        # Control: same path with a valid password must succeed. Without this
+        # control, a Python import error elsewhere would also "fail" and pass
+        # the test for the wrong reason.
+        run: |
+          STRONG_PW="$(openssl rand -hex 16)"
+          sed -i "s|FIRST_ADMIN_PASSWORD=.*|FIRST_ADMIN_PASSWORD=${STRONG_PW}|" .env
+          set +e
+          docker compose run --rm --no-deps \
+            api python -c "from app.config import Settings; Settings()" \
+            > bootstrap-ok.out 2> bootstrap-ok.err
+          rc=$?
+          set -e
+          echo "exit=${rc}"
+          if [ "${rc}" != "0" ]; then
+            echo "::error::Bootstrap with a strong password should succeed but exited ${rc}."
+            echo "--- stdout ---"; cat bootstrap-ok.out
+            echo "--- stderr ---"; cat bootstrap-ok.err
+            exit 1
+          fi
+
+      - name: Upload bootstrap logs on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: bootstrap-failure-logs-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            bootstrap.out
+            bootstrap.err
+            bootstrap-ok.out
+            bootstrap-ok.err
+          retention-days: 14
+          if-no-files-found: warn
+
+      - name: Teardown
+        if: always()
+        run: docker compose down -v --remove-orphans
+
+  # -------------------------------------------------------------------------
   # Frontend — vitest and production build on native Node.
   # Vite 6 requires Node 20+. No engines field is declared in package.json,
   # so the version is pinned here to match local-dev expectations.

@@ -42,12 +42,26 @@ if (-not (Test-Path ".env")) {
     Copy-Item ".env.example" ".env"
     # Generate JWT secret
     $jwtSecret = -join ((1..64) | ForEach-Object { '{0:x}' -f (Get-Random -Max 16) })
-    (Get-Content ".env") -replace "CHANGE-ME-generate-with-openssl-rand-hex-32", $jwtSecret | Set-Content ".env"
+    # T2C: generate a strong admin password instead of leaving the placeholder.
+    # Settings.check_first_admin_password rejects the .env.example value at startup.
+    # Use hex so the value contains no shell or .env-parser metacharacters.
+    $adminPassword = -join ((1..32) | ForEach-Object { '{0:x}' -f (Get-Random -Max 16) })
+    # Use String.Replace (literal) instead of -replace (regex) to avoid metachar issues.
+    $envContent = (Get-Content ".env" -Raw)
+    $envContent = $envContent.Replace("CHANGE-ME-generate-with-openssl-rand-hex-32", $jwtSecret)
+    $envContent = $envContent.Replace("CHANGE-ME-on-first-login", $adminPassword)
+    Set-Content ".env" -Value $envContent -NoNewline
     Write-Host ""
-    Write-Host "IMPORTANT: Edit .env to set your admin email and password:" -ForegroundColor Yellow
-    Write-Host "  notepad .env"
+    Write-Host "============================================" -ForegroundColor Yellow
+    Write-Host "  ADMIN PASSWORD GENERATED - copy this now" -ForegroundColor Yellow
+    Write-Host "============================================" -ForegroundColor Yellow
+    Write-Host "  Email:    admin@example.gov  (edit .env to change)"
+    Write-Host "  Password: $adminPassword" -ForegroundColor Cyan
+    Write-Host "============================================" -ForegroundColor Yellow
+    Write-Host "  This password is stored in .env. Store it in your password manager."
+    Write-Host "  Press Enter when you have copied it."
     Write-Host ""
-    Read-Host "Press Enter after editing .env, or Ctrl+C to edit later"
+    Read-Host "Press Enter to continue, or Ctrl+C to edit .env first"
 }
 
 # ─── Hardware Detection ───────────────────────────────────────────────────────

@@ -49,3 +49,14 @@ class ODBCConfig(BaseModel):
         if v is not None:
             return [_validate_identifier(col, f"columns[{i}]") for i, col in enumerate(v)]
         return v
+
+    @field_validator("connection_string")
+    @classmethod
+    def _reject_ssrf_targets(cls, v: str) -> str:
+        # T2C — block loopback / RFC1918 / link-local / localhost by default;
+        # CONNECTOR_HOST_ALLOWLIST is the narrow explicit override. Fails closed
+        # if no Server/Host/Data Source field is parseable.
+        from app.config import settings
+        from app.security.host_validator import validate_odbc_connection_string
+        validate_odbc_connection_string(v, settings.connector_host_allowlist)
+        return v

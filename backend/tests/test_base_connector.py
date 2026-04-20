@@ -40,7 +40,7 @@ def test_factory_rest_api():
 
 def test_factory_odbc():
     connector = get_connector("odbc", {
-        "connection_string": "DSN=x",
+        "connection_string": "Server=db.example.gov;Database=x",
         "table_name": "records",
         "pk_column": "id",
     })

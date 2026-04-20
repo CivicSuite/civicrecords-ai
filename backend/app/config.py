@@ -1,9 +1,32 @@
-from pydantic import model_validator
+from pydantic import field_validator, model_validator
 from pydantic_settings import BaseSettings
 
 APP_VERSION = "1.1.0"
 
 _INSECURE_SECRETS = {"CHANGE-ME", "CHANGE-ME-generate-with-openssl-rand-hex-32", ""}
+
+_INSECURE_PASSWORDS = frozenset({
+    "CHANGE-ME",
+    "CHANGE-ME-on-first-login",
+    "password",
+    "Password",
+    "PASSWORD",
+    "admin",
+    "Admin",
+    "admin123",
+    "Admin123",
+    "changeme",
+    "ChangeMe",
+    "12345678",
+    "123456789",
+    "1234567890",
+    "qwertyuiop",
+    "letmein",
+    "welcome",
+    "Welcome1",
+})
+
+_MIN_PASSWORD_LEN = 12
 
 
 class Settings(BaseSettings):
@@ -27,6 +50,11 @@ class Settings(BaseSettings):
     smtp_from_email: str = "noreply@civicrecords.local"
     smtp_use_tls: bool = True
 
+    # T2C — explicit narrow allowlist for connector hosts that would otherwise be
+    # blocked by the SSRF validator (loopback / RFC1918 / link-local / localhost).
+    # Empty by default. No wildcard support, no "disable all" escape hatch.
+    connector_host_allowlist: list[str] = []
+
     testing: bool = False
 
     model_config = {"env_file": ".env", "extra": "ignore"}
@@ -44,6 +72,32 @@ class Settings(BaseSettings):
             raise ValueError(
                 f"JWT_SECRET must be at least 32 characters (got {len(self.jwt_secret)}). "
                 "Generate one with: openssl rand -hex 32"
+            )
+        return self
+
+    @field_validator("connector_host_allowlist", mode="before")
+    @classmethod
+    def _parse_allowlist_csv(cls, v):
+        # Accept CSV strings from env (e.g. "host1,10.0.0.5") in addition to native lists.
+        if isinstance(v, str):
+            return [s.strip() for s in v.split(",") if s.strip()]
+        return v
+
+    @model_validator(mode="after")
+    def check_first_admin_password(self):
+        if self.testing:
+            return self
+        pw = self.first_admin_password or ""
+        if pw in _INSECURE_PASSWORDS:
+            raise ValueError(
+                "FIRST_ADMIN_PASSWORD is set to an insecure placeholder or common value. "
+                "Set it to a strong password (at least 12 characters, not in the common "
+                "blocklist). On install, the install scripts can generate one for you."
+            )
+        if len(pw) < _MIN_PASSWORD_LEN:
+            raise ValueError(
+                f"FIRST_ADMIN_PASSWORD must be at least {_MIN_PASSWORD_LEN} characters "
+                f"(got {len(pw)}). Set a strong value before starting the app."
             )
         return self
 

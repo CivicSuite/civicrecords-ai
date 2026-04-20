@@ -1,5 +1,5 @@
 from typing import Literal, Optional
-from pydantic import AnyHttpUrl, BaseModel, Field, model_validator
+from pydantic import AnyHttpUrl, BaseModel, Field, field_validator, model_validator
 
 
 class RestApiConfig(BaseModel):
@@ -53,3 +53,16 @@ class RestApiConfig(BaseModel):
                 "pagination_style='cursor' requires response_format='json'"
             )
         return self
+
+    @field_validator("base_url", "token_url")
+    @classmethod
+    def _reject_ssrf_targets(cls, v):
+        # T2C — block loopback / RFC1918 / link-local / localhost by default;
+        # CONNECTOR_HOST_ALLOWLIST is the narrow explicit override for
+        # legitimate on-prem targets.
+        if v is None:
+            return v
+        from app.config import settings
+        from app.security.host_validator import validate_url_host
+        validate_url_host(str(v), settings.connector_host_allowlist)
+        return v

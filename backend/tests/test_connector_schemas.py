@@ -40,7 +40,7 @@ class TestRestApiConfig:
 class TestODBCConfig:
     def test_valid_config(self):
         cfg = ODBCConfig(
-            connection_string="DSN=test",
+            connection_string="Server=db.example.gov;Database=test",
             table_name="public_records",
             pk_column="id",
         )
@@ -50,7 +50,7 @@ class TestODBCConfig:
     def test_invalid_table_name_rejects_sql_injection(self):
         with pytest.raises(ValidationError):
             ODBCConfig(
-                connection_string="DSN=test",
+                connection_string="Server=db.example.gov;Database=test",
                 table_name="records; DROP TABLE users--",
                 pk_column="id",
             )
@@ -58,14 +58,14 @@ class TestODBCConfig:
     def test_invalid_pk_column(self):
         with pytest.raises(ValidationError):
             ODBCConfig(
-                connection_string="DSN=test",
+                connection_string="Server=db.example.gov;Database=test",
                 table_name="records",
                 pk_column="1invalid",
             )
 
     def test_modified_column_none_is_valid(self):
         cfg = ODBCConfig(
-            connection_string="DSN=test",
+            connection_string="Server=db.example.gov;Database=test",
             table_name="records",
             pk_column="id",
             modified_column=None,
@@ -90,7 +90,7 @@ class TestConnectorConfigDiscriminatedUnion:
         adapter = TypeAdapter(ConnectorConfig)
         cfg = adapter.validate_python({
             "connector_type": "odbc",
-            "connection_string": "DSN=test",
+            "connection_string": "Server=db.example.gov;Database=test",
             "table_name": "records",
             "pk_column": "id",
         })

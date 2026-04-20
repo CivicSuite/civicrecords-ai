@@ -49,16 +49,28 @@ if [ ! -f .env ]; then
     echo ">>> Creating .env from template..."
     cp .env.example .env
     JWT_SECRET=$(openssl rand -hex 32)
+    # T2C: generate a strong admin password instead of leaving the placeholder.
+    # Settings.check_first_admin_password rejects the .env.example value at startup.
+    # Use hex so the value contains no shell or .env-parser metacharacters.
+    ADMIN_PASSWORD=$(openssl rand -hex 16)
     if [ "$OS" = "Darwin" ]; then
-        sed -i '' "s/CHANGE-ME-generate-with-openssl-rand-hex-32/$JWT_SECRET/" .env
+        sed -i '' "s|CHANGE-ME-generate-with-openssl-rand-hex-32|$JWT_SECRET|" .env
+        sed -i '' "s|CHANGE-ME-on-first-login|$ADMIN_PASSWORD|" .env
     else
-        sed -i "s/CHANGE-ME-generate-with-openssl-rand-hex-32/$JWT_SECRET/" .env
+        sed -i "s|CHANGE-ME-generate-with-openssl-rand-hex-32|$JWT_SECRET|" .env
+        sed -i "s|CHANGE-ME-on-first-login|$ADMIN_PASSWORD|" .env
     fi
     echo ""
-    echo "IMPORTANT: Edit .env to set your admin email and password:"
-    echo "  nano .env"
+    echo "============================================"
+    echo "  ADMIN PASSWORD GENERATED — copy this now"
+    echo "============================================"
+    echo "  Email:    admin@example.gov  (edit .env to change)"
+    echo "  Password: $ADMIN_PASSWORD"
+    echo "============================================"
+    echo "  This password is stored in .env. Store it in your password manager."
+    echo "  Press Enter when you have copied it."
     echo ""
-    read -p "Press Enter after editing .env, or Ctrl+C to edit later..."
+    read -p "Press Enter to continue, or Ctrl+C to edit .env first..."
 fi
 
 # ─── Hardware Detection ───────────────────────────────────────────────────────

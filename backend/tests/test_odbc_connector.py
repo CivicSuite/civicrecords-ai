@@ -45,7 +45,7 @@ def sqlite_db():
 @pytest.fixture
 def odbc_connector(sqlite_db):
     config = ODBCConfig(
-        connection_string="DSN=test",
+        connection_string="Server=db.example.gov;Database=test",
         table_name="public_records",
         pk_column="id",
         modified_column="modified_at",
@@ -94,7 +94,7 @@ async def test_health_check_healthy(odbc_connector):
 @pytest.mark.asyncio
 async def test_ensure_authenticated_raises_before_auth():
     config = ODBCConfig(
-        connection_string="DSN=test",
+        connection_string="Server=db.example.gov;Database=test",
         table_name="public_records",
         pk_column="id",
     )
@@ -137,7 +137,7 @@ async def test_fetch_invalid_source_path(odbc_connector):
 async def test_row_size_guard_skips_large_rows(sqlite_db):
     """Rows exceeding max_row_bytes are skipped in discover()."""
     config = ODBCConfig(
-        connection_string="DSN=test",
+        connection_string="Server=db.example.gov;Database=test",
         table_name="public_records",
         pk_column="id",
         max_row_bytes=5,  # impossibly small — every row exceeds this
