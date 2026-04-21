@@ -105,7 +105,7 @@ async def _seed_document_with_dept(dept_id: uuid.UUID | None, filename_suffix: s
         )).scalar_one()
         source = DataSource(
             name=f"Src {uuid.uuid4().hex[:6]}",
-            source_type=SourceType.UPLOAD,
+            source_type=SourceType.MANUAL_DROP,
             connection_config={},
             created_by=seed_user.id,
         )

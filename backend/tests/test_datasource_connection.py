@@ -12,7 +12,7 @@ async def test_test_connection_file_share_success(client: AsyncClient, admin_tok
     """POST /datasources/test-connection succeeds for an accessible directory."""
     resp = await client.post(
         "/datasources/test-connection",
-        json={"source_type": "file_share", "path": "/tmp"},
+        json={"source_type": "file_system", "path": "/tmp"},
         headers={"Authorization": f"Bearer {admin_token}"},
     )
     assert resp.status_code == 200
@@ -26,7 +26,7 @@ async def test_test_connection_file_share_failure(client: AsyncClient, admin_tok
     """POST /datasources/test-connection fails for non-existent path."""
     resp = await client.post(
         "/datasources/test-connection",
-        json={"source_type": "file_share", "path": "/nonexistent/path/xyz"},
+        json={"source_type": "file_system", "path": "/nonexistent/path/xyz"},
         headers={"Authorization": f"Bearer {admin_token}"},
     )
     assert resp.status_code == 200
@@ -65,6 +65,6 @@ async def test_test_connection_requires_admin(client: AsyncClient):
     """POST /datasources/test-connection without auth returns 401."""
     resp = await client.post(
         "/datasources/test-connection",
-        json={"source_type": "file_share", "path": "/tmp"},
+        json={"source_type": "file_system", "path": "/tmp"},
     )
     assert resp.status_code == 401

@@ -64,7 +64,7 @@ async def _seed_exemption_flag_on_request(
         )).scalar_one()
         source = DataSource(
             name=f"FlagSrc {uuid.uuid4().hex[:6]}",
-            source_type=SourceType.UPLOAD,
+            source_type=SourceType.MANUAL_DROP,
             connection_config={},
             created_by=seed_user.id,
         )

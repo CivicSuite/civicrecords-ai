@@ -331,7 +331,7 @@ class TestConcurrency:
         """))
         await db_session.execute(text("""
             INSERT INTO data_sources (id, name, source_type, connection_config, is_active, created_by)
-            VALUES (:id, 'concurrent-binary', 'directory', '{}', true, '00000000-0000-0000-0000-000000000001')
+            VALUES (:id, 'concurrent-binary', 'file_system', '{}', true, '00000000-0000-0000-0000-000000000001')
         """), {"id": str(source_id)})
         await db_session.commit()
 

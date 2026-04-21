@@ -270,7 +270,7 @@ async def test_liaison_search_excludes_dept_b(
     async with test_session_maker() as session:
         source_b = DataSource(
             name=f"Dept B Source {uuid.uuid4().hex[:6]}",
-            source_type=SourceType.UPLOAD,
+            source_type=SourceType.MANUAL_DROP,
             connection_config={},
             created_by=seed_user_id,
         )

@@ -46,7 +46,7 @@ async def test_ingest_file_txt(client, admin_token):
 
             source = DataSource(
                 name=f"test-source-{uuid.uuid4().hex[:8]}",
-                source_type=SourceType.UPLOAD,
+                source_type=SourceType.MANUAL_DROP,
                 created_by=user.id,
             )
             session.add(source)
