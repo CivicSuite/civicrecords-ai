@@ -32,7 +32,7 @@ async def test_test_connection_file_share_failure(client: AsyncClient, admin_tok
     assert resp.status_code == 200
     data = resp.json()
     assert data["success"] is False
-    assert "not accessible" in data["message"].lower()
+    assert "does not exist" in data["message"].lower()
 
 
 @pytest.mark.asyncio
