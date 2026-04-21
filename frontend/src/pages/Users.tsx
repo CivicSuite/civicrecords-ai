@@ -96,7 +96,7 @@ export default function Users({ token }: { token: string }) {
     setSubmitting(true);
     setFormError("");
     try {
-      await apiFetch("/auth/register", {
+      await apiFetch("/admin/users", {
         token,
         method: "POST",
         body: JSON.stringify({
@@ -259,16 +259,16 @@ export default function Users({ token }: { token: string }) {
                   </Card>
                 )}
                 <div>
-                  <label className="text-sm font-medium">Full Name</label>
-                  <Input value={formData.fullName} onChange={(e) => setFormData({ ...formData, fullName: e.target.value })} required />
+                  <label htmlFor="create-user-fullname" className="text-sm font-medium">Full Name</label>
+                  <Input id="create-user-fullname" value={formData.fullName} onChange={(e) => setFormData({ ...formData, fullName: e.target.value })} required />
                 </div>
                 <div>
-                  <label className="text-sm font-medium">Email</label>
-                  <Input type="email" value={formData.email} onChange={(e) => setFormData({ ...formData, email: e.target.value })} required />
+                  <label htmlFor="create-user-email" className="text-sm font-medium">Email</label>
+                  <Input id="create-user-email" type="email" value={formData.email} onChange={(e) => setFormData({ ...formData, email: e.target.value })} required />
                 </div>
                 <div>
-                  <label className="text-sm font-medium">Password</label>
-                  <Input type="password" value={formData.password} onChange={(e) => setFormData({ ...formData, password: e.target.value })} required minLength={8} />
+                  <label htmlFor="create-user-password" className="text-sm font-medium">Password</label>
+                  <Input id="create-user-password" type="password" value={formData.password} onChange={(e) => setFormData({ ...formData, password: e.target.value })} required minLength={8} />
                 </div>
                 <div>
                   <label className="text-sm font-medium">Role</label>
