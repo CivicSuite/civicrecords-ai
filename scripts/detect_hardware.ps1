@@ -66,7 +66,12 @@ if ($ramGB -lt 32) {
     exit 1
 }
 
-$recommendedModel = if ($ramGB -ge 48) { "gemma4:27b" } else { "gemma4:12b" }
+# T5C (Tier 5 Blocker 1 resolution 2026-04-21): gemma4:e4b is the single truthful default
+# across every runtime-config surface and the installer picker. The 4-model set the picker
+# presents is {gemma4:e2b, gemma4:e4b, gemma4:26b, gemma4:31b}; e4b is the default.
+# Only e2b and e4b are supportable at the 32 GB target-profile baseline; 26b and 31b
+# are shown for operators with stronger hardware and must be selected explicitly.
+$recommendedModel = "gemma4:e4b"
 $envLines += "CIVICRECORDS_TOTAL_RAM_GB=$ramGB"
 $envLines += "CIVICRECORDS_RECOMMENDED_MODEL=`"$recommendedModel`""
 

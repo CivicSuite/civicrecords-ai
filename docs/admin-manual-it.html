@@ -487,7 +487,7 @@ ul ul, ol ol { margin-top: 4px; margin-bottom: 4px; }
     <thead><tr><th>Component</th><th>Recommended</th><th>Notes</th></tr></thead>
     <tbody>
       <tr><td>CPU</td><td>12&ndash;16 cores</td><td>Intel Xeon / AMD EPYC for production workloads</td></tr>
-      <tr><td>RAM</td><td>64 GB</td><td>Supports 27B parameter model + large document corpus</td></tr>
+      <tr><td>RAM</td><td>64 GB</td><td>Recommended tier; headroom for workstation Gemma 4 tags (<code>26b</code>/<code>31b</code>) plus a large document corpus</td></tr>
       <tr><td>Storage</td><td>2 TB NVMe SSD</td><td>Room for extensive document archives and database growth</td></tr>
       <tr><td>GPU (optional)</td><td>Dedicated GPU with 8+ GB VRAM</td><td>Dramatically accelerates inference; see GPU support below</td></tr>
     </tbody>
@@ -509,7 +509,7 @@ ul ul, ol ol { margin-top: 4px; margin-bottom: 4px; }
   <h3>Performance Target</h3>
   <div class="callout callout-info">
     <div class="callout-title">Performance Benchmark</div>
-    On minimum specification hardware (8 cores, 32 GB RAM, CPU inference with Gemma 4 12B), the system targets completion of a single records query &mdash; including document retrieval, exemption scanning, and LLM analysis &mdash; in under 30 seconds.
+    On the baseline target profile (Windows 11 Pro 23H2+, 8 cores, 32 GB RAM, CPU inference with <code>gemma4:e4b</code>), the system targets completion of a single records query &mdash; including document retrieval, exemption scanning, and LLM analysis &mdash; in under 30 seconds.
   </div>
 </div>
 
@@ -687,13 +687,13 @@ civicrecords-worker Up (healthy)</span>
       <tr>
         <td><code>CHAT_MODEL</code></td>
         <td>Ollama model name for query analysis and summarization</td>
-        <td><code>gemma4:26b</code></td>
+        <td><code>gemma4:e4b</code></td>
         <td>No</td>
       </tr>
       <tr>
         <td><code>VISION_MODEL</code></td>
         <td>Ollama model name for document image/PDF analysis</td>
-        <td><code>gemma4:26b</code></td>
+        <td><code>gemma4:e4b</code></td>
         <td>No</td>
       </tr>
     </tbody>
@@ -710,7 +710,7 @@ civicrecords-worker Up (healthy)</span>
       <tr><td><code>CIVICRECORDS_PLATFORM</code></td><td>Detected GPU platform identifier</td><td><code>AMD</code></td></tr>
       <tr><td><code>CIVICRECORDS_GFX_VERSION</code></td><td>GPU microarchitecture version</td><td><code>gfx1100</code></td></tr>
       <tr><td><code>CIVICRECORDS_TOTAL_RAM_GB</code></td><td>Total system RAM in gigabytes</td><td><code>64</code></td></tr>
-      <tr><td><code>CIVICRECORDS_RECOMMENDED_MODEL</code></td><td>Installer-suggested model based on RAM</td><td><code>gemma4:27b</code></td></tr>
+      <tr><td><code>CIVICRECORDS_RECOMMENDED_MODEL</code></td><td>Default pre-filled into the installer picker (operator can change)</td><td><code>gemma4:e4b</code></td></tr>
       <tr><td><code>CIVICRECORDS_USE_HOST_OLLAMA</code></td><td>Use native host Ollama instead of container (Windows GPU)</td><td><code>true</code></td></tr>
     </tbody>
   </table>
@@ -937,11 +937,14 @@ civicrecords-worker Up (healthy)</span>
   <p>
     CivicRecords AI is optimized for the <strong>Gemma 4</strong> family of open-weight models from Google. These models provide strong instruction-following, good factual accuracy, and are released under permissive licenses suitable for government use.
   </p>
+  <p>The installer picker presents all four supported Gemma 4 tags. The default is <code>gemma4:e4b</code>. Only <code>e2b</code> and <code>e4b</code> are supportable at the 32 GB baseline target profile; <code>26b</code> and <code>31b</code> require stronger hardware and are gated behind an explicit confirmation in the installer.</p>
   <table>
-    <thead><tr><th>Model</th><th>Parameters</th><th>RAM Required</th><th>Use Case</th></tr></thead>
+    <thead><tr><th>Model</th><th>Class</th><th>Parameters</th><th>Disk</th><th>RAM (advisory)</th><th>Supportable at baseline</th></tr></thead>
     <tbody>
-      <tr><td><code>gemma4:12b</code></td><td>12 billion</td><td>32 GB minimum</td><td>Standard deployments, good balance of speed and quality</td></tr>
-      <tr><td><code>gemma4:27b</code></td><td>27 billion</td><td>48&ndash;64 GB</td><td>Higher accuracy, recommended for production with adequate RAM</td></tr>
+      <tr><td><code>gemma4:e2b</code></td><td>Edge</td><td>2.3B effective (5.1B w/ embeddings)</td><td>7.2 GB</td><td>~16 GB</td><td>Yes</td></tr>
+      <tr><td><code>gemma4:e4b</code> <em>(default)</em></td><td>Edge</td><td>4.5B effective (8B w/ embeddings)</td><td>9.6 GB</td><td>~20 GB</td><td>Yes</td></tr>
+      <tr><td><code>gemma4:26b</code></td><td>Workstation MoE</td><td>25.2B total / 3.8B active</td><td>18 GB</td><td>48+ GB recommended</td><td>No (32 GB baseline)</td></tr>
+      <tr><td><code>gemma4:31b</code></td><td>Workstation dense</td><td>30.7B</td><td>20 GB</td><td>64+ GB; GPU recommended</td><td>No (32 GB baseline)</td></tr>
     </tbody>
   </table>
 
@@ -949,14 +952,17 @@ civicrecords-worker Up (healthy)</span>
   <pre><span class="comment"># Pull the embedding model (required)</span>
 <span class="cmd">docker compose exec ollama ollama pull nomic-embed-text</span>
 
-<span class="comment"># Pull the chat/vision model</span>
-<span class="cmd">docker compose exec ollama ollama pull gemma4:12b</span>
-<span class="comment"># OR for higher accuracy on systems with 48+ GB RAM:</span>
-<span class="cmd">docker compose exec ollama ollama pull gemma4:27b</span>
+<span class="comment"># Pull the default chat/vision model</span>
+<span class="cmd">docker compose exec ollama ollama pull gemma4:e4b</span>
+<span class="comment"># OR a smaller edge model for tighter installs:</span>
+<span class="cmd">docker compose exec ollama ollama pull gemma4:e2b</span>
+<span class="comment"># OR workstation models (require 48+ GB RAM for 26b, 64+ GB RAM and GPU for 31b):</span>
+<span class="cmd">docker compose exec ollama ollama pull gemma4:26b</span>
+<span class="cmd">docker compose exec ollama ollama pull gemma4:31b</span>
 
 <span class="comment"># If using host-native Ollama (Windows GPU):</span>
 <span class="cmd">ollama pull nomic-embed-text</span>
-<span class="cmd">ollama pull gemma4:12b</span>
+<span class="cmd">ollama pull gemma4:e4b</span>
 
 <span class="comment"># Verify installed models</span>
 <span class="cmd">docker compose exec ollama ollama list</span></pre>
@@ -974,7 +980,7 @@ civicrecords-worker Up (healthy)</span>
   <span class="flag">-H</span> <span class="string">"Authorization: Bearer &lt;admin-jwt-token&gt;"</span> \
   <span class="flag">-H</span> <span class="string">"Content-Type: application/json"</span> \
   <span class="flag">-d</span> <span class="string">'{
-    "model_name": "gemma4:12b",
+    "model_name": "gemma4:e4b",
     "version": "latest",
     "license": "Apache 2.0",
     "provider": "Google",
@@ -985,9 +991,9 @@ civicrecords-worker Up (healthy)</span>
   <p>
     To change the active model, update the <code>CHAT_MODEL</code> and/or <code>VISION_MODEL</code> variables in <code>.env</code> and restart the API service:
   </p>
-  <pre><span class="comment"># Edit .env to set the new model</span>
-<span class="comment"># CHAT_MODEL=gemma4:27b</span>
-<span class="comment"># VISION_MODEL=gemma4:27b</span>
+  <pre><span class="comment"># Edit .env to set the new model (any Ollama tag; picker defaults are four Gemma 4 tags)</span>
+<span class="comment"># CHAT_MODEL=gemma4:e2b</span>
+<span class="comment"># VISION_MODEL=gemma4:e2b</span>
 
 <span class="comment"># Restart API to pick up the change</span>
 <span class="cmd">docker compose restart api</span></pre>
@@ -1006,8 +1012,10 @@ civicrecords-worker Up (healthy)</span>
     <thead><tr><th>Model</th><th>Disk Space</th><th>RAM (inference)</th><th>GPU VRAM</th><th>Avg. Query Time (CPU)</th></tr></thead>
     <tbody>
       <tr><td><code>nomic-embed-text</code></td><td>~275 MB</td><td>~1 GB</td><td>~512 MB</td><td>&lt;1 sec / chunk</td></tr>
-      <tr><td><code>gemma4:12b</code></td><td>~8 GB</td><td>~16 GB</td><td>~10 GB</td><td>10&ndash;20 sec</td></tr>
-      <tr><td><code>gemma4:27b</code></td><td>~17 GB</td><td>~32 GB</td><td>~20 GB</td><td>20&ndash;40 sec</td></tr>
+      <tr><td><code>gemma4:e2b</code></td><td>7.2 GB</td><td>~16 GB</td><td>~8 GB</td><td>8&ndash;15 sec</td></tr>
+      <tr><td><code>gemma4:e4b</code> <em>(default)</em></td><td>9.6 GB</td><td>~20 GB</td><td>~10 GB</td><td>10&ndash;20 sec</td></tr>
+      <tr><td><code>gemma4:26b</code></td><td>18 GB</td><td>48+ GB recommended</td><td>~20 GB</td><td>20&ndash;40 sec</td></tr>
+      <tr><td><code>gemma4:31b</code></td><td>20 GB</td><td>64+ GB recommended</td><td>~24 GB</td><td>30&ndash;60 sec</td></tr>
     </tbody>
   </table>
 </div>
@@ -1401,7 +1409,7 @@ civicrecords-worker Up (healthy)</span>
   <pre><span class="cmd">docker compose exec ollama ollama list</span>
 <span class="output">NAME                  ID           SIZE     MODIFIED
 nomic-embed-text      274b5616...  274 MB   3 days ago
-gemma4:12b            a1b2c3d4...  7.9 GB   3 days ago</span></pre>
+gemma4:e4b            c6eb396d...  9.6 GB   3 days ago</span></pre>
 
   <h3>Database Connectivity Checks</h3>
   <pre><span class="comment"># Test database connectivity from the API container</span>

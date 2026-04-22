@@ -1200,7 +1200,7 @@ import httpx
 
 from app.config import settings
 
-MULTIMODAL_MODEL = "gemma4:26b"
+MULTIMODAL_MODEL = "gemma4:e4b"
 OCR_PROMPT = "Extract all text from this image. Return only the extracted text, no commentary."
 
 

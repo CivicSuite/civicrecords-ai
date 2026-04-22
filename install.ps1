@@ -154,15 +154,25 @@ if (-not $healthy) {
     Write-Host "[WARN] API health check timed out. Check logs with: docker compose logs api" -ForegroundColor Yellow
 }
 
-# ─── Pull Models ─────────────────────────────────────────────────────────────
-$recommendedModel = if ($hardwareEnv["CIVICRECORDS_RECOMMENDED_MODEL"]) { $hardwareEnv["CIVICRECORDS_RECOMMENDED_MODEL"] } else { "gemma4:12b" }
+# ─── Gemma 4 Model Picker + Auto-Pull ────────────────────────────────────────
+# Tier 5 Blocker 1 (locked 2026-04-21). All four supported Gemma 4 tags are
+# presented. Default is gemma4:e4b. Target profile baseline is Windows 11 Pro
+# 23H2+ / 32 GB min (64 GB rec) / GPU optional / CPU-only supportable.
+# Only gemma4:e2b and gemma4:e4b are supportable at baseline. gemma4:26b and
+# gemma4:31b require stronger hardware and are gated behind an explicit
+# "yes" confirmation.
+# Non-interactive install: default is used unless env var
+# CIVICRECORDS_SELECTED_MODEL=<tag> is set.
+
+$defaultModel = "gemma4:e4b"
+$supportedModels = @("gemma4:e2b", "gemma4:e4b", "gemma4:26b", "gemma4:31b")
 
 Write-Host ""
 if (-not $useHostOllama) {
     Write-Host ">>> Waiting for Ollama to be ready..."
     for ($i = 1; $i -le 30; $i++) {
         try {
-            $ollamaCheck = docker compose @composeFiles exec -T ollama ollama list 2>$null
+            $null = docker compose @composeFiles exec -T ollama ollama list 2>$null
             if ($LASTEXITCODE -eq 0) {
                 Write-Host "[OK] Ollama is ready" -ForegroundColor Green
                 break
@@ -179,37 +189,123 @@ if (-not $useHostOllama) {
 Write-Host ">>> Pulling embedding model (required for search)..."
 
 if ($useHostOllama) {
-    # Use native Ollama for model pulls (GPU-accelerated)
     try {
         & ollama pull nomic-embed-text
     } catch {
         Write-Host "[WARN] Embedding model pull failed — retry: ollama pull nomic-embed-text" -ForegroundColor Yellow
     }
-
-    Write-Host ""
-    Write-Host ">>> To enable AI-powered search, pull a language model:"
-    Write-Host "    ollama pull $recommendedModel"
 } else {
-    # Use in-container Ollama
     try {
         & docker compose @composeFiles exec ollama ollama pull nomic-embed-text
     } catch {
         Write-Host "[WARN] Embedding model pull failed — retry: docker compose exec ollama ollama pull nomic-embed-text" -ForegroundColor Yellow
     }
+}
+
+# Detect whether any supported Gemma 4 model is already present in Ollama
+if ($useHostOllama) {
+    $ollamaListRaw = (& ollama list 2>$null) -join "`n"
+} else {
+    $ollamaListRaw = (& docker compose @composeFiles exec -T ollama ollama list 2>$null) -join "`n"
+}
+$existingModel = $null
+foreach ($m in $supportedModels) {
+    $escaped = [regex]::Escape($m)
+    if ($ollamaListRaw -match "(?m)^$escaped\s") {
+        $existingModel = $m
+        break
+    }
+}
+
+$selectedModel = $env:CIVICRECORDS_SELECTED_MODEL
+
+if ($existingModel -and -not $selectedModel) {
+    Write-Host ""
+    Write-Host "[OK] Supported Gemma 4 model already present in Ollama: $existingModel" -ForegroundColor Green
+    Write-Host "     Skipping language-model pull."
+    $selectedModel = $existingModel
+} else {
+    Write-Host ""
+    Write-Host "===== Gemma 4 model picker =====" -ForegroundColor Cyan
+    Write-Host ""
+    Write-Host "CivicRecords AI supports four Gemma 4 models. The target profile is"
+    Write-Host "Windows 11 Pro 23H2+ / 32 GB RAM minimum (64 GB recommended) /"
+    Write-Host "GPU optional / CPU-only supported. Models 26b and 31b require stronger"
+    Write-Host "hardware than the baseline and must be selected explicitly."
+    Write-Host ""
+    Write-Host "  1) gemma4:e2b  Edge / 2.3B effective params / 7.2 GB disk / ~16 GB RAM  [supportable]"
+    Write-Host "  2) gemma4:e4b  Edge / 4.5B effective params / 9.6 GB disk / ~20 GB RAM  [supportable]  (DEFAULT)" -ForegroundColor Green
+    Write-Host "  3) gemma4:26b  Workstation MoE / 25.2B total, 3.8B active /  18 GB disk / 48+ GB RAM recommended  [not supportable at 32 GB baseline]" -ForegroundColor Yellow
+    Write-Host "  4) gemma4:31b  Workstation dense / 30.7B params            /  20 GB disk / 64+ GB RAM recommended  [not supportable at 32 GB baseline; GPU recommended]" -ForegroundColor Yellow
+    Write-Host ""
+
+    if ($selectedModel) {
+        Write-Host "Using CIVICRECORDS_SELECTED_MODEL=$selectedModel (non-interactive override)."
+    } elseif ([Console]::IsInputRedirected) {
+        $selectedModel = $defaultModel
+        Write-Host "Non-interactive install — selecting default: $selectedModel"
+        Write-Host "Override by setting `$env:CIVICRECORDS_SELECTED_MODEL=<tag> before running."
+    } else {
+        $choice = Read-Host "Enter 1-4 (or press Enter for default gemma4:e4b)"
+        switch ($choice) {
+            "1" { $selectedModel = "gemma4:e2b" }
+            ""  { $selectedModel = "gemma4:e4b" }
+            "2" { $selectedModel = "gemma4:e4b" }
+            "3" { $selectedModel = "gemma4:26b" }
+            "4" { $selectedModel = "gemma4:31b" }
+            default {
+                Write-Host "Unknown choice '$choice' — falling back to default gemma4:e4b." -ForegroundColor Yellow
+                $selectedModel = "gemma4:e4b"
+            }
+        }
+
+        if ($selectedModel -eq "gemma4:26b") {
+            Write-Host ""
+            Write-Host "WARNING: gemma4:26b is NOT supportable at the 32 GB baseline target profile." -ForegroundColor Yellow
+            Write-Host "         Your machine should have at least 48 GB RAM for acceptable performance."
+            $confirm = Read-Host "Type 'yes' to confirm and proceed with gemma4:26b anyway"
+            if ($confirm -ne "yes") {
+                Write-Host "Aborted gemma4:26b selection. Falling back to default gemma4:e4b."
+                $selectedModel = "gemma4:e4b"
+            }
+        } elseif ($selectedModel -eq "gemma4:31b") {
+            Write-Host ""
+            Write-Host "WARNING: gemma4:31b is NOT supportable at the 32 GB baseline target profile." -ForegroundColor Yellow
+            Write-Host "         Your machine should have at least 64 GB RAM, and a GPU is recommended."
+            $confirm = Read-Host "Type 'yes' to confirm and proceed with gemma4:31b anyway"
+            if ($confirm -ne "yes") {
+                Write-Host "Aborted gemma4:31b selection. Falling back to default gemma4:e4b."
+                $selectedModel = "gemma4:e4b"
+            }
+        }
+    }
 
     Write-Host ""
-    Write-Host ">>> To enable AI-powered search, pull a language model:"
-    Write-Host "    docker compose exec ollama ollama pull $recommendedModel"
+    Write-Host ">>> Pulling $selectedModel (this may take several minutes)..."
+    $pullOk = $false
+    try {
+        if ($useHostOllama) {
+            & ollama pull $selectedModel
+        } else {
+            & docker compose @composeFiles exec ollama ollama pull $selectedModel
+        }
+        if ($LASTEXITCODE -eq 0) { $pullOk = $true }
+    } catch {}
+
+    if ($pullOk) {
+        Write-Host "[OK] Model pulled: $selectedModel" -ForegroundColor Green
+    } else {
+        Write-Host "[WARN] Model pull for $selectedModel failed. Retry manually:" -ForegroundColor Yellow
+        if ($useHostOllama) {
+            Write-Host "    ollama pull $selectedModel"
+        } else {
+            Write-Host "    docker compose exec ollama ollama pull $selectedModel"
+        }
+    }
 }
 
-if ($recommendedModel -eq "gemma4:12b") {
-    $ramGB = if ($hardwareEnv["CIVICRECORDS_TOTAL_RAM_GB"]) { $hardwareEnv["CIVICRECORDS_TOTAL_RAM_GB"] } else { "32" }
-    Write-Host "    (recommended for your ${ramGB}GB RAM configuration)"
-    Write-Host "    Alternative: gemma4:27b (needs 48GB+ RAM)"
-} else {
-    $ramGB = if ($hardwareEnv["CIVICRECORDS_TOTAL_RAM_GB"]) { $hardwareEnv["CIVICRECORDS_TOTAL_RAM_GB"] } else { "64" }
-    Write-Host "    (recommended for your ${ramGB}GB RAM configuration)"
-}
+Write-Host ""
+Write-Host "Selected LLM model: $selectedModel"
 
 $ip = (Get-NetIPAddress -AddressFamily IPv4 | Where-Object { $_.InterfaceAlias -notmatch "Loopback" } | Select-Object -First 1).IPAddress
 

@@ -152,14 +152,18 @@ echo ""
 echo "RAM: ${TOTAL_RAM_GB} GB total"
 
 if [ "$TOTAL_RAM_GB" -lt 32 ]; then
-    echo "WARNING: CivicRecords AI recommends a minimum of 32 GB RAM. Found: ${TOTAL_RAM_GB} GB"
-    echo "Installation will continue, but performance may be limited."
+    echo "ERROR: CivicRecords AI requires a minimum of 32 GB RAM (Tier 5 target-profile baseline). Found: ${TOTAL_RAM_GB} GB"
+    echo "       No Gemma 4 tag is supportable below this floor. Aborting hardware gate."
+    echo "       This matches scripts/detect_hardware.ps1 behavior on Windows (exits 1 below 32 GB)."
+    exit 1
 fi
 
-RECOMMENDED_MODEL="gemma4:12b"
-if [ "$TOTAL_RAM_GB" -ge 48 ]; then
-    RECOMMENDED_MODEL="gemma4:27b"
-fi
+# T5C (Tier 5 Blocker 1 resolution 2026-04-21): gemma4:e4b is the single truthful default
+# across every runtime-config surface and the installer picker. The 4-model set the picker
+# presents is {gemma4:e2b, gemma4:e4b, gemma4:26b, gemma4:31b}; e4b is the default.
+# Only e2b and e4b are supportable at the 32 GB target-profile baseline; 26b and 31b
+# are shown for operators with stronger hardware and must be selected explicitly.
+RECOMMENDED_MODEL="gemma4:e4b"
 
 echo "CIVICRECORDS_TOTAL_RAM_GB=$TOTAL_RAM_GB" >> "$HARDWARE_ENV_FILE"
 echo "CIVICRECORDS_RECOMMENDED_MODEL=\"$RECOMMENDED_MODEL\"" >> "$HARDWARE_ENV_FILE"

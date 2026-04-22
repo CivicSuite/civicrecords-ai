@@ -154,7 +154,7 @@ The main docker-compose.yml defines a 7-service stack. Variant files exist for d
 | 3 | api | FastAPI application server (port 8000) |
 | 4 | worker | Celery worker(s) for async ingestion/embedding/notifications |
 | 5 | beat | Celery Beat scheduler (60s notification dispatch interval) |
-| 6 | ollama | Local LLM runtime (Gemma 4 26B + nomic-embed-text) |
+| 6 | ollama | Local LLM runtime (Gemma 4 — e4b default; e2b/26b/31b supported via installer picker — plus nomic-embed-text) |
 | 7 | frontend | React/nginx (port 8080) |
 
 ### 5.2 Backend Modules (20 directories)

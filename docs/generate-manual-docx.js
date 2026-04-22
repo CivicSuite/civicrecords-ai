@@ -548,9 +548,12 @@ const doc = new Document({
 
         // --- 18. Model Management ---
         h2("18. Model Management"),
-        h3("Recommended Models"),
-        bullet("gemma4:12b \u2014 requires 32 GB RAM"),
-        bullet("gemma4:27b \u2014 requires 48 GB+ RAM"),
+        h3("Supported Gemma 4 Models"),
+        p("The installer picker presents all four supported Gemma 4 models. Default is gemma4:e4b. Only e2b and e4b are supportable at the 32 GB baseline target profile; 26b and 31b require stronger hardware and must be selected explicitly."),
+        bullet("gemma4:e2b \u2014 Edge / 2.3B effective params / 7.2 GB disk / ~16 GB RAM (supportable)"),
+        bullet("gemma4:e4b \u2014 Edge / 4.5B effective params / 9.6 GB disk / ~20 GB RAM (supportable, DEFAULT)"),
+        bullet("gemma4:26b \u2014 Workstation MoE / 25.2B total, 3.8B active / 18 GB disk / 48+ GB RAM recommended (not supportable at 32 GB baseline)"),
+        bullet("gemma4:31b \u2014 Workstation dense / 30.7B params / 20 GB disk / 64+ GB RAM, GPU recommended (not supportable at 32 GB baseline)"),
         h3("Embedding Model"),
         bullet("nomic-embed-text \u2014 always required for vector search"),
         h3("Model Registry"),
@@ -616,7 +619,7 @@ const doc = new Document({
           [
             ["API not responding", "Container stopped", "docker compose up -d api"],
             ["Search returns no results", "No documents ingested", "Add data source and ingest"],
-            ["Ollama model not found", "Model not pulled", "ollama pull gemma4:12b"],
+            ["Ollama model not found", "Model not pulled", "ollama pull gemma4:e4b (or the tag selected at install time)"],
             ["Login fails repeatedly", "Rate limited", "Wait 60 seconds"],
             ["Slow search performance", "No GPU, large dataset", "Enable GPU acceleration"],
           ],

@@ -600,17 +600,26 @@ CivicRecords AI uses two model types:
 | Type | Default | Notes |
 |---|---|---|
 | **Embedding** | `nomic-embed-text` | Always required; very lightweight |
-| **Chat/Vision** | `gemma4:27b` (recommended) | Used for document analysis, AI summaries, and OCR on scanned PDFs |
+| **Chat/Vision** | `gemma4:e4b` (default) | Used for document analysis, AI summaries, and OCR on scanned PDFs |
+
+**Supported Gemma 4 models** (the installer picker presents all four; only `e2b` and `e4b` are supportable at the 32 GB baseline target profile, `26b` and `31b` require stronger hardware):
+
+| Tag | Class | Disk | RAM (advisory) | Supportable at baseline |
+|---|---|---|---|---|
+| `gemma4:e2b` | Edge 2.3B effective | 7.2 GB | ~16 GB | yes |
+| `gemma4:e4b` | Edge 4.5B effective (DEFAULT) | 9.6 GB | ~20 GB | yes |
+| `gemma4:26b` | Workstation MoE 25.2B/3.8B active | 18 GB | 48+ GB recommended | no |
+| `gemma4:31b` | Workstation dense 30.7B | 20 GB | 64+ GB, GPU recommended | no |
 
 **To change models:**
 1. Go to **Admin → Model Registry**
 2. Select the model type
-3. Enter the Ollama model identifier (e.g., `mistral:7b`, `llama3:8b`)
+3. Enter the Ollama model identifier (e.g., `gemma4:e2b`, `mistral:7b`, `llama3:8b`)
 4. Click **Save** — the change takes effect on the next task that requires that model
 
 **To pull a new model:**
 ```bash
-docker compose exec ollama ollama pull gemma4:27b
+docker compose exec ollama ollama pull gemma4:e4b
 ```
 
 ---
@@ -669,7 +678,7 @@ docker compose restart worker
 **Ollama model not found:**
 ```bash
 docker compose exec ollama ollama list       # See installed models
-docker compose exec ollama ollama pull gemma4:27b  # Pull if missing
+docker compose exec ollama ollama pull gemma4:e4b  # Pull the default if missing
 ```
 
 **Frontend shows blank page:**

@@ -5,7 +5,9 @@ from app.llm.client import generate
 
 logger = logging.getLogger(__name__)
 
-DEFAULT_MODEL = "gemma4:26b"
+# T5C: gemma4:e4b is the single truthful default across runtime-config surfaces
+# (Tier 5 Blocker 1 resolution 2026-04-21). Caller may override via the model= kwarg.
+DEFAULT_MODEL = "gemma4:e4b"
 
 _SYSTEM_PROMPT = """You are reviewing a municipal document excerpt for potential open records exemptions.
 

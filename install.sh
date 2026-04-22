@@ -74,9 +74,22 @@ if [ ! -f .env ]; then
 fi
 
 # ─── Hardware Detection ───────────────────────────────────────────────────────
+# T5C correction pass (2026-04-21): the detect_hardware.sh gate now exits 1
+# when RAM < 32 GB (Tier 5 target-profile baseline), matching the Windows
+# install.ps1 behavior (detect_hardware.ps1 L64: `exit 1` below 32 GB). We
+# therefore propagate that failure instead of warning-and-continuing — an
+# under-spec machine is not a "defaulting to CPU mode" scenario; it's a
+# below-support-floor scenario and the installer must stop.
 echo ""
 echo "Detecting hardware capabilities..."
-bash scripts/detect_hardware.sh || echo "[WARN] Hardware detection failed — defaulting to CPU mode"
+if ! bash scripts/detect_hardware.sh; then
+    echo ""
+    echo "[ERROR] Hardware gate failed. The machine does not meet the CivicRecords AI"
+    echo "        target-profile baseline (32 GB RAM minimum). Installation aborted."
+    echo "        Review the hardware-detection output above for the specific failure,"
+    echo "        or rerun scripts/detect_hardware.sh on its own to see the full probe."
+    exit 1
+fi
 echo ""
 
 # Source the hardware config
@@ -156,8 +169,15 @@ if [ "$API_HEALTHY" = "false" ]; then
     echo "[WARN] API health check timed out. Check logs with: docker compose logs api"
 fi
 
-# ─── Pull Models ─────────────────────────────────────────────────────────────
-RECOMMENDED_MODEL="${CIVICRECORDS_RECOMMENDED_MODEL:-gemma4:12b}"
+# ─── Gemma 4 Model Picker + Auto-Pull ────────────────────────────────────────
+# Tier 5 Blocker 1 (locked 2026-04-21). All four supported Gemma 4 tags are
+# presented. Default is gemma4:e4b. Target profile baseline is Windows 11 Pro
+# 23H2+ / 32 GB min (64 GB rec) / GPU optional / CPU-only supportable.
+# Only gemma4:e2b and gemma4:e4b are supportable at baseline. gemma4:26b and
+# gemma4:31b require stronger hardware and are gated behind an explicit
+# "yes" confirmation.
+# Non-interactive install (CI, piped stdin): default is used unless env var
+# CIVICRECORDS_SELECTED_MODEL=<tag> is set.
 
 echo ""
 echo ">>> Waiting for Ollama to be ready..."
@@ -178,15 +198,99 @@ echo ">>> Pulling embedding model (required for search)..."
 # shellcheck disable=SC2086
 docker compose $COMPOSE_FILES exec ollama ollama pull nomic-embed-text || echo "[WARN] Embedding model pull failed — retry: docker compose exec ollama ollama pull nomic-embed-text"
 
-echo ""
-echo ">>> To enable AI-powered search, pull a language model:"
-echo "    docker compose exec ollama ollama pull $RECOMMENDED_MODEL"
-if [ "$RECOMMENDED_MODEL" = "gemma4:12b" ]; then
-    echo "    (recommended for your ${CIVICRECORDS_TOTAL_RAM_GB:-32}GB RAM configuration)"
-    echo "    Alternative: docker compose exec ollama ollama pull gemma4:27b  (needs 48GB+ RAM)"
+DEFAULT_MODEL="gemma4:e4b"
+SUPPORTED_MODELS="gemma4:e2b gemma4:e4b gemma4:26b gemma4:31b"
+
+# Detect whether any supported Gemma 4 model is already present in Ollama
+# shellcheck disable=SC2086
+OLLAMA_LIST_OUTPUT=$(docker compose $COMPOSE_FILES exec -T ollama ollama list 2>/dev/null || true)
+EXISTING_MODEL=""
+for M in $SUPPORTED_MODELS; do
+    if printf '%s\n' "$OLLAMA_LIST_OUTPUT" | grep -q "^${M} "; then
+        EXISTING_MODEL="$M"
+        break
+    fi
+done
+
+SELECTED_MODEL="${CIVICRECORDS_SELECTED_MODEL:-}"
+
+if [ -n "$EXISTING_MODEL" ] && [ -z "$SELECTED_MODEL" ]; then
+    echo ""
+    echo "[OK] Supported Gemma 4 model already present in Ollama: $EXISTING_MODEL"
+    echo "     Skipping language-model pull."
+    SELECTED_MODEL="$EXISTING_MODEL"
 else
-    echo "    (recommended for your ${CIVICRECORDS_TOTAL_RAM_GB:-64}GB RAM configuration)"
+    echo ""
+    echo "===== Gemma 4 model picker ====="
+    echo ""
+    echo "CivicRecords AI supports four Gemma 4 models. The target profile is"
+    echo "Windows 11 Pro 23H2+ / 32 GB RAM minimum (64 GB recommended) /"
+    echo "GPU optional / CPU-only supported. Models 26b and 31b require stronger"
+    echo "hardware than the baseline and must be selected explicitly."
+    echo ""
+    echo "  1) gemma4:e2b  Edge / 2.3B effective params / 7.2 GB disk / ~16 GB RAM  [supportable]"
+    echo "  2) gemma4:e4b  Edge / 4.5B effective params / 9.6 GB disk / ~20 GB RAM  [supportable]  (DEFAULT)"
+    echo "  3) gemma4:26b  Workstation MoE / 25.2B total, 3.8B active /  18 GB disk / 48+ GB RAM recommended  [not supportable at 32 GB baseline]"
+    echo "  4) gemma4:31b  Workstation dense / 30.7B params            /  20 GB disk / 64+ GB RAM recommended  [not supportable at 32 GB baseline; GPU recommended]"
+    echo ""
+
+    if [ -n "$SELECTED_MODEL" ]; then
+        echo "Using CIVICRECORDS_SELECTED_MODEL=$SELECTED_MODEL (non-interactive override)."
+    elif [ -t 0 ]; then
+        printf "Enter 1-4 (or press Enter for default gemma4:e4b): "
+        read -r CHOICE
+        case "$CHOICE" in
+            1) SELECTED_MODEL="gemma4:e2b" ;;
+            ""|2) SELECTED_MODEL="gemma4:e4b" ;;
+            3) SELECTED_MODEL="gemma4:26b" ;;
+            4) SELECTED_MODEL="gemma4:31b" ;;
+            *) echo "Unknown choice '$CHOICE' — falling back to default gemma4:e4b."
+               SELECTED_MODEL="gemma4:e4b" ;;
+        esac
+
+        case "$SELECTED_MODEL" in
+            gemma4:26b)
+                echo ""
+                echo "WARNING: gemma4:26b is NOT supportable at the 32 GB baseline target profile."
+                echo "         Your machine should have at least 48 GB RAM for acceptable performance."
+                printf "Type 'yes' to confirm and proceed with gemma4:26b anyway: "
+                read -r CONFIRM
+                if [ "$CONFIRM" != "yes" ]; then
+                    echo "Aborted gemma4:26b selection. Falling back to default gemma4:e4b."
+                    SELECTED_MODEL="gemma4:e4b"
+                fi
+                ;;
+            gemma4:31b)
+                echo ""
+                echo "WARNING: gemma4:31b is NOT supportable at the 32 GB baseline target profile."
+                echo "         Your machine should have at least 64 GB RAM, and a GPU is recommended."
+                printf "Type 'yes' to confirm and proceed with gemma4:31b anyway: "
+                read -r CONFIRM
+                if [ "$CONFIRM" != "yes" ]; then
+                    echo "Aborted gemma4:31b selection. Falling back to default gemma4:e4b."
+                    SELECTED_MODEL="gemma4:e4b"
+                fi
+                ;;
+        esac
+    else
+        SELECTED_MODEL="$DEFAULT_MODEL"
+        echo "Non-interactive install — selecting default: $SELECTED_MODEL"
+        echo "Override by setting CIVICRECORDS_SELECTED_MODEL=<tag> before running."
+    fi
+
+    echo ""
+    echo ">>> Pulling $SELECTED_MODEL (this may take several minutes)..."
+    # shellcheck disable=SC2086
+    if docker compose $COMPOSE_FILES exec ollama ollama pull "$SELECTED_MODEL"; then
+        echo "[OK] Model pulled: $SELECTED_MODEL"
+    else
+        echo "[WARN] Model pull for $SELECTED_MODEL failed. Retry manually:"
+        echo "    docker compose exec ollama ollama pull $SELECTED_MODEL"
+    fi
 fi
+
+echo ""
+echo "Selected LLM model: $SELECTED_MODEL"
 
 # Get IP
 OS="$(uname -s)"

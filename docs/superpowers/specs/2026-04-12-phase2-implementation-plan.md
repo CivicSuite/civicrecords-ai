@@ -1951,9 +1951,9 @@ async def test_register_model(client: AsyncClient, admin_token: str):
     resp = await client.post(
         "/admin/models/registry",
         json={
-            "model_name": "gemma4:12b",
+            "model_name": "gemma4:e4b",
             "model_version": "4.0",
-            "parameter_count": 12000000000,
+            "parameter_count": 4500000000,
             "license": "Apache 2.0",
             "model_card_url": "https://ai.google.dev/gemma",
         },
@@ -1961,7 +1961,7 @@ async def test_register_model(client: AsyncClient, admin_token: str):
     )
     assert resp.status_code == 201
     data = resp.json()
-    assert data["model_name"] == "gemma4:12b"
+    assert data["model_name"] == "gemma4:e4b"
     assert data["is_active"] is True
 
 
@@ -1979,7 +1979,7 @@ async def test_register_model_requires_admin(client: AsyncClient, staff_token: s
 async def test_list_model_registry(client: AsyncClient, admin_token: str):
     await client.post(
         "/admin/models/registry",
-        json={"model_name": "gemma4:12b"},
+        json={"model_name": "gemma4:e4b"},
         headers={"Authorization": f"Bearer {admin_token}"},
     )
     resp = await client.get(
@@ -1994,7 +1994,7 @@ async def test_list_model_registry(client: AsyncClient, admin_token: str):
 async def test_update_model_registry(client: AsyncClient, admin_token: str):
     create = await client.post(
         "/admin/models/registry",
-        json={"model_name": "gemma4:12b"},
+        json={"model_name": "gemma4:e4b"},
         headers={"Authorization": f"Bearer {admin_token}"},
     )
     model_id = create.json()["id"]

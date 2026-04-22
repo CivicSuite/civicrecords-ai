@@ -134,12 +134,14 @@ If you need more help diagnosing, the sync run log shows exactly what happened o
 
 CivicRecords AI is model-agnostic — it works with any model available through Ollama. A few options depending on your hardware:
 
-| Model | Use case | RAM required |
+| Model | Use case | RAM (advisory) |
 |---|---|---|
-| Gemma 4 26B (recommended) | Multimodal, handles scanned PDFs | 32 GB |
-| Gemma 3 4B | Lighter; text-only documents | 8 GB |
-| Mistral 7B | Good for search synthesis | 16 GB |
-| nomic-embed-text | Embeddings only (always needed) | 2 GB |
+| `gemma4:e4b` (default) | Multimodal edge model; handles scanned PDFs; supportable at 32 GB baseline | ~20 GB |
+| `gemma4:e2b` | Smaller edge model for tight installs; supportable at 32 GB baseline | ~16 GB |
+| `gemma4:26b` | Workstation MoE (25.2B total, 3.8B active); not supportable at 32 GB baseline | 48+ GB recommended |
+| `gemma4:31b` | Workstation dense (30.7B); not supportable at 32 GB baseline; GPU recommended | 64+ GB recommended |
+| Mistral 7B | Good for search synthesis | ~16 GB |
+| nomic-embed-text | Embeddings only (always needed) | ~2 GB |
 
 The embedding model (`nomic-embed-text`) runs separately from the chat model and uses minimal resources. Even if you run a smaller chat model, embedding quality stays consistent.
 

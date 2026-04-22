@@ -40,8 +40,10 @@ class Settings(BaseSettings):
     audit_retention_days: int = 1095
     cors_origins: list[str] = ["http://localhost:8080"]
     embedding_model: str = "nomic-embed-text"
-    chat_model: str = "gemma4:26b"
-    vision_model: str = "gemma4:26b"
+    # T5C: gemma4:e4b is the single truthful default across runtime-config surfaces,
+    # matching installer picker default. Tier 5 Blocker 1 resolution 2026-04-21.
+    chat_model: str = "gemma4:e4b"
+    vision_model: str = "gemma4:e4b"
     # SMTP settings for notification email delivery
     smtp_host: str = ""
     smtp_port: int = 587
