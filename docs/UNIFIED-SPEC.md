@@ -58,7 +58,7 @@ Department-level access controls with staff scoping
 Document ingestion (PDF, DOCX, XLSX, CSV, email, HTML, text) with macro stripping
 Hybrid search (semantic + keyword) with department filtering and CSV export
 Request lifecycle management (10 statuses) with priority indicators
-Exemption detection: 180 rules across 51 jurisdictions, Tier 1 PII detection, rule testing with ReDoS protection
+Exemption detection: 175 state-scoped rules across 50 states + DC (plus universal PII regex rules defined in `scripts/seed_rules.py::UNIVERSAL_PII_RULES` but not yet seeded — deferred until `ExemptionRule.state_code` is expanded beyond `VARCHAR(2)`), Tier 1 PII detection, rule testing with ReDoS protection
 Fee tracking with estimation, line items, and waiver workflows
 Response letter generation with TipTap rich text editor
 Notification service: 12 templates, SMTP delivery, dispatched via PATCH dynamic dispatch and 4 dedicated endpoints (see §8.3 for the audited matrix)
@@ -235,7 +235,7 @@ notification_templates: id, event_type, channel, subject_template, body_template
 notification_log: id, template_id, recipient_email, request_id, channel, subject, body, status, sent_at, error_message, created_at. (`subject` and `body` were added in migration 011 to fix model-vs-DB drift.)
 
 ### 6.7 Exemption Detection [IMPLEMENTED]
-exemption_rules: id, state_code, category, rule_type (regex/keyword/statutory), rule_definition, description, enabled, version, created_by, created_at. 180 rules across 51 jurisdictions (50 states + DC). (`version` was added in migration 011 to fix model-vs-DB drift.)
+exemption_rules: id, state_code, category, rule_type (regex/keyword/statutory), rule_definition, description, enabled, version, created_by, created_at. 175 state-scoped rules across 50 states + DC seeded at first boot by `app/seed/first_boot.py`. (`version` was added in migration 011 to fix model-vs-DB drift.)
 exemption_flags: id, chunk_id, rule_id, request_id, category, confidence, status, reviewed_by, reviewed_at, review_note
 redaction_ledger [PLANNED]: id, request_id, document_id, page_number, redaction_type, exemption_basis, redacted_by, created_at
 
@@ -390,6 +390,23 @@ monthly_request_volume. Each call:
 - **Transitions `onboarding_status`** (`not_started` → `in_progress` → `complete`) based on how many tracked fields are populated; the computed state is returned on every response.
 Chat-style UI (`frontend/src/pages/Onboarding.tsx`) with a Skip button that actually advances the walk — the client tracks skipped fields and sends them as `skipped_fields` on every request so the server walks past them instead of re-asking. DB truth is anchored to populated-in-DB: skipped fields stay null, onboarding_status stays `in_progress` until they are answered, and when every non-skipped field is populated the closure message lists the skipped set so the operator knows what is still missing. Errors and lifecycle state are surfaced in the UI rather than silently swallowed. The prior split where the frontend called a separate `PATCH /city-profile` to persist answers was removed in T5A because it 404-ed silently when no profile existed yet.
 
+### 8.7 First-Boot Seeding [NEW in T5B, 2026-04-22]
+`app/main.lifespan` auto-seeds the three baseline datasets CivicRecords AI needs on first boot, immediately after the first admin user is created and the systems catalog is auto-loaded:
+
+| Dataset | Source | Natural key | Row count |
+|---|---|---|---|
+| Exemption rules (state-scoped) | `scripts/seed_rules.py::STATE_RULES_REGISTRY` | `(state_code, category)` | 175 rules across 50 states + DC |
+| Disclosure / compliance templates | `scripts/seed_templates.py::TEMPLATES` + `backend/compliance_templates/*.md` | `template_type` | 5 templates |
+| Notification event templates | `scripts/seed_notification_templates.py::NOTIFICATION_TEMPLATES` | `event_type` | 12 templates |
+
+**Upsert policy — skip-if-exists.** Every row is written only if a row with the same natural key does not already exist. **Existing admin-customized rows are preserved on restart** (an operator who disables a rule or edits a template's body text keeps their change; the seeder never overwrites). Re-running the lifespan is idempotent; every restart reports `created=0, skipped=N` once the dataset is present.
+
+**Logging.** Every run emits a start line (`T5B first-boot seeding — starting`), per-dataset start + result lines with `created` / `skipped` counts, and a completion line with totals. One summary line is additionally `print()`-ed so operators watching Docker stdout see the outcome even if LOG_LEVEL filters INFO.
+
+**Universal PII rules** (`UNIVERSAL_PII_RULES` in `scripts/seed_rules.py`) are intentionally **NOT seeded by T5B** because `ExemptionRule.state_code` is `VARCHAR(2)` and the `"ALL"` sentinel those rules use cannot fit. A follow-on slice that expands the column (or models universality as a nullable) will close this gap.
+
+**Test coverage:** `backend/tests/test_first_boot_seeding.py` — 3 tests pin (a) fresh-DB seeding populates all three datasets with full state coverage, (b) rerunning the seeder produces zero new rows, and (c) a customized exemption rule + notification template survive a re-seed.
+
 ## 9. Search & Ingestion [IMPLEMENTED]
 
 ### 9.1 Ingestion Pipeline
@@ -416,7 +433,7 @@ Optional AI-generated summaries (labeled as AI draft)
 ## 10. Exemptions & Compliance
 
 ### 10.1 Exemption Rules [IMPLEMENTED]
-180 rules across 51 jurisdictions (50 states + DC). Three rule types: regex, keyword, statutory.
+175 state-scoped rules across 50 states + DC. Three rule types: regex, keyword, statutory.
 
 ### 10.2 Tier 1 PII Detection [IMPLEMENTED]
 Built-in patterns: SSN, credit card (Luhn-validated), bank routing/account numbers, phone, email, DOB, state-specific driver's license patterns (CO, CA, TX, NY, FL).
@@ -700,7 +717,7 @@ The docs/ directory contains a comprehensive documentation set:
 | Fee tracking with estimation, line items, waiver workflows | [IMPLEMENTED] |
 | Response letter generation with TipTap rich text editor | [IMPLEMENTED] |
 | Notification service: 12 templates, SMTP delivery, PATCH-dynamic + 4 dedicated dispatch (see §8.3) | [IMPLEMENTED] |
-| 50-state + DC exemption rules (180 rules), Tier 1 PII, rule testing | [IMPLEMENTED] |
+| 50-state + DC exemption rules (175 rules), Tier 1 PII, rule testing | [IMPLEMENTED] |
 | Context manager with token budgeting and model-aware scaling | [IMPLEMENTED] |
 | Central LLM client with prompt injection sanitization | [IMPLEMENTED] |
 | Operational analytics and coverage gap dashboard | [IMPLEMENTED] |

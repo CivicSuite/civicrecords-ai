@@ -61,6 +61,29 @@ async def lifespan(app: FastAPI):
         if count > 0:
             print(f"Loaded {count} systems catalog entries")
 
+    # T5B: first-boot baseline seeding. Skip-if-exists on every row, so
+    # re-runs of the lifespan are idempotent and never duplicate or revert
+    # operator customizations. Needs the first admin user for
+    # created_by / updated_by attribution — runs AFTER the admin-creation
+    # block above. See app/seed/first_boot.py for upsert policy details.
+    from app.seed import run_first_boot_seeds
+
+    async with async_session_maker() as session:
+        result = await session.execute(
+            select(User).where(User.role == UserRole.ADMIN).limit(1)
+        )
+        admin = result.scalar_one_or_none()
+        if admin is None:
+            # Defensive — the admin-creation block above should have
+            # guaranteed at least one admin exists. Log and continue;
+            # seeding is deferred to the next startup.
+            print(
+                "T5B seed: skipped — no admin user found. "
+                "First-boot seeding will retry on the next lifespan start."
+            )
+        else:
+            await run_first_boot_seeds(session, admin.id)
+
     yield
     await engine.dispose()
 
