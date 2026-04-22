@@ -6,7 +6,11 @@ from pydantic import BaseModel
 
 class CityProfileCreate(BaseModel):
     city_name: str
-    state: str
+    # T5A: state is optional on create so the onboarding interview can persist
+    # after the first answer (city_name) without a placeholder value. The
+    # POST /city-profile form-mode flow still sends state (FE validates) so
+    # this is backward-compatible for the form path.
+    state: str | None = None
     county: str | None = None
     population_band: str | None = None
     email_platform: str | None = None
@@ -20,7 +24,9 @@ class CityProfileRead(BaseModel):
     model_config = {"from_attributes": True}
     id: uuid.UUID
     city_name: str
-    state: str
+    # T5A: state is nullable in the model; read schema must reflect that or
+    # Pydantic raises on in-progress rows.
+    state: str | None
     county: str | None
     population_band: str | None
     email_platform: str | None

@@ -63,7 +63,7 @@ Fee tracking with estimation, line items, and waiver workflows
 Response letter generation with TipTap rich text editor
 Notification service: 12 templates, SMTP delivery, dispatched via PATCH dynamic dispatch and 4 dedicated endpoints (see §8.3 for the audited matrix)
 Operational analytics and dashboard with coverage gap indicators
-Guided onboarding with LLM-powered adaptive interview
+Guided onboarding — two modes operators can switch between: a 3-phase form wizard (City Profile → Systems → Gap Map), and a single-phase LLM-powered adaptive interview that persists each answer to the CityProfile singleton and transitions `onboarding_status` (not_started → in_progress → complete) as the walk progresses
 Municipal systems catalog (12 domains, 25+ vendors)
 Connector framework (4 shipped: file_system, manual_drop, rest_api, odbc; imap_email class exists as roadmap groundwork, not registered)
 Central LLM client with context manager, token budgeting, and prompt injection sanitization
@@ -119,7 +119,7 @@ The frontend/src/pages/ directory contains 14 .tsx files:
 | DataSources | Data source configuration with 3-step guided wizard and test connection | [IMPLEMENTED] |
 | Ingestion | Document processing status, pipeline monitoring, retry failed documents | [IMPLEMENTED] |
 | Users | User management, role assignment, department names, edit/deactivate with guards | [IMPLEMENTED] |
-| Onboarding | 3-phase guided wizard with LLM-powered adaptive interview | [IMPLEMENTED] |
+| Onboarding | Two modes: 3-phase form wizard (City Profile / Systems / Gap Map) AND a single-phase LLM-powered adaptive interview that persists answers in-endpoint and drives the `onboarding_status` lifecycle | [IMPLEMENTED] |
 | City Profile | City configuration and metadata | [IMPLEMENTED] |
 | Discovery | Network discovery preview page | [UI SHELL] |
 | Settings | System settings | [IMPLEMENTED] |
@@ -177,7 +177,7 @@ All modules listed with their implementation status:
 | connectors | Universal protocol (authenticate/discover/fetch/health_check): file_system, manual_drop, rest_api, odbc | [IMPLEMENTED] |
 | catalog | Municipal systems catalog (12 domains, 25+ vendors), auto-loader | [IMPLEMENTED] |
 | city_profile | City configuration, gap map, template variable source | [IMPLEMENTED] |
-| onboarding | 3-phase wizard, LLM-powered adaptive interview with fallback | [IMPLEMENTED] |
+| onboarding | Frontend offers two modes — a 3-phase form wizard (form mode) and a single-phase LLM-powered adaptive interview. The interview endpoint (`POST /onboarding/interview`) persists each answer onto the CityProfile singleton (creating the row on the first answer), normalizes yes/no → bool for `has_dedicated_it`, and transitions `onboarding_status` (not_started → in_progress → complete). LLM failure falls back to the default question text. | [IMPLEMENTED] |
 | admin | User edit/deactivate (self-demotion guard), model registry CRUD, fee schedules, coverage gaps, compliance template render | [IMPLEMENTED] |
 | service_accounts | API key generation/hashing for federation | [IMPLEMENTED] |
 | schemas | Pydantic request/response schemas | [IMPLEMENTED] |
@@ -381,11 +381,14 @@ Fee waiver workflow: create waiver (indigency/public_interest/media/government/o
 Step 1: Source type selection. Step 2: Connection config per type. Step 3: Review + test connection.
 POST /datasources/test-connection validates connectivity without persisting credentials
 
-### 8.6 Onboarding Interview [NEW in v1.1.0]
-POST /onboarding/interview generates adaptive setup questions based on incomplete city profile fields
-Chat-style UI with skip button
-Profile updates via PATCH /city-profile
-Falls back to default questions when LLM unavailable
+### 8.6 Onboarding Interview [NEW in v1.1.0; updated T5A 2026-04-22]
+POST /onboarding/interview walks a fixed list of CityProfile fields in priority order:
+city_name → state → county → population_band → email_platform → has_dedicated_it →
+monthly_request_volume. Each call:
+- Generates the next question for the first remaining empty field (LLM-powered; falls back to a hardcoded default when the LLM is unavailable).
+- **Persists the previous answer in-endpoint** — creates the CityProfile singleton on the first answer (requires `city_name` first) and updates it on subsequent calls. Normalizes yes/no → bool for `has_dedicated_it`.
+- **Transitions `onboarding_status`** (`not_started` → `in_progress` → `complete`) based on how many tracked fields are populated; the computed state is returned on every response.
+Chat-style UI (`frontend/src/pages/Onboarding.tsx`) with a Skip button that actually advances the walk — the client tracks skipped fields and sends them as `skipped_fields` on every request so the server walks past them instead of re-asking. DB truth is anchored to populated-in-DB: skipped fields stay null, onboarding_status stays `in_progress` until they are answered, and when every non-skipped field is populated the closure message lists the skipped set so the operator knows what is still missing. Errors and lifecycle state are surfaced in the UI rather than silently swallowed. The prior split where the frontend called a separate `PATCH /city-profile` to persist answers was removed in T5A because it 404-ed silently when no profile existed yet.
 
 ## 9. Search & Ingestion [IMPLEMENTED]
 

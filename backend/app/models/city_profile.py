@@ -11,7 +11,10 @@ class CityProfile(Base):
 
     id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
     city_name: Mapped[str] = mapped_column(String(200))
-    state: Mapped[str] = mapped_column(String(2))
+    # T5A: state is nullable so the onboarding interview can persist after the
+    # first answer (city_name) without a placeholder state. Populated once the
+    # interview reaches the state question; required for onboarding_status=complete.
+    state: Mapped[str | None] = mapped_column(String(2))
     county: Mapped[str | None] = mapped_column(String(200))
     population_band: Mapped[str | None] = mapped_column(String(50))
     email_platform: Mapped[str | None] = mapped_column(String(50))

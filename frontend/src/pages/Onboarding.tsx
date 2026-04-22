@@ -83,6 +83,19 @@ function loadSavedProfile(): CityProfile {
   };
 }
 
+// T5A: shape of the /onboarding/interview response. Backend persists the
+// answer inside the endpoint itself, returns the lifecycle state, and
+// honors a client-supplied `skipped_fields` list so the Skip button
+// actually advances the walk instead of re-asking the same question.
+interface InterviewResponse {
+  question: string;
+  target_field: string | null;
+  all_complete: boolean;
+  completed_fields: string[];
+  onboarding_status: string; // "not_started" | "in_progress" | "complete"
+  skipped_fields: string[];
+}
+
 export default function Onboarding({ token }: { token: string }) {
   const [step, setStep] = useState(1);
   const [profile, setProfile] = useState<CityProfile>(loadSavedProfile);
@@ -92,21 +105,37 @@ export default function Onboarding({ token }: { token: string }) {
   const [chatMessages, setChatMessages] = useState<{ role: "ai" | "user"; text: string }[]>([]);
   const [chatInput, setChatInput] = useState("");
   const [chatLoading, setChatLoading] = useState(false);
+  const [chatError, setChatError] = useState<string | null>(null);
+  const [chatStatus, setChatStatus] = useState<string>("not_started");
   const [currentField, setCurrentField] = useState<string | null>(null);
+  // T5A skip-truth: fields the operator elected to skip in this walk. Sent
+  // to the backend on every turn so it can advance past them instead of
+  // re-asking. DB truth is unaffected — skipped fields stay null until the
+  // operator fills them via the Manual Form or a fresh interview pass.
+  const [skippedFields, setSkippedFields] = useState<string[]>([]);
   const navigate = useNavigate();
 
   const startInterview = async () => {
     setMode("interview");
     setChatMessages([]);
     setChatLoading(true);
+    setChatError(null);
+    // T5A: a fresh interview session starts with no skips. The server-side
+    // walk won't skip anything unless this list carries entries.
+    setSkippedFields([]);
     try {
-      const res = await apiFetch<{ question: string; target_field: string | null; all_complete: boolean }>("/onboarding/interview", {
+      const res = await apiFetch<InterviewResponse>("/onboarding/interview", {
         token, method: "POST", body: JSON.stringify({}),
       });
       setChatMessages([{ role: "ai", text: res.question }]);
       setCurrentField(res.target_field);
+      setChatStatus(res.onboarding_status);
       if (res.all_complete) setCurrentField(null);
-    } catch {
+    } catch (err) {
+      // T5A: surface startup failure instead of silently pretending to have
+      // received a question. Also seed a fallback prompt so the operator has
+      // somewhere to type if the LLM/route is down.
+      setChatError(err instanceof Error ? err.message : "Could not start the guided interview.");
       setChatMessages([{ role: "ai", text: "Welcome! Let's set up your city profile. What is the name of your city?" }]);
       setCurrentField("city_name");
     } finally {
@@ -120,44 +149,79 @@ export default function Onboarding({ token }: { token: string }) {
     setChatInput("");
     setChatMessages((prev) => [...prev, { role: "user", text: answer }]);
     setChatLoading(true);
+    setChatError(null);
 
-    // Update city profile via PATCH
+    // T5A: the /onboarding/interview endpoint now persists the answer AND
+    // returns the next question in a single call. Removed the prior
+    // separate PATCH /city-profile round-trip (which 404-ed silently when
+    // no profile existed yet and swallowed the error). Also — if the user
+    // answers a previously-skipped field, drop it from the skip set so the
+    // echoed `skipped_fields` reflects reality.
+    const nextSkipped = skippedFields.filter((f) => f !== currentField);
     try {
-      const body: Record<string, string> = { [currentField]: answer };
-      await apiFetch("/city-profile", { token, method: "PATCH", body: JSON.stringify(body) });
-    } catch {
-      // Profile update failed — continue anyway, will retry on next save
-    }
-
-    // Get next question
-    try {
-      const res = await apiFetch<{ question: string; target_field: string | null; all_complete: boolean }>("/onboarding/interview", {
+      const res = await apiFetch<InterviewResponse>("/onboarding/interview", {
         token, method: "POST",
-        body: JSON.stringify({ last_answer: answer, last_field: currentField }),
+        body: JSON.stringify({
+          last_answer: answer,
+          last_field: currentField,
+          skipped_fields: nextSkipped,
+        }),
       });
       setChatMessages((prev) => [...prev, { role: "ai", text: res.question }]);
       setCurrentField(res.target_field);
+      setChatStatus(res.onboarding_status);
+      setSkippedFields(res.skipped_fields || nextSkipped);
       if (res.all_complete) setCurrentField(null);
-    } catch {
-      setChatMessages((prev) => [...prev, { role: "ai", text: "Thanks! Your profile has been updated." }]);
-      setCurrentField(null);
+    } catch (err) {
+      setChatError(
+        err instanceof Error
+          ? `Could not save your answer: ${err.message}. Please try again.`
+          : "Could not save your answer. Please try again."
+      );
     } finally {
       setChatLoading(false);
     }
   };
 
   const skipQuestion = async () => {
-    setChatMessages((prev) => [...prev, { role: "user", text: "(skipped)" }]);
+    if (!currentField) return;
+    // T5A skip-truth: remember which field was skipped so the next
+    // interview call asks the server to walk past it. This replaces the
+    // prior behavior where "Skip" posted `last_answer=null` and the
+    // server — finding the same field still empty — re-asked the exact
+    // same question. That made Skip a lie.
+    const fieldBeingSkipped = currentField;
+    const nextSkipped = skippedFields.includes(fieldBeingSkipped)
+      ? skippedFields
+      : [...skippedFields, fieldBeingSkipped];
+    setSkippedFields(nextSkipped);
+    setChatMessages((prev) => [
+      ...prev,
+      { role: "user", text: `(skipped ${fieldBeingSkipped.replace(/_/g, " ")})` },
+    ]);
     setChatLoading(true);
+    setChatError(null);
     try {
-      const res = await apiFetch<{ question: string; target_field: string | null; all_complete: boolean }>("/onboarding/interview", {
+      const res = await apiFetch<InterviewResponse>("/onboarding/interview", {
         token, method: "POST",
-        body: JSON.stringify({ last_answer: null, last_field: currentField }),
+        body: JSON.stringify({
+          // No persistence on skip — last_answer intentionally null.
+          last_answer: null,
+          last_field: null,
+          skipped_fields: nextSkipped,
+        }),
       });
       setChatMessages((prev) => [...prev, { role: "ai", text: res.question }]);
       setCurrentField(res.target_field);
+      setChatStatus(res.onboarding_status);
+      setSkippedFields(res.skipped_fields || nextSkipped);
       if (res.all_complete) setCurrentField(null);
-    } catch {
+    } catch (err) {
+      setChatError(
+        err instanceof Error
+          ? `Could not advance past the skipped question: ${err.message}.`
+          : "Could not advance past the skipped question."
+      );
       setCurrentField(null);
     } finally {
       setChatLoading(false);
@@ -245,6 +309,35 @@ export default function Onboarding({ token }: { token: string }) {
       {mode === "interview" && (
         <Card className="shadow-none">
           <CardContent className="p-4">
+            {/* T5A: lifecycle status badge — shows where the operator is in
+                the guided flow without a separate trip to /city-profile. */}
+            <div className="flex items-center justify-between mb-3">
+              <p className="text-xs text-muted-foreground">
+                Guided interview — answers persist automatically.
+              </p>
+              <Badge
+                variant="outline"
+                className="text-xs"
+                data-testid="onboarding-status"
+              >
+                {chatStatus === "complete"
+                  ? "Onboarding: complete"
+                  : chatStatus === "in_progress"
+                  ? "Onboarding: in progress"
+                  : "Onboarding: not started"}
+              </Badge>
+            </div>
+            {/* T5A: surface persistence / fetch failures instead of the
+                previous silent try/catch swallow. */}
+            {chatError && (
+              <div
+                role="alert"
+                data-testid="chat-error"
+                className="mb-3 rounded-md border border-destructive/30 bg-destructive/5 px-3 py-2 text-sm text-destructive"
+              >
+                {chatError}
+              </div>
+            )}
             <div className="space-y-3 max-h-[400px] overflow-y-auto mb-4">
               {chatMessages.map((msg, i) => (
                 <div key={i} className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}>
@@ -284,7 +377,25 @@ export default function Onboarding({ token }: { token: string }) {
               </div>
             )}
             {!currentField && chatMessages.length > 0 && (
-              <div className="text-center">
+              <div className="text-center space-y-2">
+                {/* T5A skip-truth: if the walk ended with skipped fields,
+                    give the operator an explicit way to revisit them. */}
+                {chatStatus !== "complete" && skippedFields.length > 0 && (
+                  <div className="flex flex-col items-center gap-2">
+                    <p className="text-xs text-muted-foreground">
+                      Skipped: {skippedFields.join(", ")}
+                    </p>
+                    <Button
+                      variant="outline"
+                      onClick={startInterview}
+                      className="gap-2"
+                      data-testid="revisit-skipped"
+                    >
+                      <MessageSquare className="h-4 w-4" />
+                      Revisit skipped fields
+                    </Button>
+                  </div>
+                )}
                 <Button onClick={() => navigate("/city-profile")} className="gap-2">
                   <CheckCircle className="h-4 w-4" />
                   View City Profile
