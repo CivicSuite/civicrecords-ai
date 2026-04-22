@@ -24,7 +24,7 @@ No open-source tool exists for the **responder side** of open records at the mun
 - **Operational Analytics** — Real-time metrics: average response time, deadline compliance rate, overdue requests, status breakdown
 - **Notification Service** — Template-based notification system with SMTP email delivery via Celery beat (60s interval). Configure SMTP_HOST, SMTP_PORT, SMTP_USERNAME, SMTP_PASSWORD in .env to enable. Notification dispatch into status transitions pending
 - **Compliance by Design** — Hash-chained audit logs, human-in-the-loop enforcement, AI content labeling, data sovereignty verification. Designed for Colorado CAIA and 50-state regulatory compliance. CJIS compliance gate for public safety connectors
-- **Civic Design System** — Professional UI built with shadcn/ui, civic blue design tokens, sidebar navigation. WCAG 2.2 AA targeted (44px touch targets, skip navigation, icon+color status badges — accessibility audit pending)
+- **Civic Design System** — Professional UI built with shadcn/ui and civic blue design tokens. Responsive shell: fixed 240px sidebar at ≥768px, hamburger-driven slide-in drawer below that (with focus trap, ESC close, overlay dim, auto-close on route change). WCAG 2.2 AA targeted (44px touch targets, skip-to-content link, icon+color status badges, programmatic label→input associations on admin forms, `role="alert"` validation errors with actionable copy — full third-party accessibility audit still pending)
 - **Federation-Ready** — REST API with service accounts enables future cross-jurisdiction record discovery between CivicRecords AI instances
 
 ## Quick Start

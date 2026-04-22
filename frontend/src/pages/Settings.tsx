@@ -4,6 +4,7 @@ import { PageHeader } from "@/components/page-header";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
+import type { components } from "@/generated/api";
 import {
   Database,
   Cpu,
@@ -22,17 +23,20 @@ interface HealthResponse {
   version: string;
 }
 
-interface SystemStatus {
-  version: string;
-  database: { status: string };
-  ollama: { status: string };
-  redis: { status: string };
-  user_count: number;
-  audit_log_count: number;
+// Backend /admin/status returns flat strings for each service
+// (components["schemas"]["SystemStatus"]). The additional optional fields
+// (smtp_configured, audit_retention_days, llm_model, data_sovereignty)
+// are surfaced by the same endpoint but not yet in the OpenAPI schema;
+// they are treated as optional client-side until the schema catches up.
+type SystemStatus = components["schemas"]["SystemStatus"] & {
   smtp_configured?: boolean;
   audit_retention_days?: number;
   llm_model?: string;
   data_sovereignty?: boolean;
+};
+
+function isServiceHealthy(status: string | undefined): boolean {
+  return status === "connected" || status === "ok" || status === "healthy";
 }
 
 function StatusRow({
@@ -108,9 +112,9 @@ export default function Settings({ token }: { token: string }) {
 
   if (!health || !status) return null;
 
-  const dbOk = status.database?.status === "connected" || status.database?.status === "ok" || status.database?.status === "healthy";
-  const ollamaOk = status.ollama?.status === "connected" || status.ollama?.status === "ok" || status.ollama?.status === "healthy";
-  const redisOk = status.redis?.status === "connected" || status.redis?.status === "ok" || status.redis?.status === "healthy";
+  const dbOk = isServiceHealthy(status.database);
+  const ollamaOk = isServiceHealthy(status.ollama);
+  const redisOk = isServiceHealthy(status.redis);
 
   return (
     <div className="space-y-8">
@@ -138,19 +142,19 @@ export default function Settings({ token }: { token: string }) {
               label="Database (PostgreSQL)"
               icon={Database}
               status={dbOk ? "ok" : "error"}
-              detail={status.database?.status ?? "unknown"}
+              detail={status.database ?? "unknown"}
             />
             <StatusRow
               label="Ollama (LLM Engine)"
               icon={Cpu}
               status={ollamaOk ? "ok" : "error"}
-              detail={status.ollama?.status ?? "unknown"}
+              detail={status.ollama ?? "unknown"}
             />
             <StatusRow
               label="Redis (Task Queue)"
               icon={Zap}
               status={redisOk ? "ok" : "error"}
-              detail={status.redis?.status ?? "unknown"}
+              detail={status.redis ?? "unknown"}
             />
           </CardContent>
         </Card>

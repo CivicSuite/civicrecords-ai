@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { StatusBadge } from "@/components/status-badge";
+import type { components } from "@/generated/api";
 import {
   Users,
   FileText,
@@ -24,14 +25,10 @@ import {
   Activity,
 } from "lucide-react";
 
-interface SystemStatus {
-  version: string;
-  database: { status: string };
-  ollama: { status: string };
-  redis: { status: string };
-  user_count: number;
-  audit_log_count: number;
-}
+// Matches the backend /admin/status contract: each service status is a flat
+// string ("connected" | "disconnected" | "error: ..."), not a nested object.
+// Source of truth: components["schemas"]["SystemStatus"] in generated/api.ts.
+type SystemStatus = components["schemas"]["SystemStatus"];
 
 interface OperationalMetrics {
   average_response_time_days: number | null;
@@ -211,9 +208,9 @@ export default function Dashboard({ token }: { token: string }) {
         </CardHeader>
         <CardContent>
           <div className="flex flex-wrap gap-6">
-            <ServiceIndicator name="Database (PostgreSQL)" status={status.database?.status} icon={Database} />
-            <ServiceIndicator name="Ollama (LLM Engine)" status={status.ollama?.status} icon={Cpu} />
-            <ServiceIndicator name="Redis (Task Queue)" status={status.redis?.status} icon={Zap} />
+            <ServiceIndicator name="Database (PostgreSQL)" status={status.database} icon={Database} />
+            <ServiceIndicator name="Ollama (LLM Engine)" status={status.ollama} icon={Cpu} />
+            <ServiceIndicator name="Redis (Task Queue)" status={status.redis} icon={Zap} />
           </div>
         </CardContent>
       </Card>

@@ -58,7 +58,9 @@ If you see less than you expect, your role or department assignment may need to 
 
 ## A.3 The Dashboard
 
-After signing in, you see the main dashboard. The left sidebar has these sections:
+After signing in, you see the main dashboard. On a desktop or tablet browser, the navigation lives in the left sidebar. On a phone or narrow browser window (under ~768 pixels wide), the sidebar collapses behind a menu button (three horizontal lines, **≡**) in the top-left corner — tap it to slide the menu in, tap a section to navigate (the menu closes by itself), or tap the **✕** inside the menu to close it without navigating.
+
+The menu has these sections:
 
 | Section | What it does |
 |---|---|
@@ -69,6 +71,8 @@ After signing in, you see the main dashboard. The left sidebar has these section
 | **Admin** | User accounts, departments, settings |
 
 The top of the screen shows your name, role, and a notification bell for pending items.
+
+**Services row (admins).** Scroll down the dashboard to find the **SERVICES** card. It shows one indicator per backing service: **Database (PostgreSQL)**, **Ollama (LLM Engine)**, and **Redis (Task Queue)**. A green check (✓) means the service is reachable and healthy; a red X (✕) means the dashboard couldn't reach it. If you see a red X but the rest of the app seems to work, that service may have just restarted — refresh the page. If the red X persists, see Section D.1 (Troubleshooting).
 
 ---
 
@@ -358,6 +362,27 @@ docker compose restart worker
 ## B.5 Connector Types and Configuration
 
 CivicRecords AI uses a standardized connector framework. Each connector must implement: `authenticate()`, `discover()`, `fetch()`, and `health_check()`.
+
+### B.5.0 Adding a Data Source (Wizard Walkthrough)
+
+Admins add data sources through the **Sources → Add Source** button. The dialog is a three-step wizard:
+
+**Step 1 — Source name and type.**
+1. Enter a **Source Name** (required). This is how the source appears in listings and sync logs. Pick something specific — "City Clerk Email Archive" is better than "Source 1". If you skip this and click **Next**, the wizard stays on Step 1 and shows a red message under the input: *"Enter a name for this source — this is how you will identify it later."*
+2. Pick a **Source Type** from the four choices: **File System** (local or mounted folder), **Manual Drop** (watched drop folder), **REST API** (HTTP endpoint), or **ODBC / Database** (SQL database via ODBC). The selection is keyboard-navigable — Tab into the group, then arrow keys to choose.
+
+**Step 2 — Connection details (the fields depend on the type you picked).**
+- **File System / Manual Drop:** enter the **Directory Path** (required). This must be a path visible to the Docker container (for example `/mnt/records` on Linux or a mounted Windows share). If you leave it blank, the wizard shows: *"Enter the full directory path where documents live (for example, /mnt/records)."*
+- **REST API:** enter the **Base URL** (required, must start with `http://` or `https://`) and optional **Endpoint Path**, then pick an **Authentication** method (None / API Key / Bearer Token / OAuth 2.0 / Basic Auth) and fill in the credentials it reveals. Each authentication method has its own required fields — leaving any of them blank produces a specific message naming the field (for example *"Client secret is required for OAuth 2.0."*).
+- **ODBC / Database:** enter the **Connection String** (required, stored encrypted), **Table Name** (required), **Primary Key Column** (required — used to track which rows have been ingested), and optional **Modified Timestamp Column** and **Batch Size**.
+
+**Step 3 — Review, schedule, and create.**
+1. Check **Enable automatic sync** to let the source sync on a schedule (on by default). Pick a preset from the dropdown (every 15 minutes, hourly, nightly at 2 AM UTC, weekly, etc.) or choose **Custom…** to enter a 5-field cron expression directly. Invalid cron expressions produce a message: *"Sync schedule must be a valid 5-field cron expression (for example, 0 2 * * *)."*
+2. Review the summary card — it shows the name, type, and key configuration values (secrets are masked).
+3. Click **Test Connection** to verify the credentials and destination. A green checkmark means the source is reachable; a red X shows the specific error returned by the connector.
+4. Click **Create Source** to save. If the backend rejects the create (invalid field, duplicate name, credential verification failure), the error is shown in a red banner at the bottom of the dialog with the exact message and the form is preserved so you can correct and retry.
+
+**What to do when a field is rejected.** Every validation message names the field and gives you a concrete example. The field with the problem is outlined and will announce as invalid to screen readers. Typing into the field clears that field's error immediately — you don't have to click Next again to clear the red.
 
 ### B.5.1 File System Connector
 

@@ -63,6 +63,83 @@ const SCHEDULE_PRESETS: { label: string; cron: string | null }[] = [
   { label: "Custom…", cron: null },
 ];
 
+// Field-level validation — keys match state keys in formData.
+// Messages are actionable: they say what is wrong AND how to fix it.
+type FormData = {
+  name: string;
+  sourceType: string;
+  host: string; port: string; path: string; username: string; password: string;
+  base_url: string; endpoint_path: string; auth_method: string;
+  api_key: string; key_location: string; key_header: string;
+  token: string; client_id: string; client_secret: string; token_url: string;
+  rest_username: string; rest_password: string;
+  pagination_style: string; max_records: string;
+  connection_string: string; table_name: string; pk_column: string;
+  modified_column: string; batch_size: string;
+  schedule_enabled: boolean; sync_schedule: string; schedule_preset: string;
+};
+
+type FieldErrors = Partial<Record<keyof FormData, string>>;
+
+function validateStep(step: number, data: FormData): FieldErrors {
+  const errors: FieldErrors = {};
+  if (step === 1) {
+    if (!data.name.trim()) {
+      errors.name = "Enter a name for this source — this is how you will identify it later.";
+    }
+  } else if (step === 2) {
+    if (data.sourceType === "file_system" || data.sourceType === "manual_drop") {
+      if (!data.path.trim()) {
+        errors.path = "Enter the full directory path where documents live (for example, /mnt/records).";
+      }
+    } else if (data.sourceType === "rest_api") {
+      if (!data.base_url.trim()) {
+        errors.base_url = "Enter the API base URL (for example, https://api.example.gov).";
+      } else if (!/^https?:\/\//i.test(data.base_url.trim())) {
+        errors.base_url = "Base URL must start with http:// or https://.";
+      }
+      if (data.auth_method === "api_key" && !data.api_key.trim()) {
+        errors.api_key = "API key is required for API Key authentication.";
+      }
+      if (data.auth_method === "bearer" && !data.token.trim()) {
+        errors.token = "Bearer token is required for Bearer Token authentication.";
+      }
+      if (data.auth_method === "oauth2") {
+        if (!data.client_id.trim()) errors.client_id = "Client ID is required for OAuth 2.0.";
+        if (!data.client_secret.trim()) errors.client_secret = "Client secret is required for OAuth 2.0.";
+        if (!data.token_url.trim()) {
+          errors.token_url = "Token URL is required for OAuth 2.0.";
+        } else if (!/^https?:\/\//i.test(data.token_url.trim())) {
+          errors.token_url = "Token URL must start with http:// or https://.";
+        }
+      }
+      if (data.auth_method === "basic") {
+        if (!data.rest_username.trim()) errors.rest_username = "Username is required for Basic Auth.";
+        if (!data.rest_password.trim()) errors.rest_password = "Password is required for Basic Auth.";
+      }
+    } else if (data.sourceType === "odbc") {
+      if (!data.connection_string.trim()) {
+        errors.connection_string = "Enter the ODBC connection string (for example, DSN=MyDSN;UID=user;PWD=...).";
+      }
+      if (!data.table_name.trim()) {
+        errors.table_name = "Enter the name of the table to read records from.";
+      }
+      if (!data.pk_column.trim()) {
+        errors.pk_column = "Enter the primary key column — needed to track which records have been ingested.";
+      }
+    }
+  } else if (step === 3) {
+    if (data.schedule_enabled && data.sync_schedule.trim()) {
+      try {
+        parseExpression(data.sync_schedule.trim(), { utc: true });
+      } catch {
+        errors.sync_schedule = "Sync schedule must be a valid 5-field cron expression (for example, 0 2 * * *).";
+      }
+    }
+  }
+  return errors;
+}
+
 
 export default function DataSources({ token }: { token: string }) {
   const [sources, setSources] = useState<DataSource[]>([]);
@@ -70,7 +147,7 @@ export default function DataSources({ token }: { token: string }) {
   const [error, setError] = useState("");
   const [showForm, setShowForm] = useState(false);
   const [wizardStep, setWizardStep] = useState(1);
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<FormData>({
     // common
     name: "", sourceType: "file_system",
     // file_system / manual_drop
@@ -86,9 +163,24 @@ export default function DataSources({ token }: { token: string }) {
     // schedule
     schedule_enabled: true, sync_schedule: "0 2 * * *", schedule_preset: "Nightly at 2am UTC",
   });
+  const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
+  const [submitError, setSubmitError] = useState("");
   const [testResult, setTestResult] = useState<{ success: boolean; message: string } | null>(null);
   const [testing, setTesting] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+
+  const updateField = <K extends keyof FormData>(key: K, value: FormData[K]) => {
+    setFormData((prev) => ({ ...prev, [key]: value }));
+    // Clear this field's error as soon as the user corrects it — don't make them
+    // hit Next again just to see the red go away.
+    if (fieldErrors[key]) {
+      setFieldErrors((prev) => {
+        const next = { ...prev };
+        delete next[key];
+        return next;
+      });
+    }
+  };
 
   const loadData = async () => {
     try {
@@ -105,6 +197,8 @@ export default function DataSources({ token }: { token: string }) {
 
   const resetWizard = () => {
     setWizardStep(1);
+    setFieldErrors({});
+    setSubmitError("");
     setFormData({
       name: "", sourceType: "file_system",
       host: "", port: "", path: "", username: "", password: "",
@@ -117,6 +211,17 @@ export default function DataSources({ token }: { token: string }) {
       schedule_enabled: true, sync_schedule: "0 2 * * *", schedule_preset: "Nightly at 2am UTC",
     });
     setTestResult(null);
+  };
+
+  const tryAdvance = (toStep: number) => {
+    const errs = validateStep(wizardStep, formData);
+    if (Object.keys(errs).length > 0) {
+      setFieldErrors(errs);
+      return;
+    }
+    setFieldErrors({});
+    setSubmitError("");
+    setWizardStep(toStep);
   };
 
   const handleTestConnection = async () => {
@@ -174,7 +279,14 @@ export default function DataSources({ token }: { token: string }) {
   };
 
   const handleSubmit = async () => {
+    // Revalidate step 3 (schedule) before sending — belt and suspenders.
+    const errs = validateStep(3, formData);
+    if (Object.keys(errs).length > 0) {
+      setFieldErrors(errs);
+      return;
+    }
     setSubmitting(true);
+    setSubmitError("");
     try {
       let config: Record<string, unknown> = {};
       if (formData.sourceType === "file_system") {
@@ -227,10 +339,34 @@ export default function DataSources({ token }: { token: string }) {
       resetWizard();
       await loadData();
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Failed to create");
+      setSubmitError(e instanceof Error ? e.message : "Failed to create source. Check the fields above and try again.");
     } finally {
       setSubmitting(false);
     }
+  };
+
+  // Reusable label + error pair.
+  // Labels are associated via htmlFor → id. Errors get role="alert" so screen
+  // readers announce them as soon as they appear. Inputs reference both the
+  // hint (if any) and the error via aria-describedby, and get aria-invalid.
+  const FieldLabel = ({ htmlFor, children, required }: { htmlFor: string; children: React.ReactNode; required?: boolean }) => (
+    <label htmlFor={htmlFor} className="text-sm font-medium">
+      {children}
+      {required && <span className="text-destructive" aria-hidden="true"> *</span>}
+      {required && <span className="sr-only"> (required)</span>}
+    </label>
+  );
+  const FieldError = ({ id, message }: { id: string; message: string | undefined }) =>
+    message ? (
+      <p id={id} role="alert" className="text-xs text-destructive mt-1">
+        {message}
+      </p>
+    ) : null;
+  const describedBy = (hintId: string | null, errorShown: boolean, errorId: string): string | undefined => {
+    const parts = [];
+    if (hintId) parts.push(hintId);
+    if (errorShown) parts.push(errorId);
+    return parts.length ? parts.join(" ") : undefined;
   };
 
 
@@ -259,7 +395,7 @@ export default function DataSources({ token }: { token: string }) {
               </DialogHeader>
               <div className="space-y-4">
                 {/* Step indicators */}
-                <div className="flex gap-2">
+                <div className="flex gap-2" aria-hidden="true">
                   {[1, 2, 3].map((s) => (
                     <div key={s} className={`h-1.5 flex-1 rounded-full ${s <= wizardStep ? "bg-primary" : "bg-muted"}`} />
                   ))}
@@ -269,33 +405,52 @@ export default function DataSources({ token }: { token: string }) {
                 {wizardStep === 1 && (
                   <>
                     <div>
-                      <label className="text-sm font-medium">Source Name</label>
-                      <Input value={formData.name} onChange={(e) => setFormData({ ...formData, name: e.target.value })} placeholder="e.g. City Clerk Email Archive" />
+                      <FieldLabel htmlFor="ds-name" required>Source Name</FieldLabel>
+                      <Input
+                        id="ds-name"
+                        value={formData.name}
+                        onChange={(e) => updateField("name", e.target.value)}
+                        placeholder="e.g. City Clerk Email Archive"
+                        aria-required="true"
+                        aria-invalid={fieldErrors.name ? "true" : undefined}
+                        aria-describedby={describedBy(null, !!fieldErrors.name, "ds-name-error")}
+                      />
+                      <FieldError id="ds-name-error" message={fieldErrors.name} />
                     </div>
                     <div>
-                      <label className="text-sm font-medium">Source Type</label>
-                      <div className="grid grid-cols-3 gap-2 mt-2">
+                      <span id="ds-type-label" className="text-sm font-medium">Source Type</span>
+                      <div
+                        role="radiogroup"
+                        aria-labelledby="ds-type-label"
+                        className="grid grid-cols-3 gap-2 mt-2"
+                      >
                         {[
                           { type: "file_system", icon: FolderOpen, label: "File System" },
                           { type: "manual_drop", icon: Upload, label: "Manual Drop" },
                           { type: "rest_api", icon: Globe, label: "REST API" },
                           { type: "odbc", icon: Database, label: "ODBC / Database" },
-                        ].map(({ type, icon: Icon, label }) => (
-                          <button
-                            key={type}
-                            type="button"
-                            onClick={() => setFormData({ ...formData, sourceType: type })}
-                            className={`p-3 rounded-lg border text-center transition-colors ${formData.sourceType === type ? "border-primary bg-primary/5" : "border-border hover:border-primary/50"}`}
-                          >
-                            <Icon className="h-5 w-5 mx-auto mb-1" />
-                            <span className="text-xs font-medium">{label}</span>
-                          </button>
-                        ))}
+                        ].map(({ type, icon: Icon, label }) => {
+                          const selected = formData.sourceType === type;
+                          return (
+                            <button
+                              key={type}
+                              type="button"
+                              role="radio"
+                              aria-checked={selected}
+                              tabIndex={selected ? 0 : -1}
+                              onClick={() => setFormData({ ...formData, sourceType: type })}
+                              className={`p-3 rounded-lg border text-center transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 ${selected ? "border-primary bg-primary/5" : "border-border hover:border-primary/50"}`}
+                            >
+                              <Icon className="h-5 w-5 mx-auto mb-1" />
+                              <span className="text-xs font-medium">{label}</span>
+                            </button>
+                          );
+                        })}
                       </div>
                     </div>
                     <div className="flex justify-end gap-3">
                       <Button type="button" variant="outline" onClick={() => { setShowForm(false); resetWizard(); }}>Cancel</Button>
-                      <Button type="button" disabled={!formData.name.trim()} onClick={() => setWizardStep(2)}>Next</Button>
+                      <Button type="button" onClick={() => tryAdvance(2)}>Next</Button>
                     </div>
                   </>
                 )}
@@ -305,9 +460,18 @@ export default function DataSources({ token }: { token: string }) {
                   <>
                     {(formData.sourceType === "file_system" || formData.sourceType === "manual_drop") && (
                       <div>
-                        <label className="text-sm font-medium">Directory Path</label>
-                        <Input value={formData.path} onChange={(e) => setFormData({ ...formData, path: e.target.value })} placeholder="/mnt/records or C:\Records\Public" />
-                        <p className="text-xs text-muted-foreground mt-1">The folder on the server where documents are stored.</p>
+                        <FieldLabel htmlFor="ds-path" required>Directory Path</FieldLabel>
+                        <Input
+                          id="ds-path"
+                          value={formData.path}
+                          onChange={(e) => updateField("path", e.target.value)}
+                          placeholder="/mnt/records or C:\Records\Public"
+                          aria-required="true"
+                          aria-invalid={fieldErrors.path ? "true" : undefined}
+                          aria-describedby={describedBy("ds-path-hint", !!fieldErrors.path, "ds-path-error")}
+                        />
+                        <p id="ds-path-hint" className="text-xs text-muted-foreground mt-1">The folder on the server where documents are stored.</p>
+                        <FieldError id="ds-path-error" message={fieldErrors.path} />
                       </div>
                     )}
 
@@ -315,17 +479,31 @@ export default function DataSources({ token }: { token: string }) {
                     {formData.sourceType === "rest_api" && (
                       <div className="space-y-3">
                         <div>
-                          <label className="text-sm font-medium">Base URL <span className="text-destructive">*</span></label>
-                          <Input value={formData.base_url} onChange={(e) => setFormData({ ...formData, base_url: e.target.value })} placeholder="https://api.example.gov" />
+                          <FieldLabel htmlFor="ds-base-url" required>Base URL</FieldLabel>
+                          <Input
+                            id="ds-base-url"
+                            value={formData.base_url}
+                            onChange={(e) => updateField("base_url", e.target.value)}
+                            placeholder="https://api.example.gov"
+                            aria-required="true"
+                            aria-invalid={fieldErrors.base_url ? "true" : undefined}
+                            aria-describedby={describedBy(null, !!fieldErrors.base_url, "ds-base-url-error")}
+                          />
+                          <FieldError id="ds-base-url-error" message={fieldErrors.base_url} />
                         </div>
                         <div>
-                          <label className="text-sm font-medium">Endpoint Path</label>
-                          <Input value={formData.endpoint_path} onChange={(e) => setFormData({ ...formData, endpoint_path: e.target.value })} placeholder="/records" />
+                          <FieldLabel htmlFor="ds-endpoint-path">Endpoint Path</FieldLabel>
+                          <Input
+                            id="ds-endpoint-path"
+                            value={formData.endpoint_path}
+                            onChange={(e) => updateField("endpoint_path", e.target.value)}
+                            placeholder="/records"
+                          />
                         </div>
                         <div>
-                          <label className="text-sm font-medium">Authentication</label>
-                          <Select value={formData.auth_method} onValueChange={(v) => setFormData({ ...formData, auth_method: v ?? "" })}>
-                            <SelectTrigger className="mt-1">
+                          <FieldLabel htmlFor="ds-auth-method">Authentication</FieldLabel>
+                          <Select value={formData.auth_method} onValueChange={(v) => updateField("auth_method", v ?? "")}>
+                            <SelectTrigger id="ds-auth-method" className="mt-1">
                               <SelectValue />
                             </SelectTrigger>
                             <SelectContent>
@@ -342,13 +520,23 @@ export default function DataSources({ token }: { token: string }) {
                         {formData.auth_method === "api_key" && (
                           <div className="space-y-2 pl-3 border-l-2 border-muted">
                             <div>
-                              <label className="text-sm font-medium">API Key <span className="text-destructive">*</span></label>
-                              <Input type="password" value={formData.api_key} onChange={(e) => setFormData({ ...formData, api_key: e.target.value })} placeholder="Enter API key" />
+                              <FieldLabel htmlFor="ds-api-key" required>API Key</FieldLabel>
+                              <Input
+                                id="ds-api-key"
+                                type="password"
+                                value={formData.api_key}
+                                onChange={(e) => updateField("api_key", e.target.value)}
+                                placeholder="Enter API key"
+                                aria-required="true"
+                                aria-invalid={fieldErrors.api_key ? "true" : undefined}
+                                aria-describedby={describedBy(null, !!fieldErrors.api_key, "ds-api-key-error")}
+                              />
+                              <FieldError id="ds-api-key-error" message={fieldErrors.api_key} />
                             </div>
                             <div>
-                              <label className="text-sm font-medium">Key Location</label>
-                              <Select value={formData.key_location} onValueChange={(v) => setFormData({ ...formData, key_location: v ?? "" })}>
-                                <SelectTrigger className="mt-1">
+                              <FieldLabel htmlFor="ds-key-location">Key Location</FieldLabel>
+                              <Select value={formData.key_location} onValueChange={(v) => updateField("key_location", v ?? "")}>
+                                <SelectTrigger id="ds-key-location" className="mt-1">
                                   <SelectValue />
                                 </SelectTrigger>
                                 <SelectContent>
@@ -358,32 +546,75 @@ export default function DataSources({ token }: { token: string }) {
                               </Select>
                             </div>
                             <div>
-                              <label className="text-sm font-medium">Header / Parameter Name</label>
-                              <Input value={formData.key_header} onChange={(e) => setFormData({ ...formData, key_header: e.target.value })} placeholder="X-API-Key" />
+                              <FieldLabel htmlFor="ds-key-header">Header / Parameter Name</FieldLabel>
+                              <Input
+                                id="ds-key-header"
+                                value={formData.key_header}
+                                onChange={(e) => updateField("key_header", e.target.value)}
+                                placeholder="X-API-Key"
+                              />
                             </div>
                           </div>
                         )}
 
                         {formData.auth_method === "bearer" && (
                           <div className="pl-3 border-l-2 border-muted">
-                            <label className="text-sm font-medium">Bearer Token <span className="text-destructive">*</span></label>
-                            <Input type="password" value={formData.token} onChange={(e) => setFormData({ ...formData, token: e.target.value })} placeholder="Enter bearer token" />
+                            <FieldLabel htmlFor="ds-bearer-token" required>Bearer Token</FieldLabel>
+                            <Input
+                              id="ds-bearer-token"
+                              type="password"
+                              value={formData.token}
+                              onChange={(e) => updateField("token", e.target.value)}
+                              placeholder="Enter bearer token"
+                              aria-required="true"
+                              aria-invalid={fieldErrors.token ? "true" : undefined}
+                              aria-describedby={describedBy(null, !!fieldErrors.token, "ds-bearer-token-error")}
+                            />
+                            <FieldError id="ds-bearer-token-error" message={fieldErrors.token} />
                           </div>
                         )}
 
                         {formData.auth_method === "oauth2" && (
                           <div className="space-y-2 pl-3 border-l-2 border-muted">
                             <div>
-                              <label className="text-sm font-medium">Client ID <span className="text-destructive">*</span></label>
-                              <Input value={formData.client_id} onChange={(e) => setFormData({ ...formData, client_id: e.target.value })} placeholder="OAuth client ID" />
+                              <FieldLabel htmlFor="ds-client-id" required>Client ID</FieldLabel>
+                              <Input
+                                id="ds-client-id"
+                                value={formData.client_id}
+                                onChange={(e) => updateField("client_id", e.target.value)}
+                                placeholder="OAuth client ID"
+                                aria-required="true"
+                                aria-invalid={fieldErrors.client_id ? "true" : undefined}
+                                aria-describedby={describedBy(null, !!fieldErrors.client_id, "ds-client-id-error")}
+                              />
+                              <FieldError id="ds-client-id-error" message={fieldErrors.client_id} />
                             </div>
                             <div>
-                              <label className="text-sm font-medium">Client Secret <span className="text-destructive">*</span></label>
-                              <Input type="password" value={formData.client_secret} onChange={(e) => setFormData({ ...formData, client_secret: e.target.value })} placeholder="OAuth client secret" />
+                              <FieldLabel htmlFor="ds-client-secret" required>Client Secret</FieldLabel>
+                              <Input
+                                id="ds-client-secret"
+                                type="password"
+                                value={formData.client_secret}
+                                onChange={(e) => updateField("client_secret", e.target.value)}
+                                placeholder="OAuth client secret"
+                                aria-required="true"
+                                aria-invalid={fieldErrors.client_secret ? "true" : undefined}
+                                aria-describedby={describedBy(null, !!fieldErrors.client_secret, "ds-client-secret-error")}
+                              />
+                              <FieldError id="ds-client-secret-error" message={fieldErrors.client_secret} />
                             </div>
                             <div>
-                              <label className="text-sm font-medium">Token URL <span className="text-destructive">*</span></label>
-                              <Input value={formData.token_url} onChange={(e) => setFormData({ ...formData, token_url: e.target.value })} placeholder="https://auth.example.gov/oauth/token" />
+                              <FieldLabel htmlFor="ds-token-url" required>Token URL</FieldLabel>
+                              <Input
+                                id="ds-token-url"
+                                value={formData.token_url}
+                                onChange={(e) => updateField("token_url", e.target.value)}
+                                placeholder="https://auth.example.gov/oauth/token"
+                                aria-required="true"
+                                aria-invalid={fieldErrors.token_url ? "true" : undefined}
+                                aria-describedby={describedBy(null, !!fieldErrors.token_url, "ds-token-url-error")}
+                              />
+                              <FieldError id="ds-token-url-error" message={fieldErrors.token_url} />
                             </div>
                           </div>
                         )}
@@ -391,20 +622,39 @@ export default function DataSources({ token }: { token: string }) {
                         {formData.auth_method === "basic" && (
                           <div className="space-y-2 pl-3 border-l-2 border-muted">
                             <div>
-                              <label className="text-sm font-medium">Username <span className="text-destructive">*</span></label>
-                              <Input value={formData.rest_username} onChange={(e) => setFormData({ ...formData, rest_username: e.target.value })} placeholder="Username" />
+                              <FieldLabel htmlFor="ds-basic-username" required>Username</FieldLabel>
+                              <Input
+                                id="ds-basic-username"
+                                value={formData.rest_username}
+                                onChange={(e) => updateField("rest_username", e.target.value)}
+                                placeholder="Username"
+                                aria-required="true"
+                                aria-invalid={fieldErrors.rest_username ? "true" : undefined}
+                                aria-describedby={describedBy(null, !!fieldErrors.rest_username, "ds-basic-username-error")}
+                              />
+                              <FieldError id="ds-basic-username-error" message={fieldErrors.rest_username} />
                             </div>
                             <div>
-                              <label className="text-sm font-medium">Password <span className="text-destructive">*</span></label>
-                              <Input type="password" value={formData.rest_password} onChange={(e) => setFormData({ ...formData, rest_password: e.target.value })} placeholder="Password" />
+                              <FieldLabel htmlFor="ds-basic-password" required>Password</FieldLabel>
+                              <Input
+                                id="ds-basic-password"
+                                type="password"
+                                value={formData.rest_password}
+                                onChange={(e) => updateField("rest_password", e.target.value)}
+                                placeholder="Password"
+                                aria-required="true"
+                                aria-invalid={fieldErrors.rest_password ? "true" : undefined}
+                                aria-describedby={describedBy(null, !!fieldErrors.rest_password, "ds-basic-password-error")}
+                              />
+                              <FieldError id="ds-basic-password-error" message={fieldErrors.rest_password} />
                             </div>
                           </div>
                         )}
 
                         <div>
-                          <label className="text-sm font-medium">Pagination Style</label>
-                          <Select value={formData.pagination_style} onValueChange={(v) => setFormData({ ...formData, pagination_style: v ?? "" })}>
-                            <SelectTrigger className="mt-1">
+                          <FieldLabel htmlFor="ds-pagination-style">Pagination Style</FieldLabel>
+                          <Select value={formData.pagination_style} onValueChange={(v) => updateField("pagination_style", v ?? "")}>
+                            <SelectTrigger id="ds-pagination-style" className="mt-1">
                               <SelectValue />
                             </SelectTrigger>
                             <SelectContent>
@@ -416,8 +666,14 @@ export default function DataSources({ token }: { token: string }) {
                           </Select>
                         </div>
                         <div>
-                          <label className="text-sm font-medium">Max Records</label>
-                          <Input type="number" value={formData.max_records} onChange={(e) => setFormData({ ...formData, max_records: e.target.value })} placeholder="1000" />
+                          <FieldLabel htmlFor="ds-max-records">Max Records</FieldLabel>
+                          <Input
+                            id="ds-max-records"
+                            type="number"
+                            value={formData.max_records}
+                            onChange={(e) => updateField("max_records", e.target.value)}
+                            placeholder="1000"
+                          />
                         </div>
                       </div>
                     )}
@@ -426,32 +682,73 @@ export default function DataSources({ token }: { token: string }) {
                     {formData.sourceType === "odbc" && (
                       <div className="space-y-3">
                         <div>
-                          <label className="text-sm font-medium">Connection String <span className="text-destructive">*</span></label>
-                          <Input type="password" value={formData.connection_string} onChange={(e) => setFormData({ ...formData, connection_string: e.target.value })} placeholder="DSN=MyDSN;UID=user;PWD=..." />
-                          <p className="text-xs text-muted-foreground mt-1">Stored securely. Contains credentials — never logged or echoed.</p>
+                          <FieldLabel htmlFor="ds-conn-string" required>Connection String</FieldLabel>
+                          <Input
+                            id="ds-conn-string"
+                            type="password"
+                            value={formData.connection_string}
+                            onChange={(e) => updateField("connection_string", e.target.value)}
+                            placeholder="DSN=MyDSN;UID=user;PWD=..."
+                            aria-required="true"
+                            aria-invalid={fieldErrors.connection_string ? "true" : undefined}
+                            aria-describedby={describedBy("ds-conn-string-hint", !!fieldErrors.connection_string, "ds-conn-string-error")}
+                          />
+                          <p id="ds-conn-string-hint" className="text-xs text-muted-foreground mt-1">Stored securely. Contains credentials — never logged or echoed.</p>
+                          <FieldError id="ds-conn-string-error" message={fieldErrors.connection_string} />
                         </div>
                         <div>
-                          <label className="text-sm font-medium">Table Name <span className="text-destructive">*</span></label>
-                          <Input value={formData.table_name} onChange={(e) => setFormData({ ...formData, table_name: e.target.value })} placeholder="public_records" />
+                          <FieldLabel htmlFor="ds-table-name" required>Table Name</FieldLabel>
+                          <Input
+                            id="ds-table-name"
+                            value={formData.table_name}
+                            onChange={(e) => updateField("table_name", e.target.value)}
+                            placeholder="public_records"
+                            aria-required="true"
+                            aria-invalid={fieldErrors.table_name ? "true" : undefined}
+                            aria-describedby={describedBy(null, !!fieldErrors.table_name, "ds-table-name-error")}
+                          />
+                          <FieldError id="ds-table-name-error" message={fieldErrors.table_name} />
                         </div>
                         <div>
-                          <label className="text-sm font-medium">Primary Key Column <span className="text-destructive">*</span></label>
-                          <Input value={formData.pk_column} onChange={(e) => setFormData({ ...formData, pk_column: e.target.value })} placeholder="id" />
+                          <FieldLabel htmlFor="ds-pk-column" required>Primary Key Column</FieldLabel>
+                          <Input
+                            id="ds-pk-column"
+                            value={formData.pk_column}
+                            onChange={(e) => updateField("pk_column", e.target.value)}
+                            placeholder="id"
+                            aria-required="true"
+                            aria-invalid={fieldErrors.pk_column ? "true" : undefined}
+                            aria-describedby={describedBy(null, !!fieldErrors.pk_column, "ds-pk-column-error")}
+                          />
+                          <FieldError id="ds-pk-column-error" message={fieldErrors.pk_column} />
                         </div>
                         <div>
-                          <label className="text-sm font-medium">Modified Timestamp Column <span className="text-muted-foreground text-xs">(optional)</span></label>
-                          <Input value={formData.modified_column} onChange={(e) => setFormData({ ...formData, modified_column: e.target.value })} placeholder="updated_at" />
+                          <FieldLabel htmlFor="ds-modified-column">
+                            Modified Timestamp Column <span className="text-muted-foreground text-xs">(optional)</span>
+                          </FieldLabel>
+                          <Input
+                            id="ds-modified-column"
+                            value={formData.modified_column}
+                            onChange={(e) => updateField("modified_column", e.target.value)}
+                            placeholder="updated_at"
+                          />
                         </div>
                         <div>
-                          <label className="text-sm font-medium">Batch Size</label>
-                          <Input type="number" value={formData.batch_size} onChange={(e) => setFormData({ ...formData, batch_size: e.target.value })} placeholder="500" />
+                          <FieldLabel htmlFor="ds-batch-size">Batch Size</FieldLabel>
+                          <Input
+                            id="ds-batch-size"
+                            type="number"
+                            value={formData.batch_size}
+                            onChange={(e) => updateField("batch_size", e.target.value)}
+                            placeholder="500"
+                          />
                         </div>
                       </div>
                     )}
 
                     <div className="flex justify-between">
-                      <Button type="button" variant="outline" onClick={() => setWizardStep(1)}>Back</Button>
-                      <Button type="button" onClick={() => setWizardStep(3)}>Next</Button>
+                      <Button type="button" variant="outline" onClick={() => { setFieldErrors({}); setWizardStep(1); }}>Back</Button>
+                      <Button type="button" onClick={() => tryAdvance(3)}>Next</Button>
                     </div>
                   </>
                 )}
@@ -460,19 +757,21 @@ export default function DataSources({ token }: { token: string }) {
                 {wizardStep === 3 && (
                   <>
                     <div className="space-y-2 border rounded-md p-3">
-                      <label className="flex items-center gap-2 text-sm font-medium">
+                      <label htmlFor="ds-schedule-enabled" className="flex items-center gap-2 text-sm font-medium cursor-pointer">
                         <Checkbox
+                          id="ds-schedule-enabled"
                           checked={formData.schedule_enabled}
                           onCheckedChange={(checked) =>
-                            setFormData({ ...formData, schedule_enabled: Boolean(checked) })
+                            updateField("schedule_enabled", Boolean(checked))
                           }
                         />
                         Enable automatic sync
                       </label>
                       {formData.schedule_enabled && (
                         <div className="space-y-1">
-                          <label className="text-xs text-muted-foreground">Sync schedule (UTC)</label>
+                          <FieldLabel htmlFor="ds-schedule-preset">Sync schedule (UTC)</FieldLabel>
                           <select
+                            id="ds-schedule-preset"
                             className="w-full border rounded-md px-2 py-1.5 text-sm bg-background"
                             value={formData.schedule_preset}
                             onChange={(e) => {
@@ -482,6 +781,13 @@ export default function DataSources({ token }: { token: string }) {
                                 schedule_preset: e.target.value,
                                 sync_schedule: preset?.cron ?? formData.sync_schedule,
                               });
+                              if (fieldErrors.sync_schedule) {
+                                setFieldErrors((prev) => {
+                                  const next = { ...prev };
+                                  delete next.sync_schedule;
+                                  return next;
+                                });
+                              }
                             }}
                           >
                             {SCHEDULE_PRESETS.map((p) => (
@@ -489,16 +795,23 @@ export default function DataSources({ token }: { token: string }) {
                             ))}
                           </select>
                           {formData.schedule_preset === "Custom…" && (
-                            <Input
-                              value={formData.sync_schedule}
-                              onChange={(e) => setFormData({ ...formData, sync_schedule: e.target.value })}
-                              placeholder="0 2 * * * (5-field cron, UTC)"
-                            />
+                            <>
+                              <FieldLabel htmlFor="ds-sync-schedule">Custom cron expression</FieldLabel>
+                              <Input
+                                id="ds-sync-schedule"
+                                value={formData.sync_schedule}
+                                onChange={(e) => updateField("sync_schedule", e.target.value)}
+                                placeholder="0 2 * * * (5-field cron, UTC)"
+                                aria-invalid={fieldErrors.sync_schedule ? "true" : undefined}
+                                aria-describedby={describedBy(null, !!fieldErrors.sync_schedule, "ds-sync-schedule-error")}
+                              />
+                            </>
                           )}
+                          <FieldError id="ds-sync-schedule-error" message={fieldErrors.sync_schedule} />
                           <p className="text-xs text-muted-foreground font-mono">
                             {formData.sync_schedule}
                           </p>
-                          {formData.sync_schedule && (
+                          {formData.sync_schedule && !fieldErrors.sync_schedule && (
                             <p
                               data-testid="cron-preview"
                               className="text-xs text-muted-foreground"
@@ -544,15 +857,26 @@ export default function DataSources({ token }: { token: string }) {
                     {testResult && (
                       <Card className={`shadow-none ${testResult.success ? "border-success" : "border-destructive"}`}>
                         <CardContent className="p-3">
-                          <p className={`text-sm ${testResult.success ? "text-success" : "text-destructive"}`}>
+                          <p
+                            role="alert"
+                            className={`text-sm ${testResult.success ? "text-success" : "text-destructive"}`}
+                          >
                             {testResult.success ? "✓" : "✗"} {testResult.message}
                           </p>
                         </CardContent>
                       </Card>
                     )}
 
+                    {submitError && (
+                      <Card className="shadow-none border-destructive">
+                        <CardContent className="p-3">
+                          <p role="alert" className="text-sm text-destructive">{submitError}</p>
+                        </CardContent>
+                      </Card>
+                    )}
+
                     <div className="flex justify-between">
-                      <Button type="button" variant="outline" onClick={() => setWizardStep(2)}>Back</Button>
+                      <Button type="button" variant="outline" onClick={() => { setFieldErrors({}); setWizardStep(2); }}>Back</Button>
                       <Button type="button" onClick={handleSubmit} disabled={submitting}>
                         {submitting ? "Creating..." : "Create Source"}
                       </Button>
