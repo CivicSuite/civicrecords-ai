@@ -1361,11 +1361,17 @@ export interface paths {
         put?: never;
         /**
          * Get Next Question
-         * @description Generate the next onboarding interview question.
+         * @description Generate the next onboarding interview question and persist the last answer.
          *
-         *     Inspects the current city profile to determine which fields are still
-         *     empty, then generates a contextual question for the next incomplete field.
-         *     Does NOT update the profile — the frontend does that via PATCH /city-profile.
+         *     Persistence semantics (T5A):
+         *       - If ``last_answer`` + ``last_field`` are supplied AND ``last_field`` is
+         *         a real tracked CityProfile field: parse the answer (yes/no → bool for
+         *         ``has_dedicated_it``), upsert the singleton row, and transition
+         *         ``onboarding_status``.
+         *       - If parsing yields ``None`` (empty or unparseable): the interview
+         *         re-asks the same field rather than storing a bad value.
+         *       - Returns the next question for the first remaining empty field, along
+         *         with the computed ``onboarding_status``.
          */
         post: operations["get_next_question_onboarding_interview_post"];
         delete?: never;
@@ -1664,7 +1670,7 @@ export interface components {
             /** City Name */
             city_name: string;
             /** State */
-            state: string;
+            state?: string | null;
             /** County */
             county?: string | null;
             /** Population Band */
@@ -1700,7 +1706,7 @@ export interface components {
             /** City Name */
             city_name: string;
             /** State */
-            state: string;
+            state: string | null;
             /** County */
             county: string | null;
             /** Population Band */
@@ -2432,6 +2438,8 @@ export interface components {
             last_answer?: string | null;
             /** Last Field */
             last_field?: string | null;
+            /** Skipped Fields */
+            skipped_fields?: string[] | null;
         };
         /** InterviewResponse */
         InterviewResponse: {
@@ -2443,6 +2451,10 @@ export interface components {
             all_complete: boolean;
             /** Completed Fields */
             completed_fields: string[];
+            /** Onboarding Status */
+            onboarding_status: string;
+            /** Skipped Fields */
+            skipped_fields: string[];
         };
         /** MessageCreate */
         MessageCreate: {

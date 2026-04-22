@@ -5002,7 +5002,7 @@
           "onboarding"
         ],
         "summary": "Get Next Question",
-        "description": "Generate the next onboarding interview question.\n\nInspects the current city profile to determine which fields are still\nempty, then generates a contextual question for the next incomplete field.\nDoes NOT update the profile \u2014 the frontend does that via PATCH /city-profile.",
+        "description": "Generate the next onboarding interview question and persist the last answer.\n\nPersistence semantics (T5A):\n  - If ``last_answer`` + ``last_field`` are supplied AND ``last_field`` is\n    a real tracked CityProfile field: parse the answer (yes/no \u2192 bool for\n    ``has_dedicated_it``), upsert the singleton row, and transition\n    ``onboarding_status``.\n  - If parsing yields ``None`` (empty or unparseable): the interview\n    re-asks the same field rather than storing a bad value.\n  - Returns the next question for the first remaining empty field, along\n    with the computed ``onboarding_status``.",
         "operationId": "get_next_question_onboarding_interview_post",
         "requestBody": {
           "content": {
@@ -5852,7 +5852,14 @@
             "title": "City Name"
           },
           "state": {
-            "type": "string",
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
             "title": "State"
           },
           "county": {
@@ -5925,8 +5932,7 @@
         },
         "type": "object",
         "required": [
-          "city_name",
-          "state"
+          "city_name"
         ],
         "title": "CityProfileCreate"
       },
@@ -5942,7 +5948,14 @@
             "title": "City Name"
           },
           "state": {
-            "type": "string",
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
             "title": "State"
           },
           "county": {
@@ -7923,6 +7936,20 @@
               }
             ],
             "title": "Last Field"
+          },
+          "skipped_fields": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Skipped Fields"
           }
         },
         "type": "object",
@@ -7955,6 +7982,17 @@
             },
             "type": "array",
             "title": "Completed Fields"
+          },
+          "onboarding_status": {
+            "type": "string",
+            "title": "Onboarding Status"
+          },
+          "skipped_fields": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Skipped Fields"
           }
         },
         "type": "object",
@@ -7962,7 +8000,9 @@
           "question",
           "target_field",
           "all_complete",
-          "completed_fields"
+          "completed_fields",
+          "onboarding_status",
+          "skipped_fields"
         ],
         "title": "InterviewResponse"
       },
