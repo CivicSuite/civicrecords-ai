@@ -1,0 +1,140 @@
+# CivicRecords AI — release-on-tag workflow (T5E).
+#
+# UNSIGNED BY DESIGN. Scott locked T5E signing posture = α (unsigned)
+# on 2026-04-22. This workflow contains no code-signing steps and
+# references no signing-cert secrets. A future release can add signing
+# without changing the structure.
+#
+# Adapted from patentforgelocal/.github/workflows/release.yml (Inno Setup
+# + choco + bash build driver shape). CivicRecords-specific deltas:
+#   - No Go/Node/Python build steps (CivicRecords runs in Docker; the
+#     installer bundles source, not compiled binaries).
+#   - Windows-only for now; mac/Linux stay on the existing guided-script
+#     install path. Cross-platform parity is documented as follow-on.
+
+name: Release
+
+on:
+  push:
+    tags: ['v*']
+
+permissions:
+  contents: write
+
+jobs:
+  build-windows-installer:
+    name: Build Windows installer (unsigned)
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Inno Setup
+        run: choco install innosetup -y
+
+      - name: Resolve version from git tag
+        id: version
+        shell: bash
+        run: |
+          # Strip leading "v" so "v1.2.0" becomes "1.2.0". The build driver
+          # then passes this through to ISCC via /DMyAppVersion=<semver>.
+          TAG="${GITHUB_REF_NAME}"
+          VERSION="${TAG#v}"
+          if [ -z "$VERSION" ]; then
+            echo "ERROR: could not derive version from GITHUB_REF_NAME='$TAG'."
+            exit 1
+          fi
+          echo "tag=$TAG" >> "$GITHUB_OUTPUT"
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          echo "Resolved installer version: $VERSION (from tag $TAG)"
+
+      - name: Build Windows installer
+        shell: bash
+        env:
+          # Single source of truth for the installer version. The build
+          # driver prefers this env var over backend/pyproject.toml.
+          CIVICRECORDS_VERSION: ${{ steps.version.outputs.version }}
+        run: bash installer/windows/build-installer.sh
+
+      - name: Locate installer artifact
+        id: locate
+        shell: bash
+        env:
+          CIVICRECORDS_VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          # Expected artifact name derives from the same resolved version
+          # the build driver used. If this file is missing, the build
+          # driver did not produce what the .iss OutputBaseFilename claims,
+          # and that is the defect — not a workflow config issue.
+          ART="build/CivicRecordsAI-${CIVICRECORDS_VERSION}-Setup.exe"
+          if [ ! -f "$ART" ]; then
+            echo "ERROR: expected installer artifact not found: $ART"
+            echo "Contents of build/:"
+            ls -la build/ || true
+            exit 1
+          fi
+          echo "artifact=$ART" >> "$GITHUB_OUTPUT"
+          SIZE=$(du -h "$ART" | cut -f1)
+          echo "size=$SIZE" >> "$GITHUB_OUTPUT"
+          SHA256=$(sha256sum "$ART" | awk '{print $1}')
+          echo "sha256=$SHA256" >> "$GITHUB_OUTPUT"
+          echo ""
+          echo "Built unsigned installer:"
+          echo "  path:    $ART"
+          echo "  size:    $SIZE"
+          echo "  sha256:  $SHA256"
+
+      - name: Write checksum file
+        shell: bash
+        run: |
+          ART="${{ steps.locate.outputs.artifact }}"
+          SHA="${{ steps.locate.outputs.sha256 }}"
+          BASENAME=$(basename "$ART")
+          echo "$SHA  $BASENAME" > "build/${BASENAME}.sha256"
+          cat "build/${BASENAME}.sha256"
+
+      - name: Upload installer artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: windows-installer
+          path: |
+            build/CivicRecordsAI-*-Setup.exe
+            build/CivicRecordsAI-*-Setup.exe.sha256
+
+  create-release:
+    name: Create GitHub Release
+    needs: [build-windows-installer]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/download-artifact@v4
+        with:
+          path: artifacts/
+
+      - name: Create draft release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "${{ github.ref_name }}" \
+            --draft \
+            --generate-notes \
+            --title "CivicRecords AI ${{ github.ref_name }}" \
+            --notes-file .github/release-notes-preamble.md || \
+          gh release create "${{ github.ref_name }}" \
+            --draft \
+            --generate-notes \
+            --title "CivicRecords AI ${{ github.ref_name }}"
+
+      - name: Upload Windows installer + checksum
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release upload "${{ github.ref_name }}" \
+            artifacts/windows-installer/CivicRecordsAI-*-Setup.exe \
+            artifacts/windows-installer/CivicRecordsAI-*-Setup.exe.sha256 \
+            --clobber
+
+      - name: Publish release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release edit "${{ github.ref_name }}" --draft=false

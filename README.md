@@ -37,7 +37,18 @@ No open-source tool exists for the **responder side** of open records at the mun
 
 ### Install
 
-> **Current install path — script-based.** The scripts below configure and start the Docker Compose stack. They do not install Docker, WSL, or any other system prerequisites — those must already be present. A full-spectrum guided installer (with prerequisite detection, Docker/WSL setup, hardware compatibility checks, and Gemma 4 viability verification) is a planned deliverable tracked as [T5E in the remediation roadmap](docs/REMEDIATION-PLAN-2026-04-19.md).
+> **Install paths.** Two options ship today:
+>
+> 1. **Windows double-click installer (T5E, UNSIGNED).** A signed build is a future release — this one is not. The unsigned installer is published on every release tag at `releases/download/<tag>/CivicRecordsAI-<version>-Setup.exe` along with a SHA-256 checksum for independent verification. On first run Windows SmartScreen shows **"Windows protected your PC — Unknown publisher."** This is expected. Click **More info → Run anyway** to proceed. See [installer/windows/README.md](installer/windows/README.md) for the full SmartScreen walkthrough and checksum-verify steps. The installer bundles the repo snapshot, runs a prereq check (Docker Desktop, WSL 2 + Virtual Machine Platform, 32 GB RAM floor, optional host Ollama), then runs `install.ps1` (via `installer\windows\launch-install.ps1`). `install.ps1` **auto-pulls `nomic-embed-text` and auto-pulls the Gemma 4 tag you select in the picker** (default `gemma4:e4b`) — expect several minutes on first run — and seeds the T5B baseline datasets.
+>
+> 2. **Script-based install (Linux / macOS, and Windows if you prefer CLI).** The scripts below configure and start the Docker Compose stack. They do **not** install Docker, WSL, or any other system prerequisites — those must already be present. `install.ps1` / `install.sh` both ship the 4-model Gemma 4 picker, auto-pull the selected LLM plus `nomic-embed-text`, and auto-seed the baseline datasets on first boot.
+>
+> **Two shortcuts, two flows.** The Windows installer creates **separate** Start Menu entries for the two operations — don't confuse them:
+>
+> - **Start CivicRecords AI** → daily start. Runs `docker compose up -d` and opens `http://localhost:8080/`. Does **not** run the prereq check, does **not** invoke `install.ps1`, does **not** pull any model, does **not** re-seed data. The Desktop shortcut (if you opted in) mirrors this daily-start behavior.
+> - **Install or Repair CivicRecords AI** → full bootstrap/repair. Runs the prereq check, then `install.ps1` (which may show the picker and pull models). Use this for first-run setup (the installer fires it automatically for you the first time), when you want to switch LLMs, or to repair a broken stack.
+>
+> **Docker Desktop and WSL 2** must be installed and running before either path; the installer detects their absence and prints concrete remediation, but does not install them for you.
 
 **Windows:**
 ```powershell
@@ -175,7 +186,7 @@ Service accounts with hashed API keys enable instance-to-instance federation acc
 **New in v1.1.0:**
 - Department-level access controls — staff scoped to own department, admins see all
 - Department CRUD API with audit logging
-- 50-state + DC exemption rule coverage (180 rules across 51 jurisdictions)
+- 50-state + DC exemption rule coverage (175 jurisdiction-scoped rules across 51 jurisdictions, plus 5 universal PII rules available in the seed source — 180 total)
 - 5 compliance template documents (AI Use Disclosure, Response Letter Disclosure, CAIA Impact Assessment, AI Governance Policy, Data Residency Attestation)
 - Template render endpoint with city profile variable substitution
 - Exemption auditability dashboard with acceptance/rejection rates and CSV/JSON export (time-period filtering not yet implemented)
