@@ -330,6 +330,7 @@ All configuration lives in `.env` in the repo root. Never commit this file.
 | `SMTP_PASSWORD` | No | — | SMTP auth password |
 | `AUDIT_RETENTION_DAYS` | No | `1095` | Audit log retention (3 years default) |
 | `PORTAL_MODE` | No | `private` | `private` (staff-only, default) or `public` (adds the minimal resident surface described in B.3.1) |
+| `ENCRYPTION_KEY` | Yes | — | Fernet key used to encrypt `data_sources.connection_config` at rest. Installer auto-generates on fresh installs; **back it up separately from the database** (see B.3.2) |
 
 ---
 
@@ -403,6 +404,53 @@ If the site does not come up the way you expect, the most common cause is a typo
 - **`.env`** — A plain-text configuration file in the CivicRecords AI install folder that holds settings like database passwords, mail server settings, and now `PORTAL_MODE`. Never share this file with anyone outside your IT team.
 - **Docker stack** — The collection of running services (database, API, frontend, etc.) that make up CivicRecords AI.
 - **Resident account** — A user account with the "public" role. Can submit requests but cannot view other people's requests or use any staff tools.
+
+---
+
+## B.3.2 Encryption Key for Connector Credentials (ENG-001 / Tier 6)
+
+CivicRecords AI encrypts the credentials you enter for each connected data source — API keys, bearer tokens, OAuth2 client secrets, Basic-auth passwords, and database connection strings — before writing them to PostgreSQL. The encryption is driven by a single environment variable, `ENCRYPTION_KEY`.
+
+### What the key protects
+
+Without the key, connector credentials would sit in the `data_sources.connection_config` column as plaintext JSON — visible to any PostgreSQL superuser, to `pg_dump` output, and to anyone with a restored backup file. With the key, the column stores a Fernet envelope (`{"v": 1, "ct": "..."}`) that is opaque without the key. A stolen backup by itself is not enough to read the credentials; an attacker would need both the backup **and** the key.
+
+This protects: API keys, OAuth2 client secrets, Basic-auth passwords, database connection strings, and any other sensitive field an admin typed into the Add Source wizard. It does **not** protect the raw ingested documents, search indexes, or request content — those are separate surfaces.
+
+### Back up the key separately from the database — this is critical
+
+**Losing `ENCRYPTION_KEY` means losing every saved connector configuration.** There is no recovery path. If the key is lost, every row in `data_sources.connection_config` becomes unreadable ciphertext and every connector must be re-entered by hand.
+
+Do not store the key in the same place as the database backup. If your database backup tape or cloud bucket also contains the `.env` file with the key, the two protections collapse into one and a single breach leaks both. Put the key somewhere physically or organizationally separate — a password manager under IT lock, a sealed envelope in a safe, a separate credential vault — and document who knows where it is.
+
+### Generating a key manually
+
+The installer generates a key automatically on a fresh install and writes it to `.env` with a loud red "BACK THIS UP SEPARATELY" banner. If you need to generate one by hand — for example, setting up `.env` in a new environment or filling in an `.env.example` placeholder — run:
+
+```bash
+python -c "from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())"
+```
+
+Copy the output into `.env` as `ENCRYPTION_KEY=...`. The value must be a real URL-safe-base64 Fernet key; the system rejects common insecure defaults and obviously-malformed keys at startup rather than starting in a broken state.
+
+### Verifying encryption after install or upgrade
+
+Once the stack is running and the Tier 6 migration has applied, confirm every existing row is encrypted:
+
+```bash
+docker compose run --rm --no-deps api python scripts/verify_at_rest.py
+```
+
+Exit code `0` means every `data_sources.connection_config` row is envelope-shaped (encrypted). Exit code `1` means at least one row is still plaintext — stop and investigate before continuing. The admin UI behavior is unchanged in both cases: connector configs decrypt transparently on read, so a working admin GET does **not** by itself prove the column is encrypted.
+
+### Key rotation is not supported in this release
+
+This release supports a single active key. There is no procedure for rotating `ENCRYPTION_KEY` without manually re-encrypting every row. The envelope format carries a `"v": 1` version tag so a future release can add rotation, but for now: pick a key at install time, back it up, and keep using it. If you believe the key has been compromised, contact the project maintainers — rotation tooling is tracked as a follow-on slice.
+
+### What if I change or lose the key?
+
+- **Changed to a new key:** existing rows become unreadable. The admin UI will return errors when opening a saved source. Restore the original key from backup to recover.
+- **Lost entirely (no backup):** the saved configurations cannot be recovered. Delete the affected rows and re-enter each connector from the admin UI. This is irreversible — which is why the backup instruction above is emphasized.
 
 ---
 

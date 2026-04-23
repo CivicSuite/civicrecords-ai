@@ -1,16 +1,52 @@
 import enum
 import uuid
 from datetime import datetime
+from typing import Any
 
 from pgvector.sqlalchemy import Vector
 from sqlalchemy import (
     Boolean, DateTime, Enum, Float, ForeignKey, Index, Integer,
-    String, Text, func,
+    String, Text, TypeDecorator, func,
 )
 from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.models.user import Base
+from app.security.at_rest import decrypt_json, encrypt_json, is_encrypted
+
+
+class EncryptedJSONB(TypeDecorator):
+    """T6 / ENG-001 — transparent at-rest encryption for a JSONB dict column.
+
+    Writes go through :func:`app.security.at_rest.encrypt_json` and are
+    stored as the versioned envelope ``{"v": 1, "ct": "..."}`` in the
+    underlying JSONB cell. Reads go through ``decrypt_json`` and caller
+    code sees the original plain dict. No connector, router, or ingestion
+    caller needs to know encryption exists.
+
+    The column is still JSONB in Postgres — no schema migration beyond a
+    one-shot data re-encryption. Anything that already looks encrypted
+    (shape ``{"v": int, "ct": str}``) is passed through on write without
+    re-encryption so the migration and its downgrade can round-trip
+    without double-wrapping.
+    """
+
+    impl = JSONB
+    cache_ok = True
+
+    def process_bind_param(self, value: Any, dialect: Any) -> Any:
+        if value is None:
+            return None
+        # Idempotent write: already encrypted payloads (e.g. coming from
+        # the Alembic migration) pass through unmodified.
+        if is_encrypted(value):
+            return value
+        return encrypt_json(value)
+
+    def process_result_value(self, value: Any, dialect: Any) -> Any:
+        if value is None:
+            return None
+        return decrypt_json(value)
 
 
 
@@ -34,7 +70,12 @@ class DataSource(Base):
     id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     name: Mapped[str] = mapped_column(String(255), unique=True)
     source_type: Mapped[SourceType] = mapped_column(Enum(SourceType, name="source_type", create_type=False, values_callable=lambda e: [m.value for m in e]))
-    connection_config: Mapped[dict] = mapped_column(JSONB, default=dict)
+    # T6 / ENG-001 — at-rest encrypted via EncryptedJSONB TypeDecorator.
+    # Storage shape in Postgres is JSONB (unchanged from 002_documents),
+    # but the cell contents are the versioned envelope
+    # ``{"v": 1, "ct": "<fernet-token>"}``. Caller code still sees a
+    # plain dict thanks to process_result_value / process_bind_param.
+    connection_config: Mapped[dict] = mapped_column(EncryptedJSONB, default=dict)
     is_active: Mapped[bool] = mapped_column(Boolean, default=True)
     created_by: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("users.id"))
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())

@@ -3,24 +3,36 @@
 import uuid
 from unittest.mock import AsyncMock, MagicMock, patch
 import pytest
+from sqlalchemy import text
+
+from app.models.document import DataSource, SourceType
+from tests.conftest import build_data_source
+
+
+async def _seed_source(session, source_id, name):
+    user_id = (await session.execute(text("SELECT id FROM users LIMIT 1"))).scalar_one()
+    await build_data_source(
+        session,
+        id=source_id,
+        name=name,
+        source_type=SourceType.REST_API,
+        connection_config={},
+        is_active=True,
+        sync_schedule="0 2 * * *",
+        schedule_enabled=True,
+        sync_paused=False,
+        consecutive_failure_count=0,
+        created_by=user_id,
+    )
 
 
 @pytest.mark.asyncio
 async def test_retrying_rows_processed_before_discover(db_session):
     """retrying rows in sync_failures are processed before discover() on same tick."""
     from app.models.sync_failure import SyncFailure
-    from sqlalchemy import text
 
     source_id = uuid.uuid4()
-    await db_session.execute(text("""
-        INSERT INTO data_sources
-          (id, name, source_type, connection_config, is_active,
-           sync_schedule, schedule_enabled, sync_paused,
-           consecutive_failure_count, created_by)
-        VALUES (:id, 'ordering-test', 'rest_api', '{}', true,
-                '0 2 * * *', true, false, 0,
-                (SELECT id FROM users LIMIT 1))
-    """), {"id": str(source_id)})
+    await _seed_source(db_session, source_id, "ordering-test")
 
     failure = SyncFailure(
         source_id=source_id,
@@ -72,18 +84,10 @@ async def test_retrying_rows_processed_before_discover(db_session):
 async def test_retrying_row_resolved_on_success(db_session):
     """A retrying row that fetches successfully → status=resolved, resolved_at set."""
     from app.models.sync_failure import SyncFailure
-    from sqlalchemy import select, text
+    from sqlalchemy import select
 
     source_id = uuid.uuid4()
-    await db_session.execute(text("""
-        INSERT INTO data_sources
-          (id, name, source_type, connection_config, is_active,
-           sync_schedule, schedule_enabled, sync_paused,
-           consecutive_failure_count, created_by)
-        VALUES (:id, 'resolve-test', 'rest_api', '{}', true,
-                '0 2 * * *', true, false, 0,
-                (SELECT id FROM users LIMIT 1))
-    """), {"id": str(source_id)})
+    await _seed_source(db_session, source_id, "resolve-test")
 
     failure = SyncFailure(
         source_id=source_id,
@@ -132,18 +136,9 @@ async def test_retrying_row_resolved_on_success(db_session):
 async def test_retrying_row_increments_retry_count_on_failure(db_session):
     """A retrying row that fails again → retry_count incremented, status remains retrying."""
     from app.models.sync_failure import SyncFailure
-    from sqlalchemy import text
 
     source_id = uuid.uuid4()
-    await db_session.execute(text("""
-        INSERT INTO data_sources
-          (id, name, source_type, connection_config, is_active,
-           sync_schedule, schedule_enabled, sync_paused,
-           consecutive_failure_count, created_by)
-        VALUES (:id, 'retry-count-test', 'rest_api', '{}', true,
-                '0 2 * * *', true, false, 0,
-                (SELECT id FROM users LIMIT 1))
-    """), {"id": str(source_id)})
+    await _seed_source(db_session, source_id, "retry-count-test")
 
     failure = SyncFailure(
         source_id=source_id,

@@ -5,6 +5,9 @@ import uuid
 import pytest
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.models.document import DataSource, SourceType
+from tests.conftest import build_data_source
+
 
 # ---------------------------------------------------------------------------
 # Helpers
@@ -131,10 +134,15 @@ async def _seed_data_source(session, source_id: uuid.UUID, source_type: str = "r
         VALUES ('00000000-0000-0000-0000-000000000001', 'seed@test.local', 'x', 'Seed', 'admin', true, true, true)
         ON CONFLICT (id) DO NOTHING
     """))
-    await session.execute(text("""
-        INSERT INTO data_sources (id, name, source_type, connection_config, is_active, created_by)
-        VALUES (:id, :name, :source_type, '{}', true, '00000000-0000-0000-0000-000000000001')
-    """), {"id": str(source_id), "name": f"test-{source_id}", "source_type": source_type})
+    await build_data_source(
+        session,
+        id=source_id,
+        name=f"test-{source_id}",
+        source_type=SourceType(source_type),
+        connection_config={},
+        is_active=True,
+        created_by=uuid.UUID("00000000-0000-0000-0000-000000000001"),
+    )
     await session.flush()
 
 
@@ -281,10 +289,15 @@ class TestConcurrency:
             VALUES ('00000000-0000-0000-0000-000000000001', 'seed@test.local', 'x', 'Seed', 'admin', true, true, true)
             ON CONFLICT (id) DO NOTHING
         """))
-        await db_session.execute(text("""
-            INSERT INTO data_sources (id, name, source_type, connection_config, is_active, created_by)
-            VALUES (:id, 'concurrent-struct', 'rest_api', '{}', true, '00000000-0000-0000-0000-000000000001')
-        """), {"id": str(source_id)})
+        await build_data_source(
+            db_session,
+            id=source_id,
+            name="concurrent-struct",
+            source_type=SourceType.REST_API,
+            connection_config={},
+            is_active=True,
+            created_by=uuid.UUID("00000000-0000-0000-0000-000000000001"),
+        )
         await db_session.commit()
 
         path = "https://api.example.com/concurrent/1"
@@ -329,10 +342,15 @@ class TestConcurrency:
             VALUES ('00000000-0000-0000-0000-000000000001', 'seed@test.local', 'x', 'Seed', 'admin', true, true, true)
             ON CONFLICT (id) DO NOTHING
         """))
-        await db_session.execute(text("""
-            INSERT INTO data_sources (id, name, source_type, connection_config, is_active, created_by)
-            VALUES (:id, 'concurrent-binary', 'file_system', '{}', true, '00000000-0000-0000-0000-000000000001')
-        """), {"id": str(source_id)})
+        await build_data_source(
+            db_session,
+            id=source_id,
+            name="concurrent-binary",
+            source_type=SourceType.FILE_SYSTEM,
+            connection_config={},
+            is_active=True,
+            created_by=uuid.UUID("00000000-0000-0000-0000-000000000001"),
+        )
         await db_session.commit()
 
         with tempfile.NamedTemporaryFile(delete=False, suffix=".txt") as f:
@@ -373,10 +391,15 @@ class TestConcurrency:
             VALUES ('00000000-0000-0000-0000-000000000001', 'seed@test.local', 'x', 'Seed', 'admin', true, true, true)
             ON CONFLICT (id) DO NOTHING
         """))
-        await db_session.execute(text("""
-            INSERT INTO data_sources (id, name, source_type, connection_config, is_active, created_by)
-            VALUES (:id, 'concurrent-update', 'rest_api', '{}', true, '00000000-0000-0000-0000-000000000001')
-        """), {"id": str(source_id)})
+        await build_data_source(
+            db_session,
+            id=source_id,
+            name="concurrent-update",
+            source_type=SourceType.REST_API,
+            connection_config={},
+            is_active=True,
+            created_by=uuid.UUID("00000000-0000-0000-0000-000000000001"),
+        )
         await db_session.commit()
 
         path = "https://api.example.com/concurrent/update"

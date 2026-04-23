@@ -54,6 +54,18 @@ _VALID_PASSWORD = "S3cure!FreshAdminPwd-2026"
 _PLACEHOLDER_PASSWORD = "CHANGE-ME-on-first-login"  # exact .env.example value
 _BOOTSTRAP_SNIPPET = "from app.config import Settings; Settings()"
 
+# T6 / ENG-001 — these tests verify the FIRST_ADMIN_PASSWORD validator.
+# Starting with Tier 6, Settings.check_encryption_key runs earlier in the
+# validator chain and will raise "ENCRYPTION_KEY is set to an insecure
+# default" before the password check if ENCRYPTION_KEY isn't a real Fernet
+# key — masking the failure mode these tests are trying to exercise.
+# Generate a real Fernet key once per test module so every _minimal_env()
+# call gets a valid key by default; tests that specifically want to
+# verify the encryption-key validator can override it.
+from cryptography.fernet import Fernet as _Fernet
+
+_VALID_ENCRYPTION_KEY = _Fernet.generate_key().decode()
+
 
 def _minimal_env(**overrides: str) -> dict[str, str]:
     """Build a minimal env for the bootstrap subprocess.
@@ -71,6 +83,12 @@ def _minimal_env(**overrides: str) -> dict[str, str]:
     env["PYTHONPATH"] = (
         _PROJECT_ROOT + os.pathsep + inherited_pp if inherited_pp else _PROJECT_ROOT
     )
+    # T6 / ENG-001 — default ENCRYPTION_KEY to a real Fernet key so the
+    # check_encryption_key validator passes and these tests exercise the
+    # FIRST_ADMIN_PASSWORD validator path they were written for. Callers
+    # that specifically want to test encryption-key validator behavior can
+    # override by passing ENCRYPTION_KEY=... in the kwargs.
+    env["ENCRYPTION_KEY"] = _VALID_ENCRYPTION_KEY
     env.update(overrides)
     return env
 

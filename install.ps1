@@ -46,10 +46,20 @@ if (-not (Test-Path ".env")) {
     # Settings.check_first_admin_password rejects the .env.example value at startup.
     # Use hex so the value contains no shell or .env-parser metacharacters.
     $adminPassword = -join ((1..32) | ForEach-Object { '{0:x}' -f (Get-Random -Max 16) })
+    # T6 / ENG-001: generate an at-rest encryption key for the
+    # data_sources.connection_config column. Fernet expects 44 chars of
+    # URL-safe base64 encoding 32 random bytes. Use the .NET CSPRNG +
+    # Convert.ToBase64String + URL-safe character substitution.
+    $rng = [System.Security.Cryptography.RandomNumberGenerator]::Create()
+    $keyBytes = New-Object byte[] 32
+    $rng.GetBytes($keyBytes)
+    $rng.Dispose()
+    $encryptionKey = ([Convert]::ToBase64String($keyBytes)) -replace '\+','-' -replace '/','_'
     # Use String.Replace (literal) instead of -replace (regex) to avoid metachar issues.
     $envContent = (Get-Content ".env" -Raw)
     $envContent = $envContent.Replace("CHANGE-ME-generate-with-openssl-rand-hex-32", $jwtSecret)
     $envContent = $envContent.Replace("CHANGE-ME-on-first-login", $adminPassword)
+    $envContent = $envContent.Replace("CHANGE-ME-generate-with-fernet-generate-key", $encryptionKey)
     Set-Content ".env" -Value $envContent -NoNewline
     Write-Host ""
     Write-Host "============================================" -ForegroundColor Yellow
@@ -60,6 +70,19 @@ if (-not (Test-Path ".env")) {
     Write-Host "============================================" -ForegroundColor Yellow
     Write-Host "  This password is stored in .env. Store it in your password manager."
     Write-Host "  Press Enter when you have copied it."
+    Write-Host ""
+    Write-Host "============================================" -ForegroundColor Red
+    Write-Host "  AT-REST ENCRYPTION KEY GENERATED (T6 / ENG-001)" -ForegroundColor Red
+    Write-Host "============================================" -ForegroundColor Red
+    Write-Host "  Key:      $encryptionKey" -ForegroundColor Cyan
+    Write-Host "============================================" -ForegroundColor Red
+    Write-Host "  This key encrypts data_sources.connection_config at rest."
+    Write-Host ""
+    Write-Host "  *** BACK THIS UP SEPARATELY FROM YOUR DATABASE. ***" -ForegroundColor Yellow
+    Write-Host "  Losing this key means every saved data-source"
+    Write-Host "  connection configuration becomes unreadable. Store it"
+    Write-Host "  alongside your JWT_SECRET in a password manager or"
+    Write-Host "  secrets vault — NOT in the same location as DB backups."
     Write-Host ""
     Read-Host "Press Enter to continue, or Ctrl+C to edit .env first"
 

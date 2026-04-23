@@ -194,14 +194,18 @@ jobs:
 
       - name: Synthesize a placeholder-password .env (the failure-mode env)
         # Set FIRST_ADMIN_PASSWORD to the exact .env.example value. JWT_SECRET
-        # gets a real value so we are isolating the password validator failure.
+        # and ENCRYPTION_KEY get real values so we are isolating the password
+        # validator failure — without a valid ENCRYPTION_KEY the T6 startup
+        # check would fire first and this job would fail for the wrong reason.
         # TESTING is intentionally NOT set; we want the validator to fire.
         run: |
           JWT_SECRET="$(openssl rand -hex 32)"
+          ENCRYPTION_KEY="$(python3 -c 'import base64, os; print(base64.urlsafe_b64encode(os.urandom(32)).decode())')"
           umask 077
           cat > .env <<EOF
           DATABASE_URL=postgresql+asyncpg://civicrecords:civicrecords@postgres:5432/civicrecords
           JWT_SECRET=${JWT_SECRET}
+          ENCRYPTION_KEY=${ENCRYPTION_KEY}
           FIRST_ADMIN_EMAIL=admin@ci.local
           FIRST_ADMIN_PASSWORD=CHANGE-ME-on-first-login
           OLLAMA_BASE_URL=http://ollama:11434

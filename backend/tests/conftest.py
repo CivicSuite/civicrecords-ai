@@ -14,6 +14,18 @@ import os
 os.environ.setdefault("JWT_SECRET", "a" * 64)
 os.environ["TESTING"] = "1"
 
+# T6 / ENG-001 — provide a valid Fernet key for at-rest encryption tests.
+# Generated once per pytest process. The testing=True short-circuit in
+# Settings.check_encryption_key means this env var isn't strictly required
+# to pass startup validation, but `app.security.at_rest._get_fernet()`
+# will still try to build a real Fernet instance on first encrypt/decrypt,
+# and that call fails with a cryptic binascii error if the key is empty
+# or malformed. Setting a real Fernet-generated key here makes every test
+# that touches EncryptedJSONB work out of the box.
+if not os.environ.get("ENCRYPTION_KEY"):
+    from cryptography.fernet import Fernet as _Fernet
+    os.environ["ENCRYPTION_KEY"] = _Fernet.generate_key().decode()
+
 
 
 import app.database
@@ -182,6 +194,26 @@ async def _create_test_user(email: str, password: str, full_name: str, role: Use
             is_superuser=(role == UserRole.ADMIN),
         )
         await manager.create(user_create)
+
+
+async def build_data_source(session, **kwargs):
+    """T6 / ENG-001 — thin ORM-based helper for creating a DataSource in tests.
+
+    Replaces raw ``INSERT INTO data_sources ...`` SQL across the test
+    suite so writes go through the ``EncryptedJSONB`` TypeDecorator and
+    ``connection_config`` is encrypted at rest.
+
+    Deliberately minimal: no factory framework, no default-value magic.
+    Callers pass the exact field values they want; SQLAlchemy column
+    defaults (``id=uuid.uuid4()``, ``is_active=True``, ``created_at=now()``,
+    etc.) fill the rest. Works with any AsyncSession the caller provides.
+    """
+    from app.models.document import DataSource
+
+    ds = DataSource(**kwargs)
+    session.add(ds)
+    await session.flush()
+    return ds
 
 
 @pytest.fixture

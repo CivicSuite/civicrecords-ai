@@ -2,6 +2,27 @@
 """P7 D10 (429 Retry-After) and D13b (pipeline failure classification) tests."""
 import pytest
 from unittest.mock import AsyncMock, MagicMock, patch
+from sqlalchemy import text
+
+from app.models.document import DataSource, SourceType
+from tests.conftest import build_data_source
+
+
+async def _seed_source(session, source_id, name):
+    user_id = (await session.execute(text("SELECT id FROM users LIMIT 1"))).scalar_one()
+    await build_data_source(
+        session,
+        id=source_id,
+        name=name,
+        source_type=SourceType.REST_API,
+        connection_config={},
+        is_active=True,
+        sync_schedule=None,
+        schedule_enabled=True,
+        sync_paused=False,
+        consecutive_failure_count=0,
+        created_by=user_id,
+    )
 
 
 def test_429_retry_after_header_honored():
@@ -46,21 +67,12 @@ async def test_integrity_error_skips_task_retry(db_session):
     """ingest_structured_record raises IntegrityError → immediately permanently_failed,
     no task-level retry. Per D13b."""
     import uuid
-    from sqlalchemy import text
     from sqlalchemy.exc import IntegrityError
     from app.models.sync_failure import SyncFailure
     from sqlalchemy import select
 
     source_id = uuid.uuid4()
-    await db_session.execute(text("""
-        INSERT INTO data_sources
-          (id, name, source_type, connection_config, is_active,
-           sync_schedule, schedule_enabled, sync_paused,
-           consecutive_failure_count, created_by)
-        VALUES (:id, 'integrity-test', 'rest_api', '{}', true,
-                NULL, true, false, 0,
-                (SELECT id FROM users LIMIT 1))
-    """), {"id": str(source_id)})
+    await _seed_source(db_session, source_id, "integrity-test")
     await db_session.commit()
 
     from app.connectors.base import DiscoveredRecord, FetchedDocument
@@ -109,20 +121,11 @@ async def test_integrity_error_skips_task_retry(db_session):
 async def test_ioerror_triggers_task_retry(db_session):
     """ingest_structured_record raises IOError → sync_failures row has status=retrying. Per D13b."""
     import uuid
-    from sqlalchemy import text
     from app.models.sync_failure import SyncFailure
     from sqlalchemy import select
 
     source_id = uuid.uuid4()
-    await db_session.execute(text("""
-        INSERT INTO data_sources
-          (id, name, source_type, connection_config, is_active,
-           sync_schedule, schedule_enabled, sync_paused,
-           consecutive_failure_count, created_by)
-        VALUES (:id, 'ioerror-test', 'rest_api', '{}', true,
-                NULL, true, false, 0,
-                (SELECT id FROM users LIMIT 1))
-    """), {"id": str(source_id)})
+    await _seed_source(db_session, source_id, "ioerror-test")
     await db_session.commit()
 
     from app.connectors.base import DiscoveredRecord, FetchedDocument

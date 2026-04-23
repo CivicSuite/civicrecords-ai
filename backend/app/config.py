@@ -7,6 +7,17 @@ APP_VERSION = "1.1.0"
 
 _INSECURE_SECRETS = {"CHANGE-ME", "CHANGE-ME-generate-with-openssl-rand-hex-32", ""}
 
+# T6 / ENG-001 — at-rest encryption placeholder for ENCRYPTION_KEY.
+# Any value in this set triggers the fail-fast startup check. The actual
+# entropy requirement (44-char URL-safe base64) is enforced by Fernet
+# itself when the Settings validator tries to build a Fernet instance —
+# that catches truncated, padded, or otherwise malformed keys.
+_INSECURE_ENCRYPTION_KEYS = {
+    "",
+    "CHANGE-ME",
+    "CHANGE-ME-generate-with-fernet-generate-key",
+}
+
 _INSECURE_PASSWORDS = frozenset({
     "CHANGE-ME",
     "CHANGE-ME-on-first-login",
@@ -72,6 +83,15 @@ class Settings(BaseSettings):
     # Any other value raises at startup via the Literal + field_validator.
     portal_mode: Literal["public", "private"] = "private"
 
+    # T6 / ENG-001 — at-rest encryption key for `data_sources.connection_config`.
+    # Fernet-compatible: 44-char URL-safe base64 encoding a 32-byte key.
+    # Generate with: python -c "from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())"
+    # Validated at startup by `check_encryption_key` (below); insecure
+    # defaults trigger a fail-fast error with remediation. In `testing=True`
+    # mode the validator short-circuits and tests use a fixed deterministic
+    # key set in `backend/tests/conftest.py`.
+    encryption_key: str = "CHANGE-ME-generate-with-fernet-generate-key"
+
     testing: bool = False
 
     model_config = {"env_file": ".env", "extra": "ignore"}
@@ -110,6 +130,43 @@ class Settings(BaseSettings):
         if isinstance(v, str):
             return v.strip().lower()
         return v
+
+    @model_validator(mode="after")
+    def check_encryption_key(self):
+        """T6 / ENG-001 — validate the at-rest encryption key at startup.
+
+        Rejects insecure defaults with an actionable error. Then attempts
+        to build a real ``cryptography.fernet.Fernet`` instance — that call
+        catches truncated, padded, or otherwise malformed keys (Fernet
+        expects exactly 44 URL-safe base64 characters encoding 32 bytes).
+        Short-circuits in ``testing=True`` mode; tests set a fixed key in
+        ``backend/tests/conftest.py`` before Settings is imported.
+        """
+        if self.testing:
+            return self
+        key = self.encryption_key or ""
+        if key in _INSECURE_ENCRYPTION_KEYS:
+            raise ValueError(
+                "ENCRYPTION_KEY is set to an insecure default. "
+                "Generate a proper key:\n"
+                "  python -c \"from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())\"\n"
+                "Back the key up SEPARATELY from the database — losing it "
+                "means every saved data-source `connection_config` becomes unreadable."
+            )
+        try:
+            # Deferred import so Settings can be imported without the
+            # cryptography package being resolvable (e.g. in lint paths).
+            from cryptography.fernet import Fernet
+
+            Fernet(key.encode("ascii"))
+        except Exception as exc:  # ValueError, UnicodeEncodeError, binascii.Error
+            raise ValueError(
+                f"ENCRYPTION_KEY is not a valid Fernet key: {exc}. "
+                "It must be 44 URL-safe base64 characters encoding a 32-byte key. "
+                "Regenerate with: "
+                "python -c \"from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())\""
+            ) from exc
+        return self
 
     @model_validator(mode="after")
     def check_first_admin_password(self):

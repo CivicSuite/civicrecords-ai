@@ -2,6 +2,9 @@
 import pytest
 from sqlalchemy import text
 
+from app.models.document import DataSource, SourceType
+from tests.conftest import build_data_source
+
 
 _ALLOWLIST = {
     5:    "*/5 * * * *",
@@ -44,12 +47,16 @@ async def test_schedule_minutes_non_allowlist_nulled_integration(db_session):
     await db_session.commit()
 
     source_id = uuid.uuid4()
-    await db_session.execute(text("""
-        INSERT INTO data_sources
-          (id, name, source_type, connection_config, is_active, created_by)
-        VALUES (:id, 'test-nonallowlist', 'rest_api', '{}', true,
-                (SELECT id FROM users LIMIT 1))
-    """), {"id": str(source_id)})
+    user_id = (await db_session.execute(text("SELECT id FROM users LIMIT 1"))).scalar_one()
+    await build_data_source(
+        db_session,
+        id=source_id,
+        name="test-nonallowlist",
+        source_type=SourceType.REST_API,
+        connection_config={},
+        is_active=True,
+        created_by=user_id,
+    )
     await db_session.commit()
 
     await db_session.execute(text("""

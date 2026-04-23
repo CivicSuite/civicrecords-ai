@@ -214,7 +214,7 @@ audit_log: id, user_id, action, resource_type, resource_id, details (JSON), ip_a
 service_accounts: id, name, api_key_hash (SHA-256), role, scopes (JSON), created_by, is_active
 
 ### 6.2 Documents & Ingestion
-data_sources: id, name, source_type (file_system/manual_drop/rest_api/odbc), connection_config (JSONB — plaintext; see ENG-001/Tier 6), schedule, status, created_by, department_id
+data_sources: id, name, source_type (file_system/manual_drop/rest_api/odbc), connection_config (JSONB — encrypted at rest as a Fernet envelope `{"v":1,"ct":...}` via the `EncryptedJSONB` TypeDecorator; see §8.10 / ENG-001 closed 2026-04-23), schedule, status, created_by, department_id
 documents: id, source_id, source_path, filename, display_name, file_type, file_hash (SHA-256), file_size, ingestion_status, ingested_at, metadata (JSON), department_id
 document_chunks: id, document_id, chunk_index, content_text, embedding Vector(768), token_count
 
@@ -491,7 +491,50 @@ New frontend pages — `PublicLanding.tsx`, `PublicRegister.tsx`, `PublicSubmit.
 - Backend: `backend/tests/test_portal_mode.py` — 15 pytest cases covering config normalization, the fail-fast path on invalid values, register gating (mounted in public / 404 in private), `UserCreate` role forcing, public-submit role gating (PUBLIC allowed, staff 403), and the always-on `/config/portal-mode` endpoint in both modes.
 - Frontend: `PublicLanding.test.tsx`, `PublicRegister.test.tsx`, `PublicSubmit.test.tsx` — 12 vitest cases total across the three pages, pinning state rendering and error copy.
 
-**Standing caveat (unchanged by T5D):** T2B runtime exposure closed; Tier 6 at-rest exposure still open; ENG-001 is not fully closed until Tier 6 lands. T5D does not touch the at-rest surface.
+**Standing caveat (historical — closed by Tier 6 / §8.10 on 2026-04-23):** T2B closed the runtime exposure in an earlier sprint; Tier 6 closes the at-rest exposure. As of 2026-04-23 ENG-001 is fully closed. The phrase "T2B closed; Tier 6 open" is preserved here for traceability with prior sprint notes and memory/state files but no longer describes the live system.
+
+### 8.10 At-rest Encryption for `data_sources.connection_config` [IMPLEMENTED — Tier 6 / ENG-001, 2026-04-23]
+
+**Closes ENG-001.** T2B previously closed the runtime API-response exposure of `connection_config`; Tier 6 closes the remaining at-rest exposure (plaintext JSONB visible to DB superusers, `pg_dump` output, and restored backups). Together, T2B + Tier 6 = ENG-001 fully closed.
+
+**Scott-locked design decisions (2026-04-22/23):**
+1. **Single key.** One `ENCRYPTION_KEY`. No rotation program in v1. The versioned envelope (`"v": 1`) leaves rotation as a future slice; rotation is **not** a deferred Tier 6 item, it is explicitly out of this slice.
+2. **Reversible migration.** Both `up` and `down` require the key. `down` decrypts envelope rows back to plaintext for operators who need to roll back.
+3. **Concise operator docs.** No KMS/vault integration, no rotation runbook, no HSM story. Operators are told what the key protects, that they must back it up separately from the database, how to generate one, and how to verify post-deploy. That is the full operator surface.
+4. **Closure criterion.** At-rest encryption of this column closes the at-rest gap for ENG-001. No audit-log scrub or adjacent data-at-rest scope is part of this slice.
+5. **OpenAPI regenerated per the T3D gate.** Zero semantic change expected — `DataSourceAdminRead` still returns the dict because encryption is transparent at the ORM layer.
+
+**Envelope shape.** `{"v": 1, "ct": "<fernet-token>"}`. Version tag reserves room for a future rotation/migration story without breaking existing rows.
+
+**Crypto.** `cryptography.fernet.Fernet` — AES-128-CBC for confidentiality plus HMAC-SHA256 for integrity. Tampered ciphertext fails authentication at decryption time and raises `AtRestDecryptionError` rather than returning corrupted JSON.
+
+**Helper module (`backend/app/security/at_rest.py`).** Exposes `encrypt_json(obj, key)`, `decrypt_json(envelope, key)`, `is_encrypted(value)`, and `AtRestDecryptionError`. Version dispatch is based on the `"v"` field; unknown versions raise a specific error rather than attempting a best-effort decode.
+
+**ORM integration (`backend/app/models/document.py`).** A new `EncryptedJSONB(TypeDecorator)` class transparently encrypts on `process_bind_param` and decrypts on `process_result_value`. `DataSource.connection_config` now uses `EncryptedJSONB`; every existing caller continues to see a plain dict. No admin UI or API changes are required — the change is invisible above the ORM layer, which is why the OpenAPI schema does not move.
+
+**Config (`backend/app/config.py`).** New `encryption_key: str` setting (env: `ENCRYPTION_KEY`) with a `check_encryption_key` validator that:
+- Rejects insecure defaults (the `.env.example` placeholder `CHANGE-ME-generate-with-fernet-generate-key`, empty strings, and other obvious placeholders).
+- Calls `Fernet(key)` to catch malformed keys at startup rather than at first write.
+- Short-circuits in `testing=True` mode so the unit-test suite does not need a real Fernet key to run.
+
+**Migration (`backend/alembic/versions/019_encrypt_connection_config.py`).** Reversible and idempotent in both directions:
+- `up`: for each row where `connection_config` does not match the envelope shape, encrypt the plaintext JSONB and overwrite. Skip rows already in envelope shape. Requires the key.
+- `down`: for each row where `connection_config` is envelope-shaped, decrypt and overwrite with plaintext JSONB. Skip rows already in plaintext. Requires the key.
+- Re-running either direction is safe — the skip-if-shape-matches check makes both idempotent.
+
+**Operator verification (`backend/scripts/verify_at_rest.py`).** Post-deploy sanity check. Connects to the database, scans every `data_sources.connection_config` row, and exits `0` if every row is envelope-shaped (encrypted) or `1` if any row is still plaintext. Intended use: `docker compose run --rm --no-deps api python scripts/verify_at_rest.py` after running the migration.
+
+**Installer integration.** `install.ps1` and `install.sh` generate a Fernet-shape key on fresh install (PowerShell uses .NET `RandomNumberGenerator` + URL-safe base64 substitution; bash uses `openssl rand -base64 32 | tr '+/' '-_'`). Both print a loud red "BACK THIS UP SEPARATELY FROM YOUR DATABASE" banner so the operator sees the backup responsibility before the stack comes up.
+
+**`.env.example`** documents `ENCRYPTION_KEY=CHANGE-ME-generate-with-fernet-generate-key` with a comment block explaining key generation (`python -c "from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())"`) and the backup responsibility.
+
+**Test coverage (`backend/tests/test_at_rest_encryption.py`).** Covers: helper round-trip (encrypt → decrypt returns original dict), envelope shape validation, tampered-ciphertext rejection (HMAC failure raises `AtRestDecryptionError`), version dispatch (unknown `"v"` value raises a specific error), startup validator behavior (insecure defaults rejected, malformed key rejected, testing mode short-circuit), end-to-end admin create → raw DB row is envelope-shaped → admin GET decrypts back to the original dict, and migration idempotency on both `up` and `down`.
+
+**What this slice does NOT do:**
+- No key rotation. One key per deployment, for the lifetime of that deployment in v1.
+- No KMS/HSM/vault integration. Key comes from `ENCRYPTION_KEY` only.
+- No encryption of other columns (audit log, documents, search indexes, request body). That is not part of ENG-001.
+- No change to the API surface, the admin UI, or the generated TypeScript types.
 
 ## 9. Search & Ingestion [IMPLEMENTED]
 
@@ -606,7 +649,7 @@ Continuous discovery and self-healing [PLANNED]
 ### 11.5 Security for Connectors
 Network discovery: disabled by default, explicit IT opt-in, audit-logged.
 Every connection: admin must review, confirm, provide credentials, authorize.
-Credentials (API): `connection_config` fields are redacted from non-admin API responses (T2B); admin write endpoints return the full config. At-rest storage is **plaintext JSONB** — visible to DB superusers, pg_dump outputs, and backups. AES-256 at-rest encryption is tracked as **ENG-001 / Tier 6** and is not yet implemented. Credentials are never logged, returned on GET, or displayed after initial admin entry.
+Credentials (API): `connection_config` fields are redacted from non-admin API responses (T2B); admin write endpoints return the full config. At-rest storage is **encrypted** as a versioned Fernet envelope (`{"v":1,"ct":"<fernet-token>"}`, AES-128-CBC + HMAC-SHA256) via the `EncryptedJSONB` SQLAlchemy TypeDecorator, keyed off `ENCRYPTION_KEY` (T6 / ENG-001, 2026-04-23). `pg_dump` output and raw backups contain ciphertext only; decryption happens transparently at the ORM layer. Credentials are never logged, returned on GET, or displayed after initial admin entry. See §8.10 for the full design. Key rotation is intentionally not supported in this release; the `"v": 1` tag leaves rotation as a future slice.
 Test-connection endpoint: dedicated schema, never persists credentials, never logs connection strings.
 Least-privilege: read-only accounts. System never writes to source systems.
 CJIS Compliance: Architecture satisfies encryption (5.10.1), audit logging (5.4), access control (5.5), no cloud egress (5.10.3.2). City must satisfy fingerprint checks (5.12), signed addendum, and security training (5.2). Compliance gate blocks public safety connector activation until confirmed.
@@ -628,7 +671,9 @@ No telemetry, no outbound connections, no crash reporting
 SMTP credentials never logged or displayed after entry
 All LLM outputs labeled as AI-generated drafts
 T2A — Department scope enforcement: role self-escalation via `PATCH /users/me` closed (`UserSelfUpdate` schema); all 24 department-scoped request handlers use `require_department_scope` (fail-closed); 404/403 status-code info-leak unified via `require_department_or_404` across 21 handler call sites; Pattern D list-endpoint fail-open closed on `GET /requests/`, `/requests/stats`, `POST /search/query`, `GET /search/export` via `require_department_filter`; parameterized cross-endpoint enforcement test covers 25 routes; `review_fee_waiver` gap found by auditor during review and fixed in same PR
-T2B — Connection credential redaction: `connection_config` removed from `DataSourceRead`; `DataSourceAdminRead` (full config) returned only by admin write endpoints (`POST /datasources/`, `PATCH /datasources/{id}`). Runtime credential exposure to non-admin users: **closed**. At-rest storage exposure (plaintext JSONB): **open**, tracked as ENG-001 / Tier 6
+T2B — Connection credential redaction: `connection_config` removed from `DataSourceRead`; `DataSourceAdminRead` (full config) returned only by admin write endpoints (`POST /datasources/`, `PATCH /datasources/{id}`). Runtime credential exposure to non-admin users: **closed**.
+
+Tier 6 / ENG-001 — At-rest encryption of `data_sources.connection_config` (2026-04-23): Fernet envelope (`{"v":1,"ct":"<fernet-token>"}`, AES-128-CBC + HMAC-SHA256) via `backend/app/security/at_rest.py` (`encrypt_json` / `decrypt_json` / `is_encrypted` / `AtRestDecryptionError`) and the `EncryptedJSONB(TypeDecorator)` in `backend/app/models/document.py` — transparent to caller code, which still sees a plain dict. Driven by a new `encryption_key` config setting (env: `ENCRYPTION_KEY`) with a `check_encryption_key` validator that rejects insecure defaults, calls `Fernet(...)` to catch malformed keys, and short-circuits in `testing=True` mode. Reversible + idempotent Alembic data migration `019_encrypt_connection_config` — `up` encrypts plaintext rows, `down` decrypts envelope rows, both require the key, both skip rows already in the target shape. Operator post-deploy check: `backend/scripts/verify_at_rest.py` exits 0 if every row is envelope-shaped, 1 otherwise. Tests: `backend/tests/test_at_rest_encryption.py` covers helper round-trip, envelope shape, tampered-ciphertext rejection, version dispatch, startup validator behavior, end-to-end admin create → raw DB is envelope → admin GET decrypts, and migration idempotency. **ENG-001 fully closed.** Key rotation intentionally out of scope for this release; the `"v": 1` tag reserves room for a future rotation slice. OpenAPI schema is unchanged — `DataSourceAdminRead` still returns the dict because encryption is transparent at the ORM layer.
 T2C — Bootstrap hardening: `Settings.check_first_admin_password` model-validator rejects `.env.example` placeholder, empty value, <12 chars, and an embedded blocklist of common defaults; installers generate a 32-hex-char password and substitute it into `.env`; bootstrap-failure CI job confirms non-zero exit with placeholder
 T2C — SSRF protection: `backend/app/security/host_validator.py` rejects connector URLs targeting loopback (127.0.0.0/8, ::1), link-local/IMDS (169.254.0.0/16), RFC1918 (10/8, 172.16/12, 192.168/16), and 0.0.0.0 at Pydantic schema-validation time; `CONNECTOR_HOST_ALLOWLIST` env var for on-prem overrides (exact-match only, no wildcards); ODBC fail-closed on unparseable host field
 T3A — Admin user creation: `frontend/src/pages/Users.tsx` create-user form POSTs to `/api/admin/users` (was `/api/auth/register`, which routed through `UserCreate.force_staff_role` and silently downgraded any submitted role to STAFF); three create-form labels received `htmlFor`/`id` associations
@@ -816,6 +861,7 @@ The docs/ directory contains a comprehensive documentation set:
 | First-boot baseline seeding: 175 state-scoped exemption rules across 51 jurisdictions + 5 compliance templates + 12 notification templates, idempotent, visibly logged | [IMPLEMENTED — T5B, 2026-04-22 at `61449c5`. See §8.7.] |
 | 4-model Gemma 4 installer picker (`gemma4:e2b`, `gemma4:e4b` default, `gemma4:26b`, `gemma4:31b`) with per-model disk/RAM advisories and `supportable_against_target` boolean; fake `gemma4:12b` and `gemma4:27b` tags purged repo-wide | [IMPLEMENTED — T5C, 2026-04-22 at `7721cf0`.] |
 | `PORTAL_MODE=public\|private` install-time switch with conditional `/auth/register` and `/public/*` route mounting + typed `GET /config/portal-mode` | [IMPLEMENTED — T5D, 2026-04-23 at `a57a897`. See §8.9.] |
+| At-rest encryption for `data_sources.connection_config` (Fernet envelope, `EncryptedJSONB` TypeDecorator, reversible Alembic migration, operator verification script) | [IMPLEMENTED — Tier 6 / ENG-001, 2026-04-23. See §8.10.] |
 | Full active discovery engine | [UI SHELL / PLANNED] |
 | Full-spectrum guided installer: Windows unsigned double-click installer (Inno Setup 6.x) with prerequisite detection (Docker Desktop, WSL 2, 32 GB RAM floor, optional host Ollama), split Start-vs-Install shortcuts, tag-derived version sourcing, T5C 4-model Gemma 4 picker + auto-pull, and T5B first-boot baseline seeding | [IMPLEMENTED — T5E, 2026-04-22. Windows only; macOS/Linux remain on script-based install (`install.sh`). Unsigned by design per Scott-locked B3=α posture. See §8.8 and `installer/windows/README.md`.] |
 | GIS connector | [PLANNED] |
@@ -905,7 +951,7 @@ Onboarding completable by clerk alone without IT involvement.
 Network discovery requires explicit IT opt-in.
 Every connector authorization is audit-logged.
 Health checks surfaced on Dashboard.
-Credentials encrypted AES-256 at rest. Never logged, exported, or returned.
+Credentials encrypted at rest (Fernet envelope: AES-128-CBC + HMAC-SHA256) via the `EncryptedJSONB` TypeDecorator on `data_sources.connection_config`, keyed off `ENCRYPTION_KEY`. Never logged, exported, or returned. See §8.10.
 Coverage gap map auto-updates.
 Zero false negatives for Tier 1 regex PII detection.
 All redaction is proposal-only; humans approve.
@@ -953,7 +999,7 @@ The system is well beyond a simple MVP: it has professional security hardening (
 **Tier 5 status — FULLY SHIPPED (2026-04-22/23):** all five slices pushed to `origin/master` and individually CI-verified. T5C Gemma 4 tag purge + 4-model installer picker (`7721cf0`). T5A onboarding persistence + `has_dedicated_it` + `onboarding_status` lifecycle + skip-truth (`1782573`). T5B first-boot baseline seeding — 175 state-scoped exemption rules + 5 compliance templates + 12 notification templates, idempotent, visibly logged (`61449c5`). T5D `PORTAL_MODE=public|private` install-time switch + minimal public surface under Scott-locked B4=(b) + Option A register-first (`a57a897`). T5E Windows unsigned double-click installer via Inno Setup 6.x with Start-vs-Install flow split and tag-derived version sourcing (`1d5429d`; CI-flake fix `e898319`). T3D regen after T5A schema change (`bf3c9c3`). CI workflow Node 20 runtime bump (`5dbeed7`). All slices shipped under Hard Rule 9 (six-artifact doc gate) with matching CHANGELOG + README + USER-MANUAL + docs/index.html updates in the same commit.
 
 **What remains (not in Tier 5 scope, intentionally deferred):**
-- **Tier 6 — at-rest encryption for `data_sources.connection_config` (ENG-001).** STILL OPEN and HELD. T2B runtime exposure is closed; at-rest plaintext storage remains. Required to fully close ENG-001. Not authorized to start.
+- **Tier 6 — at-rest encryption for `data_sources.connection_config` (ENG-001).** CLOSED 2026-04-23. Fernet envelope + `EncryptedJSONB` TypeDecorator + reversible Alembic migration `019_encrypt_connection_config` + operator `verify_at_rest.py` script. T2B runtime exposure + Tier 6 at-rest exposure both closed → ENG-001 fully closed. See §8.10. (Historical entry retained so prior sprint notes and memory/state files that refer to "Tier 6 still open" can be reconciled with the live repo. Key rotation is intentionally not in scope for this release and is available as a future slice — not a deferred Tier 6 item.)
 - **Cross-platform native installer parity for macOS/Linux.** Follow-on to T5E; not scheduled. macOS/Linux remain on the script path (`install.sh`).
 - **Signed Windows installer.** Scott-locked B3=α (unsigned by design for this slice). Signing is not a deferred Tier 5 item; it is explicitly out of the T5E slice. Any future signing work would be a new decision.
 - **Public-portal expansion beyond B4=(b).** Published-records search, resident dashboard, track-my-request suite are all PLANNED and explicitly out of the T5D minimal surface. Expansion requires explicit Scott re-scoping.

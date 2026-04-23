@@ -10,6 +10,9 @@ import pytest
 from unittest.mock import MagicMock, AsyncMock, patch
 from sqlalchemy import text
 
+from app.models.document import DataSource, SourceType
+from tests.conftest import build_data_source
+
 
 # ---------------------------------------------------------------------------
 # Helpers
@@ -39,15 +42,20 @@ def make_fetched_document(n: int):
 
 
 async def _seed_source(db_session, source_id: uuid.UUID, name: str = "test-source"):
-    await db_session.execute(text("""
-        INSERT INTO data_sources
-          (id, name, source_type, connection_config, is_active,
-           sync_schedule, schedule_enabled, sync_paused,
-           consecutive_failure_count, created_by)
-        VALUES (:id, :name, 'rest_api', '{}', true,
-                '0 2 * * *', true, false, 0,
-                (SELECT id FROM users LIMIT 1))
-    """), {"id": str(source_id), "name": name})
+    user_id = (await db_session.execute(text("SELECT id FROM users LIMIT 1"))).scalar_one()
+    await build_data_source(
+        db_session,
+        id=source_id,
+        name=name,
+        source_type=SourceType.REST_API,
+        connection_config={},
+        is_active=True,
+        sync_schedule="0 2 * * *",
+        schedule_enabled=True,
+        sync_paused=False,
+        consecutive_failure_count=0,
+        created_by=user_id,
+    )
     await db_session.commit()
 
 

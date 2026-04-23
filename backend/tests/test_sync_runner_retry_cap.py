@@ -3,24 +3,38 @@
 import uuid
 from unittest.mock import AsyncMock, MagicMock, patch
 import pytest
+from sqlalchemy import text
+
+from app.models.document import DataSource, SourceType
+from tests.conftest import build_data_source
+
+
+async def _seed_source(session, source_id, name, **extra):
+    user_id = (await session.execute(text("SELECT id FROM users LIMIT 1"))).scalar_one()
+    await build_data_source(
+        session,
+        id=source_id,
+        name=name,
+        source_type=SourceType.REST_API,
+        connection_config={},
+        is_active=True,
+        sync_schedule="0 2 * * *",
+        schedule_enabled=True,
+        sync_paused=False,
+        consecutive_failure_count=0,
+        created_by=user_id,
+        **extra,
+    )
 
 
 @pytest.mark.asyncio
 async def test_retry_cap_by_count(db_session):
     """100 retrying rows, retry_batch_size=10 → exactly 10 retried, 90 remain."""
     from app.models.sync_failure import SyncFailure
-    from sqlalchemy import select, func, text
+    from sqlalchemy import select, func
 
     source_id = uuid.uuid4()
-    await db_session.execute(text("""
-        INSERT INTO data_sources
-          (id, name, source_type, connection_config, is_active,
-           sync_schedule, schedule_enabled, sync_paused,
-           consecutive_failure_count, retry_batch_size, created_by)
-        VALUES (:id, 'cap-count', 'rest_api', '{}', true,
-                '0 2 * * *', true, false, 0, 10,
-                (SELECT id FROM users LIMIT 1))
-    """), {"id": str(source_id)})
+    await _seed_source(db_session, source_id, "cap-count", retry_batch_size=10)
 
     for i in range(100):
         db_session.add(SyncFailure(
@@ -71,18 +85,9 @@ async def test_retry_cap_by_count(db_session):
 async def test_dead_letter_at_retry_threshold_during_retry_run(db_session):
     """A retrying row with retry_count=5 → promoted to permanently_failed, not fetched."""
     from app.models.sync_failure import SyncFailure
-    from sqlalchemy import text
 
     source_id = uuid.uuid4()
-    await db_session.execute(text("""
-        INSERT INTO data_sources
-          (id, name, source_type, connection_config, is_active,
-           sync_schedule, schedule_enabled, sync_paused,
-           consecutive_failure_count, created_by)
-        VALUES (:id, 'dead-letter-cap', 'rest_api', '{}', true,
-                '0 2 * * *', true, false, 0,
-                (SELECT id FROM users LIMIT 1))
-    """), {"id": str(source_id)})
+    await _seed_source(db_session, source_id, "dead-letter-cap")
 
     failure = SyncFailure(
         source_id=source_id,

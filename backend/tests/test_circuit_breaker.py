@@ -5,28 +5,40 @@ from datetime import datetime, timezone
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
+from sqlalchemy import text
+
+from app.models.document import DataSource, SourceType
+from tests.conftest import build_data_source
 
 
 UTC = timezone.utc
 
 
+async def _seed_admin_user_id(session):
+    """Return the seed admin user id created by setup_db."""
+    row = await session.execute(text("SELECT id FROM users LIMIT 1"))
+    return row.scalar_one()
+
+
 @pytest.mark.asyncio
 async def test_circuit_opens_after_5_consecutive_full_run_failures(db_session):
     """5 consecutive all-fail runs → sync_paused=True, consecutive_failure_count=5."""
-    from app.models.document import DataSource
     from app.connectors.base import DiscoveredRecord
-    from sqlalchemy import text
 
     source_id = uuid.uuid4()
-    await db_session.execute(text("""
-        INSERT INTO data_sources
-          (id, name, source_type, connection_config, is_active,
-           sync_schedule, schedule_enabled, sync_paused,
-           consecutive_failure_count, created_by)
-        VALUES (:id, 'circuit-open', 'rest_api', '{}', true,
-                '0 2 * * *', true, false, 0,
-                (SELECT id FROM users LIMIT 1))
-    """), {"id": str(source_id)})
+    await build_data_source(
+        db_session,
+        id=source_id,
+        name="circuit-open",
+        source_type=SourceType.REST_API,
+        connection_config={},
+        is_active=True,
+        sync_schedule="0 2 * * *",
+        schedule_enabled=True,
+        sync_paused=False,
+        consecutive_failure_count=0,
+        created_by=await _seed_admin_user_id(db_session),
+    )
     await db_session.commit()
 
     discovered = [
@@ -58,20 +70,22 @@ async def test_circuit_opens_after_5_consecutive_full_run_failures(db_session):
 @pytest.mark.asyncio
 async def test_circuit_does_not_open_at_4_failures(db_session):
     """4 consecutive all-fail runs → sync_paused=False, counter=4."""
-    from app.models.document import DataSource
     from app.connectors.base import DiscoveredRecord
-    from sqlalchemy import text
 
     source_id = uuid.uuid4()
-    await db_session.execute(text("""
-        INSERT INTO data_sources
-          (id, name, source_type, connection_config, is_active,
-           sync_schedule, schedule_enabled, sync_paused,
-           consecutive_failure_count, created_by)
-        VALUES (:id, 'circuit-no-open', 'rest_api', '{}', true,
-                '0 2 * * *', true, false, 0,
-                (SELECT id FROM users LIMIT 1))
-    """), {"id": str(source_id)})
+    await build_data_source(
+        db_session,
+        id=source_id,
+        name="circuit-no-open",
+        source_type=SourceType.REST_API,
+        connection_config={},
+        is_active=True,
+        sync_schedule="0 2 * * *",
+        schedule_enabled=True,
+        sync_paused=False,
+        consecutive_failure_count=0,
+        created_by=await _seed_admin_user_id(db_session),
+    )
     await db_session.commit()
 
     discovered = [
@@ -103,20 +117,22 @@ async def test_circuit_does_not_open_at_4_failures(db_session):
 @pytest.mark.asyncio
 async def test_success_resets_consecutive_failure_count(db_session):
     """3 failures then 1 success → consecutive_failure_count=0, sync_paused=False."""
-    from app.models.document import DataSource
     from app.connectors.base import DiscoveredRecord, FetchedDocument
-    from sqlalchemy import text
 
     source_id = uuid.uuid4()
-    await db_session.execute(text("""
-        INSERT INTO data_sources
-          (id, name, source_type, connection_config, is_active,
-           sync_schedule, schedule_enabled, sync_paused,
-           consecutive_failure_count, created_by)
-        VALUES (:id, 'circuit-reset', 'rest_api', '{}', true,
-                '0 2 * * *', true, false, 3,
-                (SELECT id FROM users LIMIT 1))
-    """), {"id": str(source_id)})
+    await build_data_source(
+        db_session,
+        id=source_id,
+        name="circuit-reset",
+        source_type=SourceType.REST_API,
+        connection_config={},
+        is_active=True,
+        sync_schedule="0 2 * * *",
+        schedule_enabled=True,
+        sync_paused=False,
+        consecutive_failure_count=3,
+        created_by=await _seed_admin_user_id(db_session),
+    )
     await db_session.commit()
 
     discovered = [
@@ -153,16 +169,19 @@ async def test_zero_records_discovered_does_not_increment_counter(db_session):
     import uuid
 
     source_id = uuid.uuid4()
-    from sqlalchemy import text
-    await db_session.execute(text("""
-        INSERT INTO data_sources
-          (id, name, source_type, connection_config, is_active,
-           sync_schedule, schedule_enabled, sync_paused,
-           consecutive_failure_count, created_by)
-        VALUES (:id, 'zero-work', 'rest_api', '{}', true,
-                '0 2 * * *', true, false, 0,
-                (SELECT id FROM users LIMIT 1))
-    """), {"id": str(source_id)})
+    await build_data_source(
+        db_session,
+        id=source_id,
+        name="zero-work",
+        source_type=SourceType.REST_API,
+        connection_config={},
+        is_active=True,
+        sync_schedule="0 2 * * *",
+        schedule_enabled=True,
+        sync_paused=False,
+        consecutive_failure_count=0,
+        created_by=await _seed_admin_user_id(db_session),
+    )
     await db_session.commit()
 
     from app.ingestion.sync_runner import run_connector_sync_with_retry
@@ -195,22 +214,24 @@ async def test_zero_records_discovered_does_not_increment_counter(db_session):
 @pytest.mark.asyncio
 async def test_retry_success_with_zero_new_records_resets_counter(db_session):
     """0 new records discovered, but retrying rows succeed → counter resets to 0 (D-FAIL-4)."""
-    from app.models.document import DataSource
     from app.models.sync_failure import SyncFailure
     import uuid
-    from sqlalchemy import text
     from app.connectors.base import FetchedDocument
 
     source_id = uuid.uuid4()
-    await db_session.execute(text("""
-        INSERT INTO data_sources
-          (id, name, source_type, connection_config, is_active,
-           sync_schedule, schedule_enabled, sync_paused,
-           consecutive_failure_count, created_by)
-        VALUES (:id, 'retry-success', 'rest_api', '{}', true,
-                '0 2 * * *', true, false, 3,
-                (SELECT id FROM users LIMIT 1))
-    """), {"id": str(source_id)})
+    await build_data_source(
+        db_session,
+        id=source_id,
+        name="retry-success",
+        source_type=SourceType.REST_API,
+        connection_config={},
+        is_active=True,
+        sync_schedule="0 2 * * *",
+        schedule_enabled=True,
+        sync_paused=False,
+        consecutive_failure_count=3,
+        created_by=await _seed_admin_user_id(db_session),
+    )
 
     failure = SyncFailure(
         source_id=source_id,
@@ -263,22 +284,25 @@ async def test_grace_period_trips_circuit_at_2_failures_not_5(db_session):
     This verifies the grace-period fast-feedback path: admins know within 2
     sync ticks if their fix didn't work, instead of waiting for 5 more failures.
     """
-    from app.models.document import DataSource
     from app.connectors.base import DiscoveredRecord
-    from sqlalchemy import text
 
     source_id = uuid.uuid4()
     # Simulate a source that was just unpaused — consecutive_failure_count=0,
     # sync_paused=False, sync_paused_reason="grace_period" (set by /unpause endpoint).
-    await db_session.execute(text("""
-        INSERT INTO data_sources
-          (id, name, source_type, connection_config, is_active,
-           sync_schedule, schedule_enabled, sync_paused,
-           consecutive_failure_count, sync_paused_reason, created_by)
-        VALUES (:id, 'grace-reopen', 'rest_api', '{}', true,
-                '0 2 * * *', true, false, 0, 'grace_period',
-                (SELECT id FROM users LIMIT 1))
-    """), {"id": str(source_id)})
+    await build_data_source(
+        db_session,
+        id=source_id,
+        name="grace-reopen",
+        source_type=SourceType.REST_API,
+        connection_config={},
+        is_active=True,
+        sync_schedule="0 2 * * *",
+        schedule_enabled=True,
+        sync_paused=False,
+        consecutive_failure_count=0,
+        sync_paused_reason="grace_period",
+        created_by=await _seed_admin_user_id(db_session),
+    )
     await db_session.commit()
 
     discovered = [
@@ -321,20 +345,23 @@ async def test_grace_period_clears_on_success(db_session):
     """After unpause (grace_period sentinel), a successful sync clears the sentinel
     so the source returns to normal 5-failure threshold.
     """
-    from app.models.document import DataSource
     from app.connectors.base import DiscoveredRecord, FetchedDocument
-    from sqlalchemy import text
 
     source_id = uuid.uuid4()
-    await db_session.execute(text("""
-        INSERT INTO data_sources
-          (id, name, source_type, connection_config, is_active,
-           sync_schedule, schedule_enabled, sync_paused,
-           consecutive_failure_count, sync_paused_reason, created_by)
-        VALUES (:id, 'grace-clear', 'rest_api', '{}', true,
-                '0 2 * * *', true, false, 0, 'grace_period',
-                (SELECT id FROM users LIMIT 1))
-    """), {"id": str(source_id)})
+    await build_data_source(
+        db_session,
+        id=source_id,
+        name="grace-clear",
+        source_type=SourceType.REST_API,
+        connection_config={},
+        is_active=True,
+        sync_schedule="0 2 * * *",
+        schedule_enabled=True,
+        sync_paused=False,
+        consecutive_failure_count=0,
+        sync_paused_reason="grace_period",
+        created_by=await _seed_admin_user_id(db_session),
+    )
     await db_session.commit()
 
     discovered = [

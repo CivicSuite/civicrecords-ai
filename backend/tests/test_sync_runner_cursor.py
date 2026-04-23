@@ -4,25 +4,38 @@ import uuid
 from unittest.mock import AsyncMock, MagicMock, patch
 from datetime import datetime, timezone
 import pytest
+from sqlalchemy import text
+
+from app.models.document import DataSource, SourceType
+from tests.conftest import build_data_source
+
+
+async def _seed_source(session, source_id, name, **extra):
+    user_id = (await session.execute(text("SELECT id FROM users LIMIT 1"))).scalar_one()
+    await build_data_source(
+        session,
+        id=source_id,
+        name=name,
+        source_type=SourceType.REST_API,
+        connection_config={},
+        is_active=True,
+        sync_schedule="0 2 * * *",
+        schedule_enabled=True,
+        sync_paused=False,
+        consecutive_failure_count=0,
+        created_by=user_id,
+        **extra,
+    )
 
 
 @pytest.mark.asyncio
 async def test_partial_failure_cursor_advances_past_successes(db_session):
     """8 records succeed, 2 fail → cursor advances, 2 rows in sync_failures."""
     from app.models.sync_failure import SyncFailure
-    from app.models.document import DataSource
-    from sqlalchemy import select, func, text
+    from sqlalchemy import select, func
 
     source_id = uuid.uuid4()
-    await db_session.execute(text("""
-        INSERT INTO data_sources
-          (id, name, source_type, connection_config, is_active,
-           sync_schedule, schedule_enabled, sync_paused,
-           consecutive_failure_count, created_by)
-        VALUES (:id, 'cursor-test', 'rest_api', '{}', true,
-                '0 2 * * *', true, false, 0,
-                (SELECT id FROM users LIMIT 1))
-    """), {"id": str(source_id)})
+    await _seed_source(db_session, source_id, "cursor-test")
     await db_session.commit()
 
     from app.connectors.base import DiscoveredRecord, FetchedDocument
@@ -81,19 +94,8 @@ async def test_partial_failure_cursor_advances_past_successes(db_session):
 @pytest.mark.asyncio
 async def test_full_failure_does_not_advance_cursor(db_session):
     """All records fail → consecutive_failure_count increments, last_sync_at still set."""
-    from app.models.document import DataSource
-    from sqlalchemy import text
-
     source_id = uuid.uuid4()
-    await db_session.execute(text("""
-        INSERT INTO data_sources
-          (id, name, source_type, connection_config, is_active,
-           sync_schedule, schedule_enabled, sync_paused,
-           consecutive_failure_count, created_by)
-        VALUES (:id, 'all-fail', 'rest_api', '{}', true,
-                '0 2 * * *', true, false, 0,
-                (SELECT id FROM users LIMIT 1))
-    """), {"id": str(source_id)})
+    await _seed_source(db_session, source_id, "all-fail")
     await db_session.commit()
 
     from app.connectors.base import DiscoveredRecord

@@ -1,6 +1,10 @@
 import uuid
 import pytest
 from httpx import AsyncClient
+from sqlalchemy import text
+
+from app.models.document import DataSource, SourceType
+from tests.conftest import build_data_source
 
 @pytest.mark.asyncio
 async def test_create_datasource(client: AsyncClient, admin_token: str):
@@ -35,17 +39,21 @@ async def test_ingestion_stats(client: AsyncClient, admin_token: str):
 @pytest.mark.asyncio
 async def test_health_status_degraded_on_failure_count(client: AsyncClient, admin_token: str, db_session):
     """consecutive_failure_count > 0 → health_status=degraded in list response."""
-    from sqlalchemy import text
     source_id = uuid.uuid4()
-    await db_session.execute(text("""
-        INSERT INTO data_sources
-          (id, name, source_type, connection_config, is_active,
-           sync_schedule, schedule_enabled, sync_paused,
-           consecutive_failure_count, created_by)
-        VALUES (:id, :name, 'rest_api', '{}', true,
-                NULL, true, false, 3,
-                (SELECT id FROM users LIMIT 1))
-    """), {"id": str(source_id), "name": f"health-degraded-{source_id.hex[:8]}"})
+    user_id = (await db_session.execute(text("SELECT id FROM users LIMIT 1"))).scalar_one()
+    await build_data_source(
+        db_session,
+        id=source_id,
+        name=f"health-degraded-{source_id.hex[:8]}",
+        source_type=SourceType.REST_API,
+        connection_config={},
+        is_active=True,
+        sync_schedule=None,
+        schedule_enabled=True,
+        sync_paused=False,
+        consecutive_failure_count=3,
+        created_by=user_id,
+    )
     await db_session.commit()
 
     resp = await client.get("/datasources/", headers={"Authorization": f"Bearer {admin_token}"})
@@ -59,17 +67,21 @@ async def test_health_status_degraded_on_failure_count(client: AsyncClient, admi
 @pytest.mark.asyncio
 async def test_health_status_circuit_open_when_paused(client: AsyncClient, admin_token: str, db_session):
     """sync_paused=True → health_status=circuit_open."""
-    from sqlalchemy import text
     source_id = uuid.uuid4()
-    await db_session.execute(text("""
-        INSERT INTO data_sources
-          (id, name, source_type, connection_config, is_active,
-           sync_schedule, schedule_enabled, sync_paused,
-           consecutive_failure_count, created_by)
-        VALUES (:id, :name, 'rest_api', '{}', true,
-                NULL, true, true, 5,
-                (SELECT id FROM users LIMIT 1))
-    """), {"id": str(source_id), "name": f"health-paused-{source_id.hex[:8]}"})
+    user_id = (await db_session.execute(text("SELECT id FROM users LIMIT 1"))).scalar_one()
+    await build_data_source(
+        db_session,
+        id=source_id,
+        name=f"health-paused-{source_id.hex[:8]}",
+        source_type=SourceType.REST_API,
+        connection_config={},
+        is_active=True,
+        sync_schedule=None,
+        schedule_enabled=True,
+        sync_paused=True,
+        consecutive_failure_count=5,
+        created_by=user_id,
+    )
     await db_session.commit()
 
     resp = await client.get("/datasources/", headers={"Authorization": f"Bearer {admin_token}"})

@@ -7,6 +7,9 @@ from unittest.mock import AsyncMock, MagicMock, patch
 import pytest
 from croniter import croniter
 
+from app.models.document import DataSource, SourceType
+from tests.conftest import build_data_source
+
 
 UTC = timezone.utc
 
@@ -107,14 +110,19 @@ class TestCheckScheduledSources:
         await self._seed_user(db_session)
         source_id = uuid.uuid4()
         from sqlalchemy import text
-        await db_session.execute(text("""
-            INSERT INTO data_sources
-              (id, name, source_type, connection_config, is_active,
-               sync_schedule, schedule_enabled, sync_paused, created_by)
-            VALUES (:id, 'test-disabled', 'rest_api', '{}', true,
-                    '0 2 * * *', false, false,
-                    (SELECT id FROM users LIMIT 1))
-        """), {"id": str(source_id)})
+        user_id = (await db_session.execute(text("SELECT id FROM users LIMIT 1"))).scalar_one()
+        await build_data_source(
+            db_session,
+            id=source_id,
+            name="test-disabled",
+            source_type=SourceType.REST_API,
+            connection_config={},
+            is_active=True,
+            sync_schedule="0 2 * * *",
+            schedule_enabled=False,
+            sync_paused=False,
+            created_by=user_id,
+        )
         await db_session.commit()
 
         with patch("app.ingestion.tasks.task_ingest_source") as mock_task:
@@ -128,14 +136,19 @@ class TestCheckScheduledSources:
         await self._seed_user(db_session)
         source_id = uuid.uuid4()
         from sqlalchemy import text
-        await db_session.execute(text("""
-            INSERT INTO data_sources
-              (id, name, source_type, connection_config, is_active,
-               sync_schedule, schedule_enabled, sync_paused, created_by)
-            VALUES (:id, 'test-paused', 'rest_api', '{}', true,
-                    '0 2 * * *', true, true,
-                    (SELECT id FROM users LIMIT 1))
-        """), {"id": str(source_id)})
+        user_id = (await db_session.execute(text("SELECT id FROM users LIMIT 1"))).scalar_one()
+        await build_data_source(
+            db_session,
+            id=source_id,
+            name="test-paused",
+            source_type=SourceType.REST_API,
+            connection_config={},
+            is_active=True,
+            sync_schedule="0 2 * * *",
+            schedule_enabled=True,
+            sync_paused=True,
+            created_by=user_id,
+        )
         await db_session.commit()
 
         with patch("app.ingestion.tasks.task_ingest_source") as mock_task:

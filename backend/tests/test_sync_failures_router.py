@@ -5,6 +5,23 @@ import pytest
 from httpx import AsyncClient
 from sqlalchemy import text, select, func
 
+from app.models.document import DataSource, SourceType
+from tests.conftest import build_data_source
+
+
+async def _seed_source(session, source_id: uuid.UUID, name: str, **extra):
+    user_id = (await session.execute(text("SELECT id FROM users LIMIT 1"))).scalar_one()
+    await build_data_source(
+        session,
+        id=source_id,
+        name=name,
+        source_type=SourceType.REST_API,
+        connection_config={},
+        is_active=True,
+        created_by=user_id,
+        **extra,
+    )
+
 
 @pytest.mark.asyncio
 async def test_retry_all_permanently_failed(client: AsyncClient, admin_token: str, db_session):
@@ -12,10 +29,7 @@ async def test_retry_all_permanently_failed(client: AsyncClient, admin_token: st
     from app.models.sync_failure import SyncFailure
 
     source_id = uuid.uuid4()
-    await db_session.execute(text("""
-        INSERT INTO data_sources (id, name, source_type, connection_config, is_active, created_by)
-        VALUES (:id, 'bulk-retry', 'rest_api', '{}', true, (SELECT id FROM users LIMIT 1))
-    """), {"id": str(source_id)})
+    await _seed_source(db_session, source_id, "bulk-retry")
     await db_session.commit()
 
     for i in range(3):
@@ -51,10 +65,7 @@ async def test_dismiss_all_permanently_failed(client: AsyncClient, admin_token: 
     from app.models.sync_failure import SyncFailure
 
     source_id = uuid.uuid4()
-    await db_session.execute(text("""
-        INSERT INTO data_sources (id, name, source_type, connection_config, is_active, created_by)
-        VALUES (:id, 'bulk-dismiss', 'rest_api', '{}', true, (SELECT id FROM users LIMIT 1))
-    """), {"id": str(source_id)})
+    await _seed_source(db_session, source_id, "bulk-dismiss")
     await db_session.commit()
 
     for i in range(2):
@@ -94,14 +105,14 @@ async def test_unpause_source(client: AsyncClient, admin_token: str, db_session)
     from app.models.document import DataSource
 
     source_id = uuid.uuid4()
-    await db_session.execute(text("""
-        INSERT INTO data_sources
-          (id, name, source_type, connection_config, is_active, created_by,
-           sync_paused, consecutive_failure_count, sync_paused_reason)
-        VALUES (:id, 'unpause-test', 'rest_api', '{}', true,
-                (SELECT id FROM users LIMIT 1),
-                true, 5, 'Circuit open after 5 failures')
-    """), {"id": str(source_id)})
+    await _seed_source(
+        db_session,
+        source_id,
+        "unpause-test",
+        sync_paused=True,
+        consecutive_failure_count=5,
+        sync_paused_reason="Circuit open after 5 failures",
+    )
     await db_session.commit()
 
     resp = await client.post(
@@ -126,10 +137,7 @@ async def test_list_sync_failures_filters_by_status(client: AsyncClient, admin_t
     from app.models.sync_failure import SyncFailure
 
     source_id = uuid.uuid4()
-    await db_session.execute(text("""
-        INSERT INTO data_sources (id, name, source_type, connection_config, is_active, created_by)
-        VALUES (:id, 'filter-test', 'rest_api', '{}', true, (SELECT id FROM users LIMIT 1))
-    """), {"id": str(source_id)})
+    await _seed_source(db_session, source_id, "filter-test")
     await db_session.commit()
 
     db_session.add(SyncFailure(source_id=source_id, source_path="/r/1",

@@ -53,12 +53,19 @@ if [ ! -f .env ]; then
     # Settings.check_first_admin_password rejects the .env.example value at startup.
     # Use hex so the value contains no shell or .env-parser metacharacters.
     ADMIN_PASSWORD=$(openssl rand -hex 16)
+    # T6 / ENG-001: generate an at-rest encryption key for the
+    # data_sources.connection_config column. Fernet expects 44 chars of
+    # URL-safe base64 encoding 32 random bytes. `openssl rand -base64 32`
+    # produces standard base64; swap `+`→`-` and `/`→`_` for URL-safe.
+    ENCRYPTION_KEY=$(openssl rand -base64 32 | tr '+/' '-_')
     if [ "$OS" = "Darwin" ]; then
         sed -i '' "s|CHANGE-ME-generate-with-openssl-rand-hex-32|$JWT_SECRET|" .env
         sed -i '' "s|CHANGE-ME-on-first-login|$ADMIN_PASSWORD|" .env
+        sed -i '' "s|CHANGE-ME-generate-with-fernet-generate-key|$ENCRYPTION_KEY|" .env
     else
         sed -i "s|CHANGE-ME-generate-with-openssl-rand-hex-32|$JWT_SECRET|" .env
         sed -i "s|CHANGE-ME-on-first-login|$ADMIN_PASSWORD|" .env
+        sed -i "s|CHANGE-ME-generate-with-fernet-generate-key|$ENCRYPTION_KEY|" .env
     fi
     echo ""
     echo "============================================"
@@ -69,6 +76,19 @@ if [ ! -f .env ]; then
     echo "============================================"
     echo "  This password is stored in .env. Store it in your password manager."
     echo "  Press Enter when you have copied it."
+    echo ""
+    echo "============================================"
+    echo "  AT-REST ENCRYPTION KEY GENERATED (T6 / ENG-001)"
+    echo "============================================"
+    echo "  Key: $ENCRYPTION_KEY"
+    echo "============================================"
+    echo "  This key encrypts data_sources.connection_config at rest."
+    echo ""
+    echo "  *** BACK THIS UP SEPARATELY FROM YOUR DATABASE. ***"
+    echo "  Losing this key means every saved data-source connection"
+    echo "  configuration becomes unreadable. Store it alongside your"
+    echo "  JWT_SECRET in a password manager or secrets vault — NOT in"
+    echo "  the same location as DB backups."
     echo ""
     read -p "Press Enter to continue, or Ctrl+C to edit .env first..."
 
