@@ -321,6 +321,80 @@ All configuration lives in `.env` in the repo root. Never commit this file.
 | `SMTP_USERNAME` | No | — | SMTP auth username |
 | `SMTP_PASSWORD` | No | — | SMTP auth password |
 | `AUDIT_RETENTION_DAYS` | No | `1095` | Audit log retention (3 years default) |
+| `PORTAL_MODE` | No | `private` | `private` (staff-only, default) or `public` (adds the minimal resident surface described in B.3.1) |
+
+---
+
+## B.3.1 Portal Mode (Private vs. Public)
+
+CivicRecords AI can run in one of two modes. You pick the mode when you install, and you can change it later by editing `.env` and restarting the stack. **If you do nothing, the system runs in private mode** — the same behavior CivicRecords AI has always had.
+
+### What each mode does
+
+**Private mode (default).** Only city staff can use the system. Someone visiting the site from the open internet sees the staff login screen and nothing else. There is no "register" button. There is no public page. Residents who want to file a request still do so the way they always have — by email, phone, or walking into city hall. Staff receive those requests on their side as they do today.
+
+Choose private mode if:
+- Your city does not yet have policies, staffing, or legal sign-off to accept resident-submitted requests through a website.
+- You want to deploy the staff tool first and add the public surface later.
+- You are deploying into an internal network and public access is not desired.
+
+**Public mode.** Adds three — and only three — resident-facing pages on top of the staff tool:
+1. A **public landing page** that explains what residents can do online.
+2. A **resident registration page** where a member of the public can create an account for themselves.
+3. A **request submission form** that a registered, signed-in resident can use to file a records request.
+
+A resident must create an account and sign in before they can submit a request. There is no anonymous walk-up submission through the website — the person submitting the request has to be a real, identifiable account holder. This is a deliberate design decision for the first public-mode slice.
+
+**What public mode does NOT add.** There is no public search of already-released records, no full resident dashboard, no "track my request" screen. Those features are on the roadmap but are not part of this release. If a resident asks, the honest answer is "not yet — for now, your submission confirmation and any follow-up go through email."
+
+### Choosing the mode at install time
+
+The installer will ask you which mode to run in.
+
+**On Windows** (running `install.ps1` or the Start-Menu "Install or Repair CivicRecords AI" shortcut):
+
+```
+Portal mode — private (staff-only) or public (adds minimal resident surface)?
+Press Enter for the default [private], or type "public":
+```
+
+**On Linux / macOS** (running `bash install.sh`):
+
+```
+Portal mode [private]:
+```
+
+Press Enter to accept the default (`private`), or type `public` and press Enter.
+
+**Non-interactive installs** (for example, when you are scripting a deployment): set the environment variable `CIVICRECORDS_PORTAL_MODE=public` before running the installer. The installer will pick it up and skip the prompt.
+
+### Changing the mode after installation
+
+You can switch modes at any time without reinstalling. You will need access to the server where CivicRecords AI is running and permission to restart the Docker stack.
+
+1. Open `.env` in the CivicRecords AI install folder (the same folder that has `docker-compose.yml`).
+2. Find the line that reads `PORTAL_MODE=private` (or add it if it is missing).
+3. Change it to `PORTAL_MODE=public` — or the reverse, if you are switching back to private.
+4. Save the file.
+5. Restart the stack: `docker compose restart api frontend` (from that folder).
+6. Open `http://localhost:8080/` in a browser and confirm you see the expected screen — the staff login in private mode, or the public landing page in public mode.
+
+If the site does not come up the way you expect, the most common cause is a typo in `.env`. The system only accepts exactly `private` or `public` (case and extra spaces are forgiven — `Public` and ` PUBLIC ` both work — but misspellings like `publick` will stop the system from starting. If the stack refuses to start, open the logs with `docker compose logs api` and look for a message about `PORTAL_MODE`; fix the typo and restart.
+
+### Who can do what, at a glance
+
+| Who | Private mode | Public mode |
+|---|---|---|
+| Staff (admin, staff, reviewer, read-only, liaison) | Sign in at the staff login → staff workbench | Sign in at the staff login → staff workbench (unchanged) |
+| Someone who is not signed in | Sees staff login only | Sees public landing, can register, can sign in |
+| A registered resident (signed in) | N/A — resident accounts cannot be created | Sees the three public pages: landing, their registration state, and the submission form |
+| Anonymous visitor trying to submit a request | Not possible — no public surface | Not possible — submission requires a signed-in resident account |
+
+### Glossary
+
+- **`.env`** — A plain-text configuration file in the CivicRecords AI install folder that holds settings like database passwords, mail server settings, and now `PORTAL_MODE`. Never share this file with anyone outside your IT team.
+- **Docker stack** — The collection of running services (database, API, frontend, etc.) that make up CivicRecords AI.
+- **Resident account** — A user account with the "public" role. Can submit requests but cannot view other people's requests or use any staff tools.
 
 ---
 

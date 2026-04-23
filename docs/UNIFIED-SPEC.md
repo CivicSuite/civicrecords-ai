@@ -445,6 +445,48 @@ The model-pull behavior of `install.ps1` is *always* present on the install/repa
 
 **Test coverage:** `backend/tests/test_first_boot_seeding.py` — 3 tests pin (a) fresh-DB seeding populates all three datasets with full state coverage, (b) rerunning the seeder produces zero new rows, and (c) a customized exemption rule + notification template survive a re-seed.
 
+### 8.9 Install-time Portal Switch (T5D) [NEW 2026-04-22]
+
+**Two modes, locked at install time, changeable post-install by editing `.env` and restarting the stack.** Scott locked B4 = (b) on 2026-04-22 and selected Option A (authenticated public submission only, no anonymous walk-up) on the same day. T5D implements exactly that — no more, no less.
+
+**Private mode (default).** Staff-only. No public routes are mounted. `/auth/register` returns 404 (not 403 — the route does not exist in private mode). `UserRole.PUBLIC` is not assignable via self-registration. The login screen is the only externally reachable page. This matches the pre-T5D behavior of every CivicRecords AI deployment; existing deployments that do nothing will keep working exactly as they did.
+
+**Public mode — minimal surface (exact, locked).** Three user-visible surfaces, no more:
+1. **Public landing page** (`/public/`) — explains what the city lets residents do online and routes them to register or sign in.
+2. **Resident registration path** (`/public/register`) — creates a `UserRole.PUBLIC` account. The existing pre-T5D `UserCreate` bug that silently forced self-registered users to `UserRole.STAFF` is corrected in this slice; self-register now correctly forces `UserRole.PUBLIC`.
+3. **Authenticated records-request submission form** (`/public/submit`) — `UserRole.PUBLIC`-only. Requires the resident to be signed in. Populates `created_by` from the authenticated account.
+
+**Explicitly NOT in this slice and NOT implied by any copy:** anonymous walk-up submission, published-records search, a full resident dashboard, a track-my-request suite, or any other public-portal feature. Section 4.2 ("Public Portal [PLANNED]") remains the forward-looking scope; T5D does not advance it beyond the three surfaces above.
+
+**Config surface.**
+- Env var: `PORTAL_MODE=private|public` (default `private`).
+- Backend model: `backend/app/config.py` adds `portal_mode: Literal["public","private"] = "private"` with a Pydantic `field_validator` that lowercases and strips whitespace — `"public"`, `"Public"`, `" PUBLIC "` all resolve to `"public"`.
+- **Failure mode:** any value other than the two canonical strings (after normalization) fails fast at startup rather than silently defaulting to private. The operator gets a loud error instead of a quietly misconfigured deployment.
+- Installer integration: `install.ps1` / `install.sh` prompt interactively with `private` as the default; non-interactive installs accept `$CIVICRECORDS_PORTAL_MODE` as a pre-set. `.env.example` documents both modes with a comment block.
+
+**Backend endpoints.**
+| Endpoint | Mount condition | Auth | Roles | Notes |
+|---|---|---|---|---|
+| `POST /public/requests` | `portal_mode == "public"` | Required | `UserRole.PUBLIC` only | Staff roles (ADMIN, STAFF, REVIEWER, READ_ONLY, LIAISON) get 403 here and use `/requests/`. `created_by` FK is populated from the authenticated resident. **Not anonymous — submission requires a signed-in `UserRole.PUBLIC` account.** |
+| `POST /auth/register` | `portal_mode == "public"` | None | — | Returns 404 in private mode (route not mounted). In public mode, forces `UserRole.PUBLIC` on the created account. |
+| `GET /config/portal-mode` | Always mounted | None | — | Returns `{"mode": "private" \| "public"}`. Unauthenticated so the frontend can branch its routing on boot before any user-identity lookup. |
+
+**Frontend routing branches** (`frontend/src/App.tsx`).
+1. Boot: fetch `GET /config/portal-mode`.
+2. If `private`: behavior matches pre-T5D — login screen → staff workbench.
+3. If `public`:
+   - Unauthenticated visitors → `/public/*` routes (landing, register, sign-in).
+   - Authenticated `UserRole.PUBLIC` → `/public/*` only; cannot reach the staff dashboard.
+   - Authenticated staff roles → existing workbench; the public landing is not used.
+
+New frontend pages — `PublicLanding.tsx`, `PublicRegister.tsx`, `PublicSubmit.tsx` — each render loading / success / empty / error / partial states with actionable error copy (every error message names a specific fix path, not a dead end).
+
+**Test coverage.**
+- Backend: `backend/tests/test_portal_mode.py` — 15 pytest cases covering config normalization, the fail-fast path on invalid values, register gating (mounted in public / 404 in private), `UserCreate` role forcing, public-submit role gating (PUBLIC allowed, staff 403), and the always-on `/config/portal-mode` endpoint in both modes.
+- Frontend: `PublicLanding.test.tsx`, `PublicRegister.test.tsx`, `PublicSubmit.test.tsx` — 12 vitest cases total across the three pages, pinning state rendering and error copy.
+
+**Standing caveat (unchanged by T5D):** T2B runtime exposure closed; Tier 6 at-rest exposure still open; ENG-001 is not fully closed until Tier 6 lands. T5D does not touch the at-rest surface.
+
 ## 9. Search & Ingestion [IMPLEMENTED]
 
 ### 9.1 Ingestion Pipeline

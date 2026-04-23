@@ -399,6 +399,27 @@
         }
       }
     },
+    "/config/portal-mode": {
+      "get": {
+        "tags": [
+          "public"
+        ],
+        "summary": "Get the deployment's current portal posture.",
+        "operationId": "get_portal_mode_config_portal_mode_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PortalModeResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/audit/logs": {
       "get": {
         "tags": [
@@ -8684,6 +8705,25 @@
           "top_request_topics"
         ],
         "title": "OperationalMetrics"
+      },
+      "PortalModeResponse": {
+        "properties": {
+          "mode": {
+            "type": "string",
+            "enum": [
+              "public",
+              "private"
+            ],
+            "title": "Mode",
+            "description": "Active portal posture for this deployment. ``public`` = minimal resident surface (landing + authenticated records-request submission + resident registration) reachable without staff auth. ``private`` = staff-only; no public routes, no resident self-registration."
+          }
+        },
+        "type": "object",
+        "required": [
+          "mode"
+        ],
+        "title": "PortalModeResponse",
+        "description": "T5D \u2014 schema for ``GET /config/portal-mode``.\n\nExposed to the frontend on boot so it can branch routing without a\nuser-identity lookup. The payload is intentionally the single field\nbelow \u2014 no staff config, no user state, no schema version."
       },
       "RequestCreate": {
         "properties": {

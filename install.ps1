@@ -62,6 +62,54 @@ if (-not (Test-Path ".env")) {
     Write-Host "  Press Enter when you have copied it."
     Write-Host ""
     Read-Host "Press Enter to continue, or Ctrl+C to edit .env first"
+
+    # T5D — install-time PORTAL_MODE selection. Default is "private" (the
+    # safer posture — staff-only, no public surface). Operators choose
+    # "public" to expose the resident landing page + submission form +
+    # resident-registration path (locked B4=(b) minimal surface).
+    # Non-interactive installs can set $env:CIVICRECORDS_PORTAL_MODE
+    # before invoking install.ps1 to skip the prompt.
+    $portalMode = $env:CIVICRECORDS_PORTAL_MODE
+    if ($portalMode) {
+        $portalMode = $portalMode.Trim().ToLower()
+        if ($portalMode -ne "public" -and $portalMode -ne "private") {
+            Write-Host ""
+            Write-Host "[WARN] CIVICRECORDS_PORTAL_MODE='$portalMode' is not 'public' or 'private' -- falling back to 'private'." -ForegroundColor Yellow
+            $portalMode = "private"
+        } else {
+            Write-Host ""
+            Write-Host "PORTAL_MODE=$portalMode (from env, non-interactive install)" -ForegroundColor Cyan
+        }
+    } elseif ([Environment]::UserInteractive) {
+        Write-Host ""
+        Write-Host "============================================" -ForegroundColor Cyan
+        Write-Host "  Portal mode (T5D)" -ForegroundColor Cyan
+        Write-Host "============================================" -ForegroundColor Cyan
+        Write-Host "  private (default): staff-only deployment. No public routes. Residents"
+        Write-Host "                     cannot self-register. Login screen is the only"
+        Write-Host "                     externally reachable page."
+        Write-Host "  public:            exposes a minimal public surface -- landing page,"
+        Write-Host "                     resident registration, and an authenticated"
+        Write-Host "                     records-request submission form for residents."
+        Write-Host ""
+        $answer = (Read-Host "Install in public mode? [y/N]").Trim().ToLower()
+        if ($answer -eq "y" -or $answer -eq "yes" -or $answer -eq "public") {
+            $portalMode = "public"
+        } else {
+            $portalMode = "private"
+        }
+        Write-Host "PORTAL_MODE=$portalMode" -ForegroundColor Cyan
+    } else {
+        $portalMode = "private"
+        Write-Host "PORTAL_MODE=private (non-interactive install, default)" -ForegroundColor Cyan
+    }
+
+    # Persist the chosen mode into .env, replacing the default "private"
+    # value shipped by .env.example. Using literal String.Replace (not
+    # -replace regex) to avoid metachar issues.
+    $envContent = (Get-Content ".env" -Raw)
+    $envContent = $envContent.Replace("PORTAL_MODE=private", "PORTAL_MODE=$portalMode")
+    Set-Content ".env" -Value $envContent -NoNewline
 }
 
 # ─── Hardware Detection ───────────────────────────────────────────────────────

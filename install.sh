@@ -71,6 +71,54 @@ if [ ! -f .env ]; then
     echo "  Press Enter when you have copied it."
     echo ""
     read -p "Press Enter to continue, or Ctrl+C to edit .env first..."
+
+    # T5D — install-time PORTAL_MODE selection. Default is "private" (the
+    # safer posture — staff-only, no public surface). Operators choose
+    # "public" to expose the resident landing page + submission form +
+    # resident-registration path (locked B4=(b) minimal surface).
+    # Non-interactive installs can set CIVICRECORDS_PORTAL_MODE before
+    # invoking install.sh to skip the prompt.
+    if [ -n "$CIVICRECORDS_PORTAL_MODE" ]; then
+        PORTAL_MODE_CHOICE=$(echo "$CIVICRECORDS_PORTAL_MODE" | tr '[:upper:]' '[:lower:]' | tr -d '[:space:]')
+        if [ "$PORTAL_MODE_CHOICE" != "public" ] && [ "$PORTAL_MODE_CHOICE" != "private" ]; then
+            echo ""
+            echo "[WARN] CIVICRECORDS_PORTAL_MODE='$CIVICRECORDS_PORTAL_MODE' is not 'public' or 'private' — falling back to 'private'."
+            PORTAL_MODE_CHOICE="private"
+        else
+            echo ""
+            echo "PORTAL_MODE=$PORTAL_MODE_CHOICE (from env, non-interactive install)"
+        fi
+    elif [ -t 0 ]; then
+        echo ""
+        echo "============================================"
+        echo "  Portal mode (T5D)"
+        echo "============================================"
+        echo "  private (default): staff-only deployment. No public routes. Residents"
+        echo "                     cannot self-register. Login screen is the only"
+        echo "                     externally reachable page."
+        echo "  public:            exposes a minimal public surface — landing page,"
+        echo "                     resident registration, and an authenticated"
+        echo "                     records-request submission form for residents."
+        echo ""
+        read -p "Install in public mode? [y/N] " PORTAL_ANSWER
+        PORTAL_ANSWER=$(echo "$PORTAL_ANSWER" | tr '[:upper:]' '[:lower:]' | tr -d '[:space:]')
+        case "$PORTAL_ANSWER" in
+            y|yes|public) PORTAL_MODE_CHOICE="public" ;;
+            *)            PORTAL_MODE_CHOICE="private" ;;
+        esac
+        echo "PORTAL_MODE=$PORTAL_MODE_CHOICE"
+    else
+        PORTAL_MODE_CHOICE="private"
+        echo "PORTAL_MODE=private (non-interactive install, default)"
+    fi
+
+    # Persist the chosen mode into .env, replacing the default "private"
+    # value shipped by .env.example.
+    if [ "$OS" = "Darwin" ]; then
+        sed -i '' "s|^PORTAL_MODE=private$|PORTAL_MODE=$PORTAL_MODE_CHOICE|" .env
+    else
+        sed -i "s|^PORTAL_MODE=private$|PORTAL_MODE=$PORTAL_MODE_CHOICE|" .env
+    fi
 fi
 
 # ─── Hardware Detection ───────────────────────────────────────────────────────

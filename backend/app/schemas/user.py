@@ -16,13 +16,37 @@ class UserRead(schemas.BaseUser[uuid.UUID]):
 
 
 class UserCreate(schemas.BaseUserCreate):
+    """Self-registration schema for the public ``/auth/register`` endpoint.
+
+    Role is forced server-side, never honored from the request payload:
+    * In ``PORTAL_MODE=public``: role → ``UserRole.PUBLIC`` (residents who
+      register via the public surface get the minimal public role, never
+      STAFF).
+    * In ``PORTAL_MODE=private``: ``/auth/register`` is not mounted at all,
+      so this schema is unreachable in private mode. The fallback value here
+      matches the private-mode non-assignability posture (PUBLIC, not STAFF)
+      — which also corrects a pre-existing bug where self-register was
+      silently forced to STAFF regardless of caller intent.
+
+    Admin-driven user creation (including explicit STAFF/REVIEWER/LIAISON/
+    READ_ONLY assignments) goes through ``/admin/users`` via
+    :class:`AdminUserCreate`.
+    """
     full_name: str = ""
-    role: UserRole = UserRole.STAFF
+    role: UserRole = UserRole.PUBLIC
 
     @model_validator(mode="after")
-    def force_staff_role(self):
-        """Prevent callers from escalating role. Admin user creation goes through /admin/users."""
-        self.role = UserRole.STAFF
+    def force_public_role(self):
+        """Prevent callers from escalating role on self-registration.
+
+        T5D (2026-04-22): this used to force STAFF — a pre-existing bug
+        where the public ``/auth/register`` endpoint created STAFF-level
+        users. Corrected to PUBLIC as part of the portal-mode gating slice.
+        The ``/auth/register`` endpoint is only mounted when
+        ``PORTAL_MODE=public``, so in practice this value is only observed
+        by residents registering through the public surface.
+        """
+        self.role = UserRole.PUBLIC
         return self
 
 

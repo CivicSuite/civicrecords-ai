@@ -75,6 +75,23 @@ export interface paths {
         patch: operations["users_patch_user_users__id__patch"];
         trace?: never;
     };
+    "/config/portal-mode": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get the deployment's current portal posture. */
+        get: operations["get_portal_mode_config_portal_mode_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/audit/logs": {
         parameters: {
             query?: never;
@@ -2682,6 +2699,22 @@ export interface components {
             /** Top Request Topics */
             top_request_topics: string[];
         };
+        /**
+         * PortalModeResponse
+         * @description T5D — schema for ``GET /config/portal-mode``.
+         *
+         *     Exposed to the frontend on boot so it can branch routing without a
+         *     user-identity lookup. The payload is intentionally the single field
+         *     below — no staff config, no user state, no schema version.
+         */
+        PortalModeResponse: {
+            /**
+             * Mode
+             * @description Active portal posture for this deployment. ``public`` = minimal resident surface (landing + authenticated records-request submission + resident registration) reachable without staff auth. ``private`` = staff-only; no public routes, no resident self-registration.
+             * @enum {string}
+             */
+            mode: "public" | "private";
+        };
         /** RequestCreate */
         RequestCreate: {
             /** Requester Name */
@@ -3686,6 +3719,26 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_portal_mode_config_portal_mode_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PortalModeResponse"];
                 };
             };
         };

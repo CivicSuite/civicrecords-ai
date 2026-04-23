@@ -1,3 +1,5 @@
+from typing import Literal
+
 from pydantic import field_validator, model_validator
 from pydantic_settings import BaseSettings
 
@@ -57,6 +59,19 @@ class Settings(BaseSettings):
     # Empty by default. No wildcard support, no "disable all" escape hatch.
     connector_host_allowlist: list[str] = []
 
+    # T5D — install-time portal switch. Locked B4=(b) minimal public surface.
+    # "private" (default): staff-only posture. /auth/register is not mounted
+    #   and returns 404. No public routes are reachable. UserRole.PUBLIC is
+    #   defined in code but is not assignable via self-registration.
+    # "public": exposes the minimal public surface — public landing page,
+    #   resident-registration path, and an authenticated records-request
+    #   submission form for UserRole.PUBLIC users. Per Scott's 2026-04-22
+    #   Option A decision, anonymous walk-up submission is NOT supported;
+    #   residents must register (creating a UserRole.PUBLIC account) and
+    #   sign in before submitting a records request.
+    # Any other value raises at startup via the Literal + field_validator.
+    portal_mode: Literal["public", "private"] = "private"
+
     testing: bool = False
 
     model_config = {"env_file": ".env", "extra": "ignore"}
@@ -83,6 +98,17 @@ class Settings(BaseSettings):
         # Accept CSV strings from env (e.g. "host1,10.0.0.5") in addition to native lists.
         if isinstance(v, str):
             return [s.strip() for s in v.split(",") if s.strip()]
+        return v
+
+    @field_validator("portal_mode", mode="before")
+    @classmethod
+    def _normalize_portal_mode(cls, v):
+        # Normalize case and whitespace so "Public", " public ", "PRIVATE"
+        # all resolve; Literal["public","private"] then enforces the final
+        # allowlist. Any other value raises pydantic ValidationError at
+        # startup, which is what we want.
+        if isinstance(v, str):
+            return v.strip().lower()
         return v
 
     @model_validator(mode="after")

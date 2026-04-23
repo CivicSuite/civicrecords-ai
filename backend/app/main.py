@@ -1,11 +1,33 @@
 from contextlib import asynccontextmanager
+from typing import Literal
 
 from fastapi import FastAPI, Request, Response
 from fastapi.middleware.cors import CORSMiddleware
+from pydantic import BaseModel, Field
 
 from app.audit import AuditMiddleware, audit_router
-from app.auth import auth_router, users_router
+from app.auth import auth_router, register_router, users_router
 from app.config import APP_VERSION, settings
+
+
+class PortalModeResponse(BaseModel):
+    """T5D — schema for ``GET /config/portal-mode``.
+
+    Exposed to the frontend on boot so it can branch routing without a
+    user-identity lookup. The payload is intentionally the single field
+    below — no staff config, no user state, no schema version.
+    """
+
+    mode: Literal["public", "private"] = Field(
+        description=(
+            "Active portal posture for this deployment. "
+            "``public`` = minimal resident surface (landing + "
+            "authenticated records-request submission + resident "
+            "registration) reachable without staff auth. "
+            "``private`` = staff-only; no public routes, no resident "
+            "self-registration."
+        ),
+    )
 from app.database import engine
 from app.models.user import User, UserRole
 from app.schemas.user import AdminUserCreate
@@ -142,6 +164,45 @@ def create_app() -> FastAPI:
 
     app.include_router(auth_router, prefix="/auth/jwt", tags=["auth"])
     app.include_router(users_router, prefix="/users", tags=["users"])
+
+    # T5D — mount /auth/register only in PORTAL_MODE=public. The gate lives
+    # here (at create_app() time) rather than at module-import time so that
+    # tests can flip ``settings.portal_mode`` before the ``client`` fixture
+    # calls ``create_app`` and get the correct mount behavior for that test.
+    # In private mode this branch is skipped, so FastAPI returns 404 for
+    # POST /auth/register — the endpoint effectively does not exist on the
+    # public wire. Resident self-registration creates UserRole.PUBLIC users
+    # (see ``UserCreate.force_public_role`` in ``app.schemas.user``).
+    if settings.portal_mode == "public":
+        app.include_router(register_router, prefix="/auth", tags=["auth"])
+
+    # T5D — public surface (PORTAL_MODE=public only). Mounted under /public.
+    # Provides the authenticated records-request submission endpoint and
+    # associated read endpoints for signed-in UserRole.PUBLIC users. In
+    # private mode the public router is not mounted, so every /public/*
+    # path returns 404. Import is local so the app never imports the
+    # module in private mode.
+    if settings.portal_mode == "public":
+        from app.public.router import router as public_router
+        app.include_router(public_router, prefix="/public", tags=["public"])
+
+    # T5D — unauthenticated portal-mode discovery endpoint. Always
+    # mounted, regardless of PORTAL_MODE — the frontend calls this on
+    # boot to decide whether to expose the /public/* route tree. The
+    # response is intentionally minimal (one string field); it does not
+    # leak staff-only configuration or user state. The explicit
+    # response_model gives OpenAPI a typed schema (not ``{}``), which
+    # means the generated TypeScript client surfaces the exact literal
+    # union instead of ``unknown``.
+    @app.get(
+        "/config/portal-mode",
+        tags=["public"],
+        response_model=PortalModeResponse,
+        summary="Get the deployment's current portal posture.",
+    )
+    async def get_portal_mode() -> PortalModeResponse:
+        return PortalModeResponse(mode=settings.portal_mode)
+
     app.include_router(audit_router)
 
     from app.service_accounts import service_accounts_router
