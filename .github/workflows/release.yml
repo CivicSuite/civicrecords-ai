@@ -129,10 +129,23 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          gh release upload "${{ github.ref_name }}" \
-            artifacts/windows-installer/CivicRecordsAI-*-Setup.exe \
-            artifacts/windows-installer/CivicRecordsAI-*-Setup.exe.sha256 \
-            --clobber
+          # actions/upload-artifact@v7 preserves paths relative to
+          # GITHUB_WORKSPACE, so an artifact uploaded from `build/` lands
+          # back under `artifacts/windows-installer/build/` after
+          # actions/download-artifact@v8, not at the top of the artifact
+          # directory. Locate via `find` so this step is robust to either
+          # layout and produces an actionable error if nothing matches.
+          EXE=$(find artifacts -name 'CivicRecordsAI-*-Setup.exe' -type f | head -1)
+          SHA=$(find artifacts -name 'CivicRecordsAI-*-Setup.exe.sha256' -type f | head -1)
+          if [ -z "$EXE" ] || [ -z "$SHA" ]; then
+            echo "::error::Could not locate installer + checksum in artifacts/"
+            echo "Contents of artifacts/:"
+            find artifacts -type f || true
+            exit 1
+          fi
+          echo "Uploading installer: $EXE"
+          echo "Uploading checksum:  $SHA"
+          gh release upload "${{ github.ref_name }}" "$EXE" "$SHA" --clobber
 
       - name: Publish release
         env:
