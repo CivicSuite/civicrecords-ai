@@ -50,6 +50,13 @@ describe("DataSources — Add Source wizard accessibility + validation (T4C)", (
     await act(async () => {
       fireEvent.click(addBtn);
     });
+    // The wizard is a base-ui Dialog mounted into a portal. The click
+    // returning does not guarantee the portal subtree is in the DOM yet;
+    // on slow/contended runners (CI) the sync getByLabelText/getByRole
+    // calls downstream would throw before the mount completed. Block
+    // here on a stable first-step element — the Source Name input —
+    // so every caller can safely use synchronous screen queries.
+    await screen.findByLabelText(/source name/i);
   }
 
   it("associates the Source Name label with its input via htmlFor/id", async () => {
