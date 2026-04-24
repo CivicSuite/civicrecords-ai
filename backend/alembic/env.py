@@ -9,7 +9,16 @@ from app.models import Base
 
 config = context.config
 if config.config_file_name is not None:
-    fileConfig(config.config_file_name)
+    # Phase 1 Part B: programmatic alembic invocation (test_civiccore_migration_gates)
+    # runs env.py in the pytest parent process. fileConfig's default
+    # disable_existing_loggers=True sets .disabled=True on every pre-existing
+    # app.* logger, which survives beyond the migration call. Subsequent tests
+    # that rely on caplog (e.g. test_structured_log_on_fetch_failure) then see
+    # empty caplog.records because pytest's caplog.at_level does NOT reset the
+    # .disabled attribute — it only adjusts .level and logging.disable().
+    # disable_existing_loggers=False is the correct posture for alembic invoked
+    # from within a Python app that owns its own logger hierarchy.
+    fileConfig(config.config_file_name, disable_existing_loggers=False)
 
 target_metadata = Base.metadata
 

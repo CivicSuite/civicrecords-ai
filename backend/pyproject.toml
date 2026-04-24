@@ -47,6 +47,7 @@ asyncio_default_fixture_loop_scope = "session"
 testpaths = ["tests"]
 markers = [
     "portal_mode(mode): T5D — set PORTAL_MODE for this test ('public' or 'private'). See tests/test_portal_mode.py::_portal_mode_override.",
+    "integration: Phase 1 — integration test that requires an external runtime (Docker Compose, Alembic, civiccore migration runner). See tests/test_civiccore_migration_gates.py.",
 ]
 
 [tool.setuptools.packages.find]
