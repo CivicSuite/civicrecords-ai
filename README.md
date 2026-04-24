@@ -72,6 +72,12 @@ bash install.sh
 4. Click **Ingest Now** — documents are parsed, chunked, and indexed automatically
 5. Go to **Search** — type a natural language query and get cited results
 
+### Phase 1 migration layer
+
+CivicRecords AI backend installs `civiccore` (the shared CivicSuite schema + migration runtime) as a dependency. During the Phase 1 transition period `civiccore` is pinned by git+SHA rather than PyPI version; see `backend/pyproject.toml`. Because of this, the backend Docker build requires `git` inside the image (already wired in `Dockerfile.backend`).
+
+Migrations run in two layers: `civiccore` first (creates/updates the 16 shared tables), then this repo's Alembic chain on top. See [ADR-0003](https://github.com/CivicSuite/civicsuite/blob/main/docs/architecture/ADR-0003-civiccore-alembic-baseline-strategy.md) for the full gate contract.
+
 ## Architecture
 
 ```

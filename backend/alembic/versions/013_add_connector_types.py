@@ -8,6 +8,8 @@ from typing import Sequence, Union
 import sqlalchemy as sa
 from alembic import op
 
+from civiccore.migrations.guards import idempotent_add_column
+
 revision: str = '013_connector_types'
 down_revision: Union[str, None] = '012_liaison_public_roles'
 branch_labels: Union[str, Sequence[str], None] = None
@@ -15,13 +17,16 @@ depends_on: Union[str, Sequence[str], None] = None
 
 
 def upgrade() -> None:
-    # Add new SourceType enum values
-    # PostgreSQL requires ALTER TYPE ... ADD VALUE; cannot be done inside a transaction.
+    # Add new SourceType enum values.
+    # source_type is a SHARED (CivicCore-owned) enum, but ADD VALUE IF NOT EXISTS
+    # is natively idempotent — civiccore baseline can pre-declare these and the
+    # statements still run cleanly here.
     op.execute("ALTER TYPE source_type ADD VALUE IF NOT EXISTS 'rest_api'")
     op.execute("ALTER TYPE source_type ADD VALUE IF NOT EXISTS 'odbc'")
 
-    # Add last_sync_cursor column (last_sync_at already exists)
-    op.add_column(
+    # Add last_sync_cursor column on SHARED data_sources table — guarded.
+    # (last_sync_at already exists from 787207afc66a.)
+    idempotent_add_column(
         "data_sources",
         sa.Column("last_sync_cursor", sa.String(), nullable=True),
     )

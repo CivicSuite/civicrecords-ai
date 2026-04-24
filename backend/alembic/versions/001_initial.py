@@ -11,6 +11,11 @@ from alembic import op
 import sqlalchemy as sa
 from sqlalchemy.dialects import postgresql
 
+from civiccore.migrations.guards import (
+    idempotent_create_index,
+    idempotent_create_table,
+)
+
 revision: str = "001"
 down_revision: Union[str, None] = None
 branch_labels: Union[str, Sequence[str], None] = None
@@ -23,7 +28,7 @@ def upgrade() -> None:
 
     # Users table (fastapi-users compatible)
     # The Enum with create_type=True on the first table creates the user_role type
-    op.create_table(
+    idempotent_create_table(
         "users",
         sa.Column("id", fastapi_users_db_sqlalchemy.generics.GUID(), nullable=False),
         sa.Column("email", sa.String(length=320), nullable=False),
@@ -37,10 +42,10 @@ def upgrade() -> None:
         sa.Column("last_login", sa.DateTime(timezone=True), nullable=True),
         sa.PrimaryKeyConstraint("id"),
     )
-    op.create_index("ix_users_email", "users", ["email"], unique=True)
+    idempotent_create_index("ix_users_email", "users", ["email"], unique=True)
 
     # Service accounts table
-    op.create_table(
+    idempotent_create_table(
         "service_accounts",
         sa.Column("id", sa.UUID(), nullable=False),
         sa.Column("name", sa.String(255), nullable=False),
@@ -54,7 +59,7 @@ def upgrade() -> None:
     )
 
     # Audit log table (append-only, hash-chained)
-    op.create_table(
+    idempotent_create_table(
         "audit_log",
         sa.Column("id", sa.Integer(), autoincrement=True, nullable=False),
         sa.Column("prev_hash", sa.String(64), nullable=False, server_default="0" * 64),
@@ -68,12 +73,12 @@ def upgrade() -> None:
         sa.Column("ai_generated", sa.Boolean(), nullable=False, server_default=sa.text("false")),
         sa.PrimaryKeyConstraint("id"),
     )
-    op.create_index("ix_audit_log_entry_hash", "audit_log", ["entry_hash"])
-    op.create_index("ix_audit_log_timestamp", "audit_log", ["timestamp"])
-    op.create_index("ix_audit_log_action", "audit_log", ["action"])
-    op.create_index("ix_audit_log_resource_type", "audit_log", ["resource_type"])
-    op.create_index("ix_audit_log_user_id", "audit_log", ["user_id"])
-    op.create_index("ix_audit_log_user_timestamp", "audit_log", ["user_id", "timestamp"])
+    idempotent_create_index("ix_audit_log_entry_hash", "audit_log", ["entry_hash"])
+    idempotent_create_index("ix_audit_log_timestamp", "audit_log", ["timestamp"])
+    idempotent_create_index("ix_audit_log_action", "audit_log", ["action"])
+    idempotent_create_index("ix_audit_log_resource_type", "audit_log", ["resource_type"])
+    idempotent_create_index("ix_audit_log_user_id", "audit_log", ["user_id"])
+    idempotent_create_index("ix_audit_log_user_timestamp", "audit_log", ["user_id", "timestamp"])
 
 
 def downgrade() -> None:
