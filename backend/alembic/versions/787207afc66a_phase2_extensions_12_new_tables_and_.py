@@ -11,6 +11,12 @@ import sqlalchemy as sa
 from sqlalchemy.dialects import postgresql
 import fastapi_users_db_sqlalchemy.generics
 
+from civiccore.migrations.guards import (
+    idempotent_add_column,
+    idempotent_create_foreign_key,
+    idempotent_create_table,
+)
+
 # revision identifiers
 revision: str = '787207afc66a'
 down_revision: Union[str, None] = '006'
@@ -21,7 +27,7 @@ depends_on: Union[str, Sequence[str], None] = None
 def upgrade() -> None:
     # === 12 New Tables ===
 
-    op.create_table('connector_templates',
+    idempotent_create_table('connector_templates',
     sa.Column('id', sa.Integer(), autoincrement=True, nullable=False),
     sa.Column('vendor_name', sa.String(length=200), nullable=False),
     sa.Column('protocol', sa.String(length=50), nullable=False),
@@ -36,7 +42,7 @@ def upgrade() -> None:
     sa.PrimaryKeyConstraint('id')
     )
 
-    op.create_table('departments',
+    idempotent_create_table('departments',
     sa.Column('id', sa.Uuid(), nullable=False),
     sa.Column('name', sa.String(length=200), nullable=False),
     sa.Column('code', sa.String(length=20), nullable=False),
@@ -46,7 +52,7 @@ def upgrade() -> None:
     sa.UniqueConstraint('code')
     )
 
-    op.create_table('system_catalog',
+    idempotent_create_table('system_catalog',
     sa.Column('id', sa.Integer(), autoincrement=True, nullable=False),
     sa.Column('domain', sa.String(length=100), nullable=False),
     sa.Column('function', sa.String(length=200), nullable=False),
@@ -63,7 +69,7 @@ def upgrade() -> None:
     sa.PrimaryKeyConstraint('id')
     )
 
-    op.create_table('city_profile',
+    idempotent_create_table('city_profile',
     sa.Column('id', sa.Uuid(), nullable=False),
     sa.Column('city_name', sa.String(length=200), nullable=False),
     sa.Column('state', sa.String(length=2), nullable=False),
@@ -95,7 +101,7 @@ def upgrade() -> None:
     sa.PrimaryKeyConstraint('id')
     )
 
-    op.create_table('notification_templates',
+    idempotent_create_table('notification_templates',
     sa.Column('id', sa.Uuid(), nullable=False),
     sa.Column('event_type', sa.String(length=50), nullable=False),
     sa.Column('channel', sa.String(length=20), nullable=False),
@@ -109,7 +115,7 @@ def upgrade() -> None:
     sa.UniqueConstraint('event_type')
     )
 
-    op.create_table('prompt_templates',
+    idempotent_create_table('prompt_templates',
     sa.Column('id', sa.Uuid(), nullable=False),
     sa.Column('name', sa.String(length=200), nullable=False),
     sa.Column('purpose', sa.String(length=50), nullable=False),
@@ -207,21 +213,21 @@ def upgrade() -> None:
 
     # === Add new columns to existing tables ===
 
-    # data_sources
-    op.add_column('data_sources', sa.Column('discovered_source_id', sa.Uuid(), nullable=True))
-    op.add_column('data_sources', sa.Column('connector_template_id', sa.Integer(), nullable=True))
-    op.add_column('data_sources', sa.Column('sync_schedule', sa.String(50), nullable=True))
-    op.add_column('data_sources', sa.Column('last_sync_at', sa.DateTime(timezone=True), nullable=True))
-    op.add_column('data_sources', sa.Column('last_sync_status', sa.String(20), nullable=True))
-    op.add_column('data_sources', sa.Column('health_status', sa.String(20), nullable=True))
-    op.add_column('data_sources', sa.Column('schema_hash', sa.String(64), nullable=True))
+    # data_sources (shared — guarded)
+    idempotent_add_column('data_sources', sa.Column('discovered_source_id', sa.Uuid(), nullable=True))
+    idempotent_add_column('data_sources', sa.Column('connector_template_id', sa.Integer(), nullable=True))
+    idempotent_add_column('data_sources', sa.Column('sync_schedule', sa.String(50), nullable=True))
+    idempotent_add_column('data_sources', sa.Column('last_sync_at', sa.DateTime(timezone=True), nullable=True))
+    idempotent_add_column('data_sources', sa.Column('last_sync_status', sa.String(20), nullable=True))
+    idempotent_add_column('data_sources', sa.Column('health_status', sa.String(20), nullable=True))
+    idempotent_add_column('data_sources', sa.Column('schema_hash', sa.String(64), nullable=True))
 
-    # documents
-    op.add_column('documents', sa.Column('display_name', sa.String(500), nullable=True))
-    op.add_column('documents', sa.Column('department_id', sa.Uuid(), nullable=True))
-    op.add_column('documents', sa.Column('redaction_status', sa.String(20), server_default='none', nullable=False))
-    op.add_column('documents', sa.Column('derivative_path', sa.String(1000), nullable=True))
-    op.add_column('documents', sa.Column('original_locked', sa.Boolean(), server_default='false', nullable=False))
+    # documents (shared — guarded)
+    idempotent_add_column('documents', sa.Column('display_name', sa.String(500), nullable=True))
+    idempotent_add_column('documents', sa.Column('department_id', sa.Uuid(), nullable=True))
+    idempotent_add_column('documents', sa.Column('redaction_status', sa.String(20), server_default='none', nullable=False))
+    idempotent_add_column('documents', sa.Column('derivative_path', sa.String(1000), nullable=True))
+    idempotent_add_column('documents', sa.Column('original_locked', sa.Boolean(), server_default='false', nullable=False))
 
     # records_requests
     op.add_column('records_requests', sa.Column('requester_phone', sa.String(50), nullable=True))
@@ -244,14 +250,14 @@ def upgrade() -> None:
     op.add_column('exemption_flags', sa.Column('detection_method', sa.String(50), nullable=True))
     op.add_column('exemption_flags', sa.Column('auto_detected', sa.Boolean(), server_default='false', nullable=False))
 
-    # model_registry
-    op.add_column('model_registry', sa.Column('context_window_size', sa.Integer(), nullable=True))
-    op.add_column('model_registry', sa.Column('supports_ner', sa.Boolean(), server_default='false', nullable=False))
-    op.add_column('model_registry', sa.Column('supports_vision', sa.Boolean(), server_default='false', nullable=False))
+    # model_registry (shared — guarded)
+    idempotent_add_column('model_registry', sa.Column('context_window_size', sa.Integer(), nullable=True))
+    idempotent_add_column('model_registry', sa.Column('supports_ner', sa.Boolean(), server_default='false', nullable=False))
+    idempotent_add_column('model_registry', sa.Column('supports_vision', sa.Boolean(), server_default='false', nullable=False))
 
-    # users — add department_id
-    op.add_column('users', sa.Column('department_id', sa.Uuid(), nullable=True))
-    op.create_foreign_key('fk_users_department', 'users', 'departments', ['department_id'], ['id'])
+    # users — add department_id (shared — guarded)
+    idempotent_add_column('users', sa.Column('department_id', sa.Uuid(), nullable=True))
+    idempotent_create_foreign_key('fk_users_department', 'users', 'departments', ['department_id'], ['id'])
 
 
 def downgrade() -> None:

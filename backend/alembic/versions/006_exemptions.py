@@ -9,6 +9,11 @@ from alembic import op
 import sqlalchemy as sa
 from sqlalchemy.dialects import postgresql
 
+from civiccore.migrations.guards import (
+    idempotent_create_index,
+    idempotent_create_table,
+)
+
 revision: str = "006"
 down_revision: Union[str, None] = "005"
 branch_labels: Union[str, Sequence[str], None] = None
@@ -16,7 +21,7 @@ depends_on: Union[str, Sequence[str], None] = None
 
 
 def upgrade() -> None:
-    op.create_table("exemption_rules",
+    idempotent_create_table("exemption_rules",
         sa.Column("id", sa.UUID(), nullable=False),
         sa.Column("state_code", sa.String(2), nullable=False),
         sa.Column("category", sa.String(100), nullable=False),
@@ -28,8 +33,8 @@ def upgrade() -> None:
         sa.Column("created_at", sa.DateTime(timezone=True), server_default=sa.func.now()),
         sa.PrimaryKeyConstraint("id"),
     )
-    op.create_index("ix_exemption_rules_state", "exemption_rules", ["state_code"])
-    op.create_index("ix_exemption_rules_category", "exemption_rules", ["category"])
+    idempotent_create_index("ix_exemption_rules_state", "exemption_rules", ["state_code"])
+    idempotent_create_index("ix_exemption_rules_category", "exemption_rules", ["category"])
 
     op.create_table("exemption_flags",
         sa.Column("id", sa.UUID(), nullable=False),

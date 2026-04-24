@@ -32,6 +32,12 @@ def upgrade() -> None:
     # PostgreSQL 12+ allows ALTER TYPE ... ADD VALUE IF NOT EXISTS inside a transaction.
     # The project targets PostgreSQL 17, so the prior COMMIT workaround (which breaks
     # asyncpg's protocol-level transaction management) is not needed.
+    #
+    # The user_role enum is a SHARED (CivicCore-owned) type — civiccore baseline
+    # already declares the full role set including 'liaison' and 'public', so on
+    # any DB that ran the baseline these statements no-op via ADD VALUE IF NOT
+    # EXISTS. Native Postgres idempotency is sufficient here; no `has_table`
+    # gate is needed because we are mutating a TYPE, not a table.
     op.execute(sa.text("ALTER TYPE user_role ADD VALUE IF NOT EXISTS 'liaison'"))
     op.execute(sa.text("ALTER TYPE user_role ADD VALUE IF NOT EXISTS 'public'"))
 

@@ -19,6 +19,8 @@ from typing import Sequence, Union
 import sqlalchemy as sa
 from alembic import op
 
+from civiccore.migrations.guards import idempotent_alter_column
+
 revision: str = '018_city_profile_state_nullable'
 down_revision: Union[str, None] = '017_rename_connector_enum_values'
 branch_labels: Union[str, Sequence[str], None] = None
@@ -26,7 +28,10 @@ depends_on: Union[str, Sequence[str], None] = None
 
 
 def upgrade() -> None:
-    op.alter_column(
+    # SHARED city_profile column — guarded. On fresh install, baseline
+    # already creates city_profile.state with nullable=True (HEAD shape),
+    # so this is a no-op via the helper's introspection check.
+    idempotent_alter_column(
         'city_profile',
         'state',
         existing_type=sa.String(length=2),

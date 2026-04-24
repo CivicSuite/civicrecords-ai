@@ -10,13 +10,18 @@ import sqlalchemy as sa
 from sqlalchemy.dialects import postgresql
 from pgvector.sqlalchemy import Vector
 
+from civiccore.migrations.guards import (
+    idempotent_create_index,
+    idempotent_create_table,
+)
+
 revision: str = "002"
 down_revision: Union[str, None] = "001"
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
 
 def upgrade() -> None:
-    op.create_table("data_sources",
+    idempotent_create_table("data_sources",
         sa.Column("id", sa.UUID(), nullable=False),
         sa.Column("name", sa.String(255), nullable=False),
         sa.Column("source_type", sa.Enum("upload", "directory", name="source_type", create_type=True), nullable=False),
@@ -29,7 +34,7 @@ def upgrade() -> None:
         sa.PrimaryKeyConstraint("id"),
         sa.UniqueConstraint("name"),
     )
-    op.create_table("documents",
+    idempotent_create_table("documents",
         sa.Column("id", sa.UUID(), nullable=False),
         sa.Column("source_id", sa.UUID(), sa.ForeignKey("data_sources.id"), nullable=False),
         sa.Column("source_path", sa.Text(), nullable=False),
@@ -44,10 +49,10 @@ def upgrade() -> None:
         sa.Column("metadata", postgresql.JSONB(), nullable=True),
         sa.PrimaryKeyConstraint("id"),
     )
-    op.create_index("ix_documents_source_id", "documents", ["source_id"])
-    op.create_index("ix_documents_file_hash", "documents", ["file_hash"])
-    op.create_index("ix_documents_source_hash", "documents", ["source_id", "file_hash"])
-    op.create_table("document_chunks",
+    idempotent_create_index("ix_documents_source_id", "documents", ["source_id"])
+    idempotent_create_index("ix_documents_file_hash", "documents", ["file_hash"])
+    idempotent_create_index("ix_documents_source_hash", "documents", ["source_id", "file_hash"])
+    idempotent_create_table("document_chunks",
         sa.Column("id", sa.UUID(), nullable=False),
         sa.Column("document_id", sa.UUID(), sa.ForeignKey("documents.id", ondelete="CASCADE"), nullable=False),
         sa.Column("chunk_index", sa.Integer(), nullable=False),
@@ -57,8 +62,8 @@ def upgrade() -> None:
         sa.Column("page_number", sa.Integer(), nullable=True),
         sa.PrimaryKeyConstraint("id"),
     )
-    op.create_index("ix_document_chunks_document_id", "document_chunks", ["document_id"])
-    op.create_index("ix_chunks_doc_index", "document_chunks", ["document_id", "chunk_index"])
+    idempotent_create_index("ix_document_chunks_document_id", "document_chunks", ["document_id"])
+    idempotent_create_index("ix_chunks_doc_index", "document_chunks", ["document_id", "chunk_index"])
 
 def downgrade() -> None:
     op.drop_table("document_chunks")

@@ -13,6 +13,12 @@ from typing import Sequence, Union
 import sqlalchemy as sa
 from alembic import op
 
+from civiccore.migrations.guards import (
+    idempotent_add_column,
+    idempotent_create_check_constraint,
+    idempotent_create_index,
+)
+
 revision: str = '014_p6a_idempotency'
 down_revision: Union[str, None] = '013_connector_types'
 branch_labels: Union[str, Sequence[str], None] = None
@@ -20,14 +26,15 @@ depends_on: Union[str, Sequence[str], None] = None
 
 
 def upgrade() -> None:
-    # 1. Add connector_type column to documents (denormalized from data_sources.source_type)
-    op.add_column(
+    # 1. Add connector_type column to SHARED documents table — guarded.
+    #    (denormalized from data_sources.source_type)
+    idempotent_add_column(
         "documents",
         sa.Column("connector_type", sa.String(20), nullable=True),
     )
 
-    # 2. Add updated_at column to documents
-    op.add_column(
+    # 2. Add updated_at column to SHARED documents table — guarded.
+    idempotent_add_column(
         "documents",
         sa.Column("updated_at", sa.DateTime(timezone=True), nullable=True),
     )
@@ -55,7 +62,7 @@ def upgrade() -> None:
     """)
 
     # 5. Add source_path max length constraint (2048 chars)
-    op.create_check_constraint(
+    idempotent_create_check_constraint(
         "chk_source_path_length",
         "documents",
         "source_path IS NULL OR length(source_path) <= 2048",
@@ -63,7 +70,7 @@ def upgrade() -> None:
 
     # 6. Partial UNIQUE index for binary connectors: dedup by (source_id, file_hash)
     #    Excludes structured connectors (rest_api, odbc).
-    op.create_index(
+    idempotent_create_index(
         "uq_documents_binary_hash",
         "documents",
         ["source_id", "file_hash"],
@@ -72,7 +79,7 @@ def upgrade() -> None:
     )
 
     # 7. Partial UNIQUE index for structured connectors: dedup by (source_id, source_path)
-    op.create_index(
+    idempotent_create_index(
         "uq_documents_structured_path",
         "documents",
         ["source_id", "source_path"],

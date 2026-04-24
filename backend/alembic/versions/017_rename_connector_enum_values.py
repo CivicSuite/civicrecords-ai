@@ -20,8 +20,28 @@ depends_on: Union[str, Sequence[str], None] = None
 
 
 def upgrade() -> None:
-    op.execute("ALTER TYPE source_type RENAME VALUE 'upload' TO 'manual_drop'")
-    op.execute("ALTER TYPE source_type RENAME VALUE 'directory' TO 'file_system'")
+    # source_type is a SHARED (CivicCore-owned) enum. On a fresh install the
+    # civiccore baseline declares it with the canonical post-rename values
+    # ('manual_drop', 'file_system') already, so 'upload'/'directory' do not
+    # exist and the bare RENAME would raise. Gate each rename on the source
+    # value's presence in pg_enum so the migration is a no-op when the
+    # values already match the target shape.
+    op.execute(
+        "DO $$ BEGIN "
+        "IF EXISTS (SELECT 1 FROM pg_enum e "
+        "JOIN pg_type t ON e.enumtypid = t.oid "
+        "WHERE t.typname = 'source_type' AND e.enumlabel = 'upload') THEN "
+        "  ALTER TYPE source_type RENAME VALUE 'upload' TO 'manual_drop'; "
+        "END IF; END $$;"
+    )
+    op.execute(
+        "DO $$ BEGIN "
+        "IF EXISTS (SELECT 1 FROM pg_enum e "
+        "JOIN pg_type t ON e.enumtypid = t.oid "
+        "WHERE t.typname = 'source_type' AND e.enumlabel = 'directory') THEN "
+        "  ALTER TYPE source_type RENAME VALUE 'directory' TO 'file_system'; "
+        "END IF; END $$;"
+    )
 
 
 def downgrade() -> None:

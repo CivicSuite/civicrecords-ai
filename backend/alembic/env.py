@@ -26,6 +26,28 @@ def run_migrations_offline() -> None:
 
 
 def do_run_migrations(connection):
+    # Phase-1 (civiccore extraction): bring civiccore migrations to head BEFORE
+    # records' own chain. See ADR-0003 §3.
+    #
+    # Civiccore is invoked in a subprocess rather than inline because alembic's
+    # `context._proxy` is process-global, not stacked. Calling civiccore's
+    # `command.upgrade` (even on a separate connection) would tear down records'
+    # active context proxy on civiccore's __exit__, causing
+    # `AttributeError: 'NoneType' object has no attribute 'configure'` on the
+    # next records env.py line. A subprocess gives civiccore a clean alembic
+    # process. Civiccore opens its own DB connection from DATABASE_URL.
+    import subprocess
+    import sys
+
+    subprocess.run(
+        [
+            sys.executable,
+            "-c",
+            "from civiccore.migrations.runner import upgrade_to_head; upgrade_to_head()",
+        ],
+        check=True,
+    )
+
     context.configure(connection=connection, target_metadata=target_metadata)
     with context.begin_transaction():
         context.run_migrations()

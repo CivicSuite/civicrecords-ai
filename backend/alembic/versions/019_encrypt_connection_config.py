@@ -43,6 +43,7 @@ import sqlalchemy as sa
 from alembic import op
 
 from app.security.at_rest import decrypt_json, encrypt_json, is_encrypted
+from civiccore.migrations.guards import has_table
 
 revision: str = '019_encrypt_connection_config'
 down_revision: Union[str, None] = '018_city_profile_state_nullable'
@@ -80,7 +81,21 @@ def _write_row(conn, row_id, new_value) -> None:
 
 
 def upgrade() -> None:
-    """Encrypt every plaintext row. Skip already-encrypted rows."""
+    """Encrypt every plaintext row. Skip already-encrypted rows.
+
+    SHARED data_sources table — gated on table presence so the data
+    migration is a clean no-op if civiccore baseline (or any future
+    migration order) has not yet created it. The per-row ``is_encrypted``
+    check below is the authoritative post-migration-state guard: re-runs
+    against an already-encrypted column skip every row and report
+    encrypted=0.
+    """
+    if not has_table("data_sources"):
+        print(
+            "[019_encrypt_connection_config] upgrade skipped: "
+            "data_sources table not present"
+        )
+        return
     conn = op.get_bind()
     encrypted = 0
     skipped = 0
@@ -108,7 +123,16 @@ def upgrade() -> None:
 
 
 def downgrade() -> None:
-    """Decrypt every envelope row back to plaintext. Skip already-plaintext."""
+    """Decrypt every envelope row back to plaintext. Skip already-plaintext.
+
+    Mirrors ``upgrade``: gated on shared table presence.
+    """
+    if not has_table("data_sources"):
+        print(
+            "[019_encrypt_connection_config] downgrade skipped: "
+            "data_sources table not present"
+        )
+        return
     conn = op.get_bind()
     decrypted = 0
     skipped = 0
