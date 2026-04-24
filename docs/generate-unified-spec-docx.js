@@ -1014,7 +1014,19 @@ const doc = new Document({
 
 // Generate
 Packer.toBuffer(doc).then(buffer => {
-  const outPath = "C:\\Users\\scott\\Desktop\\Claude\\civicrecords-ai\\docs\\UNIFIED-SPEC.docx";
+  // Resolve output next to this generator so it works from any repo path
+  // (previously hardcoded to a non-OneDrive clone that only existed on the
+  // original author's machine — produced ENOENT on every other checkout).
+  const path = require("path");
+  const outPath = path.join(__dirname, "UNIFIED-SPEC.docx");
   fs.writeFileSync(outPath, buffer);
   console.log(`Written to ${outPath} (${(buffer.length / 1024).toFixed(0)} KB)`);
+
+  // Also write the spec-v3.1-pinned copy used as a release-asset snapshot.
+  // The spec is currently at v3.1 (see §1 of UNIFIED-SPEC.md); when the
+  // spec bumps to v3.2 or higher, add a new pinned name here and keep the
+  // old ones as archival.
+  const pinnedV31 = path.join(__dirname, "CivicRecordsAI-UnifiedSpec-v3.1.docx");
+  fs.writeFileSync(pinnedV31, buffer);
+  console.log(`Written to ${pinnedV31} (${(buffer.length / 1024).toFixed(0)} KB)`);
 });

@@ -1,8 +1,8 @@
 ---
-title: CivicRecords AI — System Component Diagram (v1.1+)
+title: CivicRecords AI — System Component Diagram (v1.2+)
 ---
 graph TB
-    subgraph Browser["🖥 Browser Client — React 18 · shadcn/ui · Tailwind CSS"]
+    subgraph Browser["🖥 Staff Browser Client — React 18 · shadcn/ui · Tailwind CSS"]
         direction LR
         UI_Search["Search UI"]
         UI_Requests["Request Tracker"]
@@ -12,13 +12,22 @@ graph TB
         UI_Audit["Audit Log"]
     end
 
+    subgraph PublicBrowser["🌐 Public Browser (optional — PORTAL_MODE=public only, T5D)"]
+        direction LR
+        UI_PubLand["Public Landing"]
+        UI_PubReg["Resident Registration"]
+        UI_PubSubmit["Records Request\nSubmission (authenticated)"]
+    end
+
     subgraph API["⚙ Application Server — FastAPI · Python 3.12"]
         direction TB
         Auth["JWT Auth\n(fastapi-users)"]
         Dept["Department\nScoping"]
+        PortalMode["Portal Mode Config\n/config/portal-mode\n(always mounted)"]
         SearchAPI["Search API\n/search/query\n/search/export"]
         RequestAPI["Request Workflow\n/requests/**"]
-        SourceAPI["Data Sources\n/datasources/**"]
+        PublicAPI["Public Router\n/public/requests\n(only in PORTAL_MODE=public)"]
+        SourceAPI["Data Sources\n/datasources/**\n(connection_config\nat-rest encrypted — T6)"]
         ExemptAPI["Exemption Engine\n/exemptions/**"]
         AdminAPI["Admin API\n/admin/**"]
         NotifAPI["Notifications\n/notifications/**"]
@@ -50,11 +59,14 @@ graph TB
     end
 
     Browser -->|"HTTPS REST/JSON"| API
+    PublicBrowser -.->|"HTTPS REST/JSON\n(optional: public mode only)"| API
     API --> Auth
     API --> Dept
+    API --> PortalMode
     API --> SearchAPI
     API --> SourceAPI
     API --> RequestAPI
+    API --> PublicAPI
     API --> ExemptAPI
     API --> AdminAPI
     SyncRunner -->|"discover / fetch"| Sources

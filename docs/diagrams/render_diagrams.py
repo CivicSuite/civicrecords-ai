@@ -154,18 +154,20 @@ def make_component():
     d.add(Rect(0, 0, W, H, fillColor=WHITE, strokeColor=None))
 
     # Title
-    d.add(label("CivicRecords AI — System Components", W/2, H - 24,
+    d.add(label("CivicRecords AI — System Components (v1.2)", W/2, H - 24,
                 size=14, color=DARK, bold=True))
 
     layers = [
         # (title, items, header_color, bg_color, y_top)
-        ("Browser Layer",
+        ("Browser Layer (Staff; optional Public surface when PORTAL_MODE=public)",
          ["Search UI", "Request Tracker", "Data Sources",
-          "Admin Panel", "Exemption Review", "Audit Log"],
+          "Admin Panel", "Exemption Review", "Audit Log",
+          "Public Landing (opt)", "Resident Register (opt)", "Public Submit (opt)"],
          DARK, PALE),
         ("Application Server",
-         ["JWT Auth", "Dept Scoping", "Search API", "Request API",
-          "Sources API", "Exemption Engine", "Admin API",
+         ["JWT Auth", "Dept Scoping", "Portal Mode API",
+          "Search API", "Request API", "Public Router (opt)",
+          "Sources API (at-rest enc.)", "Exemption Engine", "Admin API",
           "Notifications", "Audit API", "LLM Client", "Sync Runner"],
          GREEN, GREEN2),
         ("Workers",

@@ -612,7 +612,7 @@ const doc = new Document({
         // --- 23. Monitoring & Troubleshooting ---
         h2("23. Monitoring & Troubleshooting"),
         h3("Health Check"),
-        codeBlock("GET /health  \u2192  {\"status\": \"ok\", \"version\": \"1.1.0\"}"),
+        codeBlock("GET /health  \u2192  {\"status\": \"ok\", \"version\": \"1.2.0\"}"),
         h3("Common Issues"),
         makeTable(
           ["Symptom", "Cause", "Fix"],

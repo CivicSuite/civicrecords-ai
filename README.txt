@@ -16,7 +16,7 @@ No open-source tool exists for the **responder side** of open records at the mun
 - **Document Ingestion** — Automatic parsing of PDF, DOCX, XLSX, CSV, email, HTML, and text files. Scanned documents processed via multimodal AI (Gemma 4) with Tesseract OCR fallback
 - **Exemption Detection** — Tier 1 PII detection (SSN, credit card with Luhn validation, phone, email, bank accounts, state-specific driver's licenses) plus per-state statutory keyword matching. Optional LLM secondary review. All flags require human confirmation
 - **Request Management** — Full lifecycle tracking with 10 statuses: received, clarification needed, assigned, searching, in review, ready for release, drafted, approved, fulfilled, closed. Timeline, messaging, fee tracking, and response letter generation
-- **Guided Onboarding** — 3-phase wizard helps cities configure their profile, identify data systems across 12 municipal domains, and surface coverage gaps
+- **Guided Onboarding** — Two modes operators can switch between: a 3-phase form wizard (City Profile → Systems → Gap Map), and a single-phase LLM-powered adaptive interview that persists each answer (including `has_dedicated_it`) to the CityProfile singleton and drives the `onboarding_status` lifecycle (not_started → in_progress → complete). Skip advances the walk truthfully. Both modes surface coverage gaps across 12 municipal domains.
 - **Municipal Systems Catalog** — Curated knowledge base of 25+ municipal software vendors across 12 functional domains (finance, public safety, permitting, HR, etc.) with discovery hints and connector templates
 - **Universal Connector Framework** — Standardized protocol (authenticate/discover/fetch/health_check) for connecting to city data sources. Ships with four implemented connector types: `file_system` (local/mounted directories), `manual_drop` (watched drop folders), `rest_api` (generic REST API — API key / Bearer / OAuth2 client-credentials / Basic auth; JSON/XML/CSV; page/offset/cursor pagination), and `odbc` (SQL databases via pyodbc, row-as-document with SQL-injection guards). IMAP email, SMB/NFS, and SharePoint connectors on roadmap
 - **Scheduled Sync & Idempotent Ingestion** — Per-source cron scheduling (5-field expressions via croniter, evaluated in UTC with local-time disclosure, rolling 7-day min-interval validation, 5-minute floor) with `schedule_enabled` pause toggle. Idempotent pipeline: binary sources dedup by content hash, structured REST/ODBC sources dedup by stable source-path with canonical JSON serialization. Concurrent-update races prevented via `SELECT FOR UPDATE` + partial UNIQUE indexes; content updates atomically replace chunks and embeddings in the same transaction
@@ -24,7 +24,7 @@ No open-source tool exists for the **responder side** of open records at the mun
 - **Operational Analytics** — Real-time metrics: average response time, deadline compliance rate, overdue requests, status breakdown
 - **Notification Service** — Template-based notification system with SMTP email delivery via Celery beat (60s interval). Configure SMTP_HOST, SMTP_PORT, SMTP_USERNAME, SMTP_PASSWORD in .env to enable. Notification dispatch into status transitions pending
 - **Compliance by Design** — Hash-chained audit logs, human-in-the-loop enforcement, AI content labeling, data sovereignty verification. Designed for Colorado CAIA and 50-state regulatory compliance. CJIS compliance gate for public safety connectors
-- **Civic Design System** — Professional UI built with shadcn/ui, civic blue design tokens, sidebar navigation. WCAG 2.2 AA targeted (44px touch targets, skip navigation, icon+color status badges — accessibility audit pending)
+- **Civic Design System** — Professional UI built with shadcn/ui and civic blue design tokens. Responsive shell: fixed 240px sidebar at ≥768px, hamburger-driven slide-in drawer below that (with focus trap, ESC close, overlay dim, auto-close on route change). WCAG 2.2 AA targeted (44px touch targets, skip-to-content link, icon+color status badges, programmatic label→input associations on admin forms, `role="alert"` validation errors with actionable copy — full third-party accessibility audit still pending)
 - **Federation-Ready** — REST API with service accounts enables future cross-jurisdiction record discovery between CivicRecords AI instances
 
 ## Quick Start
@@ -36,6 +36,19 @@ No open-source tool exists for the **responder side** of open records at the mun
 - No internet connection required after initial setup
 
 ### Install
+
+> **Install paths.** Two options ship today:
+>
+> 1. **Windows double-click installer (T5E, UNSIGNED).** A signed build is a future release — this one is not. The unsigned installer is published on every release tag at `releases/download/<tag>/CivicRecordsAI-<version>-Setup.exe` along with a SHA-256 checksum for independent verification. On first run Windows SmartScreen shows **"Windows protected your PC — Unknown publisher."** This is expected. Click **More info → Run anyway** to proceed. See [installer/windows/README.md](installer/windows/README.md) for the full SmartScreen walkthrough and checksum-verify steps. The installer bundles the repo snapshot, runs a prereq check (Docker Desktop, WSL 2 + Virtual Machine Platform, 32 GB RAM floor, optional host Ollama), then runs `install.ps1` (via `installer\windows\launch-install.ps1`). `install.ps1` **auto-pulls `nomic-embed-text` and auto-pulls the Gemma 4 tag you select in the picker** (default `gemma4:e4b`) — expect several minutes on first run — and seeds the T5B baseline datasets.
+>
+> 2. **Script-based install (Linux / macOS, and Windows if you prefer CLI).** The scripts below configure and start the Docker Compose stack. They do **not** install Docker, WSL, or any other system prerequisites — those must already be present. `install.ps1` / `install.sh` both ship the 4-model Gemma 4 picker, auto-pull the selected LLM plus `nomic-embed-text`, and auto-seed the baseline datasets on first boot.
+>
+> **Two shortcuts, two flows.** The Windows installer creates **separate** Start Menu entries for the two operations — don't confuse them:
+>
+> - **Start CivicRecords AI** → daily start. Runs `docker compose up -d` and opens `http://localhost:8080/`. Does **not** run the prereq check, does **not** invoke `install.ps1`, does **not** pull any model, does **not** re-seed data. The Desktop shortcut (if you opted in) mirrors this daily-start behavior.
+> - **Install or Repair CivicRecords AI** → full bootstrap/repair. Runs the prereq check, then `install.ps1` (which may show the picker and pull models). Use this for first-run setup (the installer fires it automatically for you the first time), when you want to switch LLMs, or to repair a broken stack.
+>
+> **Docker Desktop and WSL 2** must be installed and running before either path; the installer detects their absence and prints concrete remediation, but does not install them for you.
 
 **Windows:**
 ```powershell
@@ -162,20 +175,20 @@ docker compose exec postgres dropdb -U civicrecords civicrecords_test
 | **Reviewer** | Everything Staff can do + approve/reject responses and exemption flags | Built |
 | **Read-Only** | View search results and request status only | Built |
 | **Liaison** | Department-scoped read access to requests and search; Users/Audit Log/Onboarding nav hidden | Built |
-| **Public** | Submit requests, track own requests, search published records | v1.1 |
+| **Public** | Submit requests (T5D, authenticated only); track own requests [planned]; search published records [planned] | T5D `a57a897` (v1.2.0) |
 
 Service accounts with hashed API keys enable instance-to-instance federation access.
 
 ## Status
 
-**v1.2.0** — 2026-04-23 release. Tier 5 (installer + onboarding + seeding + model picker + portal mode) and Tier 6 (at-rest encryption, ENG-001 closed) ship together. CI green on `d556904` (run 24853147133). Backend 617/617 pytest, frontend 36/36 vitest. README.md has the full Tier 5/6 narrative; this plaintext mirror carries the summary only.
+**v1.2.0** — 2026-04-23 release. Tier 5 (installer + onboarding + seeding + model picker + portal mode) and Tier 6 (at-rest encryption, ENG-001 closed) ship together. CI green on `d556904` (run 24853147133). Backend 617/617 pytest, frontend 36/36 vitest, unsigned Windows installer produced on tag push.
 
 **v1.1.0** — Phase 2 release with department access controls, 50-state exemption rules, and compliance templates.
 
 **New in v1.1.0:**
 - Department-level access controls — staff scoped to own department, admins see all
 - Department CRUD API with audit logging
-- 50-state + DC exemption rule coverage (180 rules across 51 jurisdictions)
+- 50-state + DC exemption rule coverage (175 jurisdiction-scoped rules across 51 jurisdictions, plus 5 universal PII rules available in the seed source — 180 total)
 - 5 compliance template documents (AI Use Disclosure, Response Letter Disclosure, CAIA Impact Assessment, AI Governance Policy, Data Residency Attestation)
 - Template render endpoint with city profile variable substitution
 - Exemption auditability dashboard with acceptance/rejection rates and CSV/JSON export (time-period filtering not yet implemented)
@@ -184,7 +197,7 @@ Service accounts with hashed API keys enable instance-to-instance federation acc
 **Carried from v1.0.x:**
 - 13 staff workbench pages + Login with shadcn/ui design system
 - 29 database tables, ~30 API endpoints
-- 556 backend + 7 frontend automated tests passing (GitHub Actions CI-verified)
+- 593 backend + 36 frontend automated tests passing (GitHub Actions CI-verified, run 24817110396 on `a57a897`)
 - Guided onboarding, systems catalog, connector framework
 - Request timeline, messaging, fee tracking, response letter generation
 - Operational analytics and notification service
@@ -192,15 +205,25 @@ Service accounts with hashed API keys enable instance-to-instance federation acc
 - Login rate limiting, audit log archival, admin-only user creation
 - Tested on Windows 11 (Docker Desktop) and Ubuntu 22.04 (Docker Engine)
 
-**In v1.2.0 — security hardening (all tagged in this release):**
+**In v1.2.0 — Tier 5 (all five slices shipped 2026-04-22 → 2026-04-23, tagged in this release):**
+
+- **T5C — 4-model Gemma 4 installer picker, 2026-04-22 (`7721cf0`):** Picker now shows exactly four supported Gemma 4 tags: `gemma4:e2b`, `gemma4:e4b` (default), `gemma4:26b`, `gemma4:31b` — with per-model disk footprint, min/recommended RAM advisories, and a `supportable_against_target` boolean against the locked Windows 11 / 32 GB baseline. The fake tags `gemma4:12b` and `gemma4:27b` that contaminated `install.sh`, `install.ps1`, `scripts/detect_hardware.*`, and `backend/app/config.py` have been purged repo-wide. Host RAM is re-verified empirically at install time regardless of picker selection.
+- **T5A — Onboarding persistence, 2026-04-22 (`1782573`):** The single-phase LLM-powered adaptive interview now actually persists each answer onto the `CityProfile` singleton (creating the row on the first answer), normalizes yes/no → bool for `has_dedicated_it`, and transitions `onboarding_status` (not_started → in_progress → complete). Skip advances the walk truthfully (previously it dropped answers silently). Coverage: 4 new persistence tests + 2 skip-truth regression tests; migration `018_city_profile_state_nullable.py` relaxes a constraint the persistence path needed.
+- **T5B — First-boot baseline seeding, 2026-04-22 (`61449c5`):** `app/main.lifespan` now auto-seeds three baseline datasets on first boot: **175 state-scoped exemption rules across 51 jurisdictions** (from `STATE_RULES_REGISTRY`), **5 compliance templates**, and **12 notification templates**. Idempotent via skip-if-exists — admin customizations survive re-seed. Every run emits a start line, per-dataset `created` / `skipped` counts, and a completion summary. Universal PII regex rules are present in the seed source (5 additional rules, 180 total) but are **not** seeded by first-boot because they lack a two-letter `state_code`; those remain deferred pending schema relaxation. See `backend/app/seed/first_boot.py` and `§8.7` of the spec.
+- **T5D — Install-time portal switch (private vs. public), 2026-04-23 (`a57a897`):** New `PORTAL_MODE` environment variable (`private` | `public`, default `private`) locked at install time, changeable post-install by editing `.env` and restarting the stack. The installer (`install.ps1` / `install.sh`) prompts for the choice interactively; non-interactive installs can pre-set `CIVICRECORDS_PORTAL_MODE`. Case and whitespace are normalized by a `field_validator` on the config model. **Private mode (default)** is staff-only — the login screen is the only externally reachable page, `/auth/register` returns 404, and `UserRole.PUBLIC` is not assignable. **Public mode** exposes exactly three surfaces and nothing more: (1) a public landing page, (2) a resident-registration path, and (3) an authenticated records-request submission form for `UserRole.PUBLIC` users. Submission requires authentication — anonymous walk-up submission is intentionally out of scope. Staff roles (ADMIN, STAFF, REVIEWER, READ_ONLY, LIAISON) continue to use `/requests/` and receive 403 on the public submit endpoint. An unauthenticated `GET /config/portal-mode` endpoint (typed `PortalModeResponse { mode: Literal["public","private"] }`) is always mounted so the frontend can discover the active mode on boot and branch its routing. Fixed a pre-existing bug in `UserCreate` that forced self-registered users to `UserRole.STAFF`; self-registration now correctly forces `UserRole.PUBLIC` (and is still only reachable in public mode). Coverage: 15 pytest cases in `backend/tests/test_portal_mode.py` plus 12 vitest cases across `PublicLanding.test.tsx`, `PublicRegister.test.tsx`, and `PublicSubmit.test.tsx`. Explicitly **not** shipped in this slice and not implied by any copy: published-records search, a full resident dashboard, a track-my-request suite, or any other public-portal feature.
+- **T5E — Windows unsigned double-click installer, 2026-04-22 (`1d5429d`; test-harness flake fix `e898319`):** Real Windows `.exe` installer built with Inno Setup 6.x, produced on every `v*` tag by `.github/workflows/release.yml` on `windows-latest` via `choco install innosetup -y` + `installer/windows/build-installer.sh`. **Unsigned by design per Scott-locked B3=α posture** — operators must expect SmartScreen "Windows protected your PC — Unknown publisher" on first run; install path documented in [installer/windows/README.md](installer/windows/README.md). Flow is split into two Start Menu shortcuts: **Start CivicRecords AI** (daily `docker compose up -d`) and **Install or Repair CivicRecords AI** (full bootstrap + picker + model pull). Version is tag-derived (no hardcoded version drift) via `/DMyAppVersion=` from `$CIVICRECORDS_VERSION`. Desktop shortcut mirrors daily-start. macOS and Linux remain on the script path (`install.sh`) — native installer parity on those platforms is explicit follow-on work, not scheduled.
+- **T3D regen** (`bf3c9c3`) — Regenerated `docs/openapi.json` and `frontend/src/generated/api.ts` after the T5A schema change; CI's stale-check gate enforces this on every subsequent backend schema or route change.
+- **CI hygiene** (`5dbeed7`) — Bumped `actions/checkout@v4` and `actions/setup-node@v4` for Node 24 runtime support ahead of the 2026-06-02 GitHub runner default flip.
+
+**In v1.2.0 — security hardening carried from earlier sprints (all tagged in this release):**
 - **T2A** — Role self-escalation via `PATCH /users/me` closed (`UserSelfUpdate` schema); all 24 department-scoped handlers enforce `require_department_scope`; 404/403 status-code info-leak unified via `require_department_or_404`; Pattern D list-endpoint fail-open fixed on 4 routes; parameterized enforcement test covers 25 routes
 - **T2B** — `connection_config` redacted from `GET /datasources/` for all non-admin users (`DataSourceAdminRead` returned only on admin write endpoints). **ENG-001 runtime exposure: closed.**
-- **Tier 6 / ENG-001** — At-rest encryption for `data_sources.connection_config` via Fernet (AES-128-CBC + HMAC-SHA256) envelope at the SQLAlchemy TypeDecorator layer; reversible Alembic migration `019_encrypt_connection_config`; new required `ENCRYPTION_KEY` env var (installer auto-generates on fresh installs). **ENG-001 now fully closed** (both runtime and at-rest halves of the connector-credentials exposure gap).
+- **Tier 6 / ENG-001 — At-rest encryption for `data_sources.connection_config`, 2026-04-23:** Connector credentials are now encrypted at rest using Fernet (AES-128-CBC + HMAC-SHA256) via a transparent SQLAlchemy `EncryptedJSONB` TypeDecorator; envelope shape is `{"v": 1, "ct": "<fernet-token>"}`. A new required `ENCRYPTION_KEY` env var (installer auto-generates on fresh installs) drives the encryption; a reversible Alembic migration (`019_encrypt_connection_config`) encrypts existing plaintext rows and decrypts on downgrade. Operator verification: `docker compose run --rm --no-deps api python scripts/verify_at_rest.py`. **ENG-001 now fully closed.** Key rotation is not supported in this release and is tracked as a future slice; the versioned envelope (`"v": 1`) leaves the door open.
 - **T2C** — `FIRST_ADMIN_PASSWORD` startup validator (rejects `.env.example` placeholder, empty, <12 chars, and common defaults); SSRF host validator blocks loopback, IMDS, and RFC1918 ranges on REST and ODBC connector URLs at schema-validation time
 - **T3A** — Create-user form now POSTs to `/api/admin/users` (was `/api/auth/register`, which silently downgraded submitted roles to STAFF)
-- **CI** — 617 backend + 36 frontend tests (CI-verified on `d556904`, run 24853147133); bootstrap-failure smoke test confirms stack rejects placeholder admin password
+- **CI** — 593 backend + 36 frontend tests (CI-verified on `a57a897`, run 24817110396); bootstrap-failure smoke test confirms stack rejects placeholder admin password; `docs/openapi.json` and `frontend/src/generated/api.ts` stale-check enforced on every build (T3D)
 
-> **ENG-001 (historical — closed 2026-04-23):** At-rest encryption for `data_sources.connection_config` landed in Tier 6 as part of v1.2.0. Prior to this release the JSONB column was plaintext and visible to any database superuser, `pg_dump` output, or restored backup. The column is now stored as a Fernet envelope keyed off `ENCRYPTION_KEY`. T2B closed the runtime exposure in an earlier sprint; Tier 6 closes the at-rest half.
+> **ENG-001 standing caveat (historical — closed 2026-04-23):** At-rest encryption for `data_sources.connection_config` landed as Tier 6 / ENG-001. Prior to Tier 6 the JSONB column was plaintext and visible to any database superuser, `pg_dump` output, or restored backup. Post-Tier-6 the column is stored as a Fernet envelope keyed off `ENCRYPTION_KEY`; `pg_dump` output and raw backups contain ciphertext only. T2B runtime exposure closed in an earlier sprint; Tier 6 closes the at-rest gap. ENG-001 is now fully closed. See Section 8.10 of [docs/UNIFIED-SPEC.md](docs/UNIFIED-SPEC.md) and the Operator section on the encryption key in [USER-MANUAL.md](USER-MANUAL.md) for details.
 
 **Roadmap (per [canonical spec](docs/UNIFIED-SPEC.md)):**
 
@@ -209,7 +232,7 @@ Service accounts with hashed API keys enable instance-to-instance federation acc
 | **Phase 0** | Design foundation | shadcn/ui, design tokens, sidebar shell, component library | In progress |
 | **Phase 1** | Staff workbench redesign | Redesign all staff pages with new design system, WCAG 2.2 AA | In progress |
 | **Phase 2** | New backend features | Fees, notifications (SMTP), response letters, context manager, analytics, liaison role, department scoping, audit retention | Partially built |
-| **Phase 3** | Public portal | Public homepage, search, guided request wizard, request tracker, help pages | Planned (v1.1) |
+| **Phase 3** | Public portal | Public homepage, search, guided request wizard, request tracker, help pages | Partial — T5D minimal surface shipped (landing + resident-registration + authenticated submission); published-records search, resident dashboard, and track-my-request remain Planned |
 | **Phase 4** | Transparency layer | Open records library, reporting dashboards, public archive, federation | Planned (v2.0) |
 
 *Note: Version numbers (semver) track release history. Phase numbers track design completeness per the canonical spec. They are separate systems. Current build (v1.2.0) includes backend work from Phases 0-2 and partial Phase 3 (T5D minimal public portal surface), but has not completed the full scope of any phase. See [canonical spec](docs/UNIFIED-SPEC.md) for complete requirements and [reconciliation](docs/RECONCILIATION-2026-04-13.md) for current gap analysis.*

@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>CivicRecords AI &mdash; Staff User Manual v1.1.0</title>
+<title>CivicRecords AI &mdash; Staff User Manual v1.2.0</title>
 <style>
   :root {
     --blue-900: #1e3a5f;
@@ -482,7 +482,7 @@
   <div class="sidebar-header">
     <h1>CivicRecords AI</h1>
     <div class="subtitle">Staff User Manual</div>
-    <span class="version-badge">v1.1.0</span>
+    <span class="version-badge">v1.2.0</span>
   </div>
   <div class="sidebar-nav">
     <div class="nav-section">Getting Started</div>
@@ -518,10 +518,31 @@
   <h1>CivicRecords AI</h1>
   <div class="cover-sub">Staff User Manual</div>
   <div class="cover-meta">
-    <span><strong>Version:</strong>&nbsp; 1.1.0</span>
+    <span><strong>Version:</strong>&nbsp; 1.2.0</span>
     <span><strong>Updated:</strong>&nbsp; April 2026</span>
     <span><strong>Audience:</strong>&nbsp; City Clerks, Records Officers, Department Liaisons, City Managers</span>
   </div>
+</div>
+
+<!-- ════════════════════════════════════════════════════════
+     v1.2.0 UPDATE NOTICE (staff-relevant)
+     This manual was written against v1.1.0. Most v1.2.0 changes are
+     administrative or install-time and do not change the daily staff
+     workflow. The items below are the staff-visible deltas only.
+     ════════════════════════════════════════════════════════ -->
+<div class="section" id="v1-2-0-notice" style="margin:1.5rem 0;padding:1.25rem 1.5rem;border-left:4px solid #15803d;background:#f0fdf4;border-radius:6px;">
+  <h2><span class="section-number">&#9733;</span> v1.2.0 — what&#39;s new for staff</h2>
+  <p>
+    This manual was originally authored against <strong>v1.1.0</strong>. The <strong>v1.2.0</strong> release (2026-04-23) is mostly administrative, install-time, and security-hardening work — <em>your daily workflow in this manual is unchanged</em>. The staff-visible notes below are the only items you need to know.
+  </p>
+  <ul>
+    <li><strong>If your city enables the public portal (optional, off by default).</strong> Residents can now create their own account and submit a records request through a public surface (<code>/public/*</code>). Those submissions land in your normal request list and look like any other request &mdash; same statuses, same timeline, same workflow. You handle them exactly the way you handle staff-created requests today. Anonymous walk-up submission is not supported &mdash; every public submission has a logged-in resident as <code>created_by</code>.</li>
+    <li><strong>Connector credentials are now encrypted at rest (ENG-001 closed).</strong> This is entirely transparent to you. Nothing in the staff UI changes. What changed: if your IT admin ever exports the database or restores a backup, connector credentials appear as ciphertext rather than plaintext. Your admin has a new <code>ENCRYPTION_KEY</code> to manage &mdash; see the Administrator Manual for the operator detail; no staff action required.</li>
+    <li><strong>Windows double-click installer is available.</strong> If your organization deploys new workstations from Windows, there is now a <code>CivicRecordsAI-1.2.0-Setup.exe</code> on the <a href="https://github.com/scottconverse/civicrecords-ai/releases/tag/v1.2.0">v1.2.0 release page</a>. It is <strong>unsigned by design</strong>, so Windows SmartScreen will show &quot;Windows protected your PC &mdash; Unknown publisher&quot; on first run. Remediation: <strong>More info &rarr; Run anyway</strong>. This is expected and safe when the installer came from the official release page with a matching SHA-256 checksum.</li>
+  </ul>
+  <p style="margin-bottom:0;">
+    Full release narrative lives in <a href="https://github.com/scottconverse/civicrecords-ai/releases/tag/v1.2.0">the v1.2.0 release notes</a> and <a href="https://github.com/scottconverse/civicrecords-ai/blob/master/CHANGELOG.md#120---2026-04-23">CHANGELOG.md &sect;[1.2.0]</a>. Nothing else in this manual changed.
+  </p>
 </div>
 
 
@@ -1394,7 +1415,7 @@
 
 <!-- ── Footer ────────────────────────────────────────────── -->
 <div style="margin-top: 64px; padding-top: 24px; border-top: 2px solid var(--gray-200); text-align: center; color: var(--gray-500); font-size: 0.82rem;">
-  <p>CivicRecords AI &mdash; Staff User Manual &mdash; Version 1.1.0 &mdash; April 2026</p>
+  <p>CivicRecords AI &mdash; Staff User Manual &mdash; Version 1.2.0 &mdash; April 2026</p>
   <p>An open-source project for transparent, efficient public records management.</p>
 </div>
 
