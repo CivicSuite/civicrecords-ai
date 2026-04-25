@@ -20,7 +20,7 @@ from __future__ import annotations
 import logging
 from typing import Any
 
-from civiccore.llm.providers import OllamaProvider, OllamaConfig
+from civiccore.llm.providers import OllamaProvider
 
 from app.config import settings
 from app.llm.context_manager import (
@@ -41,11 +41,11 @@ def _get_provider() -> OllamaProvider:
     """Lazily construct the module-level OllamaProvider bound to records settings."""
     global _provider
     if _provider is None:
+        # OllamaProvider.__init__ is keyword-only — pass kwargs directly,
+        # NOT an OllamaConfig positional. OllamaConfig is for build_provider().
         _provider = OllamaProvider(
-            OllamaConfig(
-                base_url=settings.ollama_base_url,
-                default_model=settings.chat_model,
-            )
+            base_url=settings.ollama_base_url,
+            default_model=settings.chat_model,
         )
     return _provider
 
@@ -104,8 +104,15 @@ async def generate(
 
     provider = _get_provider()
     try:
+        # Records-ai already pre-assembled the prompt via assemble_context +
+        # blocks_to_prompt above (system instruction inlined at the start of
+        # the prompt block). Pass it as user_content with empty system_prompt
+        # so civiccore's OllamaProvider routes it to Ollama's `prompt` field
+        # without prepending a separate system message. This preserves the
+        # records-ai legacy contract: a single text-completion call, not chat.
         result = await provider.generate(
-            prompt=prompt,
+            system_prompt="",
+            user_content=prompt,
             model=resolved_model,
             timeout=timeout,
             **extra,
