@@ -7,7 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-Changes since v1.3.0.
+No unreleased changes.
+
+## [1.4.0] - 2026-04-25
+
+Phase 2 LLM extraction release. Records-AI now consumes `civiccore` v0.2.0 as a versioned dependency. The LLM provider abstraction, prompt-template engine, and model registry have moved to `civiccore.llm`; records-AI keeps thin re-export shims so existing call sites work unchanged.
+
+### Operator upgrade notes (v1.3.0 → v1.4.0)
+
+- **civiccore dependency:** the `civiccore` wheel pin advances from v0.1.0 to v0.2.0. The new wheel is published at `https://github.com/CivicSuite/civiccore/releases/download/v0.2.0/civiccore-0.2.0-py3-none-any.whl`. Reinstall is automatic on `pip install -e .[dev]` from a fresh clone; existing operator deployments need to rebuild the API image (`docker compose build api`).
+- **Migration:** running `alembic upgrade head` on a v1.3.0 database now applies one new civiccore-side revision (`civiccore_0002_llm`) plus one new records-side revision (`020_phase2_consumer_app_backfill`). The civiccore revision ALTERs `prompt_templates`: renames `name` → `template_name`, adds `consumer_app VARCHAR(100) NOT NULL DEFAULT 'civiccore'`, adds `is_override BOOLEAN NOT NULL DEFAULT false`, replaces `UNIQUE(name)` with `UNIQUE(consumer_app, template_name, version)`. The records-side revision is data-only — it sets `consumer_app='civicrecords-ai'` + `is_override=true` on rows that records-AI shipped (it does not change the schema).
+- **Backwards compatibility:** API URL paths and admin permissions are unchanged. Code that imported `from app.models.prompts import PromptTemplate` or `from app.schemas.model_registry import ...` continues to work — the records-AI modules are now thin re-export shims around `civiccore.llm.{templates,registry}`. Code that read `pt.name` on a `PromptTemplate` instance must update to `pt.template_name`.
+- **Generated artifacts:** `docs/openapi.json` and `frontend/src/generated/api.ts` were regenerated to reflect the admin router's swap to civiccore Pydantic types. Frontend hot-reload will pick this up on rebuild; existing API clients that hard-coded the old `$ref` schema names need to regenerate from the new spec.
+- **Test infrastructure:** Gate 2 fixture (`backend/tests/fixtures/schema_v1_3_0.sql`) replaces the prior v1.2.0 fixture. Operators do not interact with this; it is for CI's migration gate suite.
 
 ### Added
 - Phase 2 Step 1: scratch scope worksheet for the `civiccore.llm` extraction at `docs/architecture/phase2-civiccore-llm-scope.md` (records-ai side). Inventories the modules moving to civiccore (model_registry ORM/schemas/router, prompt_templates ORM, Ollama client, context manager, prompt-injection sanitizer), the modules staying in records-ai (FOIA-specific exemption reviewer, multimodal OCR extractor, response-letter pipeline), the override-resolution algorithm for prompt templates (records-ai instance overrides → records-ai code overrides → civiccore defaults; no silent fallback), the `string.Template` engine choice, and the registry-decorator provider-registration mechanism. Feeds ADR-0004 (Step 2) and the Step 3 implementation against civiccore main.
@@ -25,14 +37,8 @@ Changes since v1.3.0.
 - Build/CI: ruff is now a required CI check (`.github/workflows/ci.yml` job `ruff (lint)`); 82 pre-existing violations cleaned up (70 auto-fixed, 6 manually fixed including 4 E402 import-order fixes and 1 F841 unused-variable removal, 4 retained as inline `# noqa: E402` with rule-ID + justification). `scripts/verify-release.sh` gains a step 4 that runs `ruff check` against the api container. Closes #33.
 - Docs: regenerated all binary doc artifacts (`README.{docx,pdf}`, `README-FULL.pdf`, `USER-MANUAL.{docx,pdf}`, `README.txt`, `docs/civicrecords-ai-manual.{docx,pdf}`, `docs/UNIFIED-SPEC.docx`, `docs/CivicRecordsAI-UnifiedSpec-v3.1.docx`) to match the v1.3.0 source state. Both Python (`docs/generate_pdfs.py`, `docs/generate_docx.py`) and Node (`docs/generate-deliverables.js`, `docs/generate-manual-{pdf,docx}.js`, `docs/generate-unified-spec-docx.js`) generator chains were re-run; binaries updated only — no generator-source or markdown-source changes. Closes #31. Hard Rule 0 four-format sync restored.
 
-### Deprecated
-
-### Removed
-
 ### Fixed
 - Frontend: belt-and-suspenders for the rare `DataSources.test.tsx` label-association flake observed once on PR #29's CI (issue #30). The test body now uses async `findByLabelText` instead of sync `getByLabelText`, layered on top of the prior `openWizard()` async wait (commit `e898319`). 30/30 filtered + 10/10 full-file pass post-fix. Other tests in the file using sync queries left untouched per scope-lock; if any flake later, file follow-up issues. Closes #30.
-
-### Security
 
 ## [1.3.0] - 2026-04-25
 
