@@ -10,6 +10,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 Changes since v1.3.0.
 
 ### Added
+- Phase 2 Step 1: scratch scope worksheet for the `civiccore.llm` extraction at `docs/architecture/phase2-civiccore-llm-scope.md` (records-ai side). Inventories the modules moving to civiccore (model_registry ORM/schemas/router, prompt_templates ORM, Ollama client, context manager, prompt-injection sanitizer), the modules staying in records-ai (FOIA-specific exemption reviewer, multimodal OCR extractor, response-letter pipeline), the override-resolution algorithm for prompt templates (records-ai instance overrides → records-ai code overrides → civiccore defaults; no silent fallback), the `string.Template` engine choice, and the registry-decorator provider-registration mechanism. Feeds ADR-0004 (Step 2) and the Step 3 implementation against civiccore main.
+- ADR-0004 records the Phase 2 civiccore.llm extraction architecture (`docs/adr/0004-phase2-civiccore-llm.md`).
 
 ### Changed
 - Build/CI: ruff is now a required CI check (`.github/workflows/ci.yml` job `ruff (lint)`); 82 pre-existing violations cleaned up (70 auto-fixed, 6 manually fixed including 4 E402 import-order fixes and 1 F841 unused-variable removal, 4 retained as inline `# noqa: E402` with rule-ID + justification). `scripts/verify-release.sh` gains a step 4 that runs `ruff check` against the api container. Closes #33.
