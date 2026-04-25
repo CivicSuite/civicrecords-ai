@@ -62,8 +62,14 @@ describe("DataSources — Add Source wizard accessibility + validation (T4C)", (
   it("associates the Source Name label with its input via htmlFor/id", async () => {
     await openWizard();
 
-    const nameInput = screen.getByLabelText(/source name/i) as HTMLInputElement;
-    // getByLabelText only returns a match when label → input is programmatically linked.
+    // openWizard() awaits findByLabelText for the same input (commit
+    // e898319), but a portal-mounted Dialog can re-render between that
+    // resolution and a sync query in the test body — observed once on
+    // PR #29's CI (issue #30), passed on rerun and consistently locally.
+    // Belt-and-suspenders: the test body also uses findBy* so a transient
+    // re-mount during the assertion phase doesn't fail the test.
+    const nameInput = (await screen.findByLabelText(/source name/i)) as HTMLInputElement;
+    // findByLabelText only returns a match when label → input is programmatically linked.
     expect(nameInput).toBeInTheDocument();
     expect(nameInput.id).toBe("ds-name");
     expect(nameInput.getAttribute("aria-required")).toBe("true");
