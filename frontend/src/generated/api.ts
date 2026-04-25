@@ -2509,7 +2509,10 @@ export interface components {
              */
             created_at: string;
         };
-        /** ModelRegistryCreate */
+        /**
+         * ModelRegistryCreate
+         * @description Schema for creating a new model_registry record (POST body).
+         */
         ModelRegistryCreate: {
             /** Model Name */
             model_name: string;
@@ -2521,6 +2524,11 @@ export interface components {
             license?: string | null;
             /** Model Card Url */
             model_card_url?: string | null;
+            /**
+             * Is Active
+             * @default false
+             */
+            is_active: boolean;
             /** Context Window Size */
             context_window_size?: number | null;
             /**
@@ -2534,36 +2542,46 @@ export interface components {
              */
             supports_vision: boolean;
         };
-        /** ModelRegistryRead */
+        /**
+         * ModelRegistryRead
+         * @description Schema for returning a model_registry record (GET response).
+         *
+         *     ``from_attributes=True`` allows construction directly from an ORM instance.
+         */
         ModelRegistryRead: {
             /** Id */
             id: number;
             /** Model Name */
             model_name: string;
             /** Model Version */
-            model_version: string | null;
+            model_version?: string | null;
             /** Parameter Count */
-            parameter_count: string | null;
+            parameter_count?: string | null;
             /** License */
-            license: string | null;
+            license?: string | null;
             /** Model Card Url */
-            model_card_url: string | null;
+            model_card_url?: string | null;
             /** Is Active */
             is_active: boolean;
-            /**
-             * Added At
-             * Format: date-time
-             */
-            added_at: string;
+            /** Added At */
+            added_at?: string | null;
             /** Context Window Size */
-            context_window_size: number | null;
+            context_window_size?: number | null;
             /** Supports Ner */
             supports_ner: boolean;
             /** Supports Vision */
             supports_vision: boolean;
         };
-        /** ModelRegistryUpdate */
+        /**
+         * ModelRegistryUpdate
+         * @description Schema for partially updating a model_registry record (PATCH body).
+         *
+         *     Every field is optional so callers can send only the fields they want to
+         *     change.
+         */
         ModelRegistryUpdate: {
+            /** Model Name */
+            model_name?: string | null;
             /** Model Version */
             model_version?: string | null;
             /** Parameter Count */
