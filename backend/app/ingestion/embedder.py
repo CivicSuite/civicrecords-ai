@@ -14,7 +14,7 @@ from __future__ import annotations
 
 import httpx
 
-from civiccore.llm.providers import OllamaConfig, OllamaProvider
+from civiccore.llm.providers import OllamaProvider
 
 from app.config import settings
 
@@ -24,14 +24,14 @@ _provider: OllamaProvider | None = None
 def _get_provider() -> OllamaProvider:
     global _provider
     if _provider is None:
+        # OllamaProvider.__init__ is keyword-only; pass the kwargs directly.
+        # default_model reuses settings.chat_model so the provider has a
+        # sensible default for any non-embed calls; embed/embed_batch below
+        # explicitly pass settings.embedding_model so default_model is unused
+        # in those paths.
         _provider = OllamaProvider(
-            OllamaConfig(
-                base_url=settings.ollama_base_url,
-                # Reuse chat_model as default_model for the provider; the
-                # embed paths below explicitly pass settings.embedding_model
-                # so this default is only relevant to text-generation calls.
-                default_model=settings.chat_model,
-            )
+            base_url=settings.ollama_base_url,
+            default_model=settings.chat_model,
         )
     return _provider
 

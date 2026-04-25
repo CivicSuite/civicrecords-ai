@@ -90,7 +90,11 @@ RECORDS_TABLES: Final[frozenset[str]] = frozenset({
     "request_messages", "request_timeline", "response_letters",
 })  # 15 total — see ADR-0003 §Context records list
 
-CIVICCORE_BASELINE_REV: Final[str] = "civiccore_0001_baseline_v1"
+CIVICCORE_BASELINE_REV: Final[str] = "civiccore_0002_llm"
+# Phase 2 added civiccore_0002_llm (ALTER prompt_templates) on top of the
+# baseline. The civiccore head after v0.2.0 ships is civiccore_0002_llm; the
+# constant name is retained for backwards-compat with prior phase 1 docs but
+# now reflects the current civiccore head, not just the baseline.
 # Phase 2 added 020_phase2_consumer_app_backfill on top of 019. The records-side
 # head moves to 020; v1.3.0 fixture starts at 019 (see V1_3_0_HEAD_REVISION).
 RECORDS_HEAD_REV: Final[str] = "020_phase2_consumer_app_backfill"
@@ -394,8 +398,10 @@ def test_gate2_upgrade_from_v1_3(v1_3_0_real_schema_db: str) -> None:
       * Records head moves from 019 → 020 (the consumer_app data backfill).
         The 020 revision is data-only — no schema change — so column-set
         fidelity is preserved.
-      * Civiccore baseline now stamped at civiccore_0001_baseline_v1 — proves
-        the civiccore runner actually executed during the upgrade.
+      * Civiccore head now stamped at civiccore_0002_llm — proves the civiccore
+        runner actually executed during the upgrade and advanced from the v1.3.0
+        starting point (civiccore was at 0001_baseline_v1 then) to the v0.2.0
+        head (0002_llm).
       * All 16 shared tables retain their pre-upgrade column sets — schema-diff
         fidelity check that the prior stamped-019 fixture could not provide.
     """
