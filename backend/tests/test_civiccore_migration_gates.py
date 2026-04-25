@@ -6,9 +6,11 @@ described in ADR-0003 §4:
 * **Gate 1 (fresh-install)** — empty Postgres → records env.py with civiccore
   wiring → all 16 shared tables + 15 records-only tables present, both
   ``alembic_version`` heads stamped at the expected revisions.
-* **Gate 2 (upgrade-from-v1.2)** — Postgres seeded with records HEAD 019 but
-  no civiccore version table → ``alembic upgrade head`` → records head
-  unchanged, civiccore baseline stamped, schema unchanged.
+* **Gate 2 (upgrade-from-v1.3)** — Postgres seeded with records HEAD 019 and
+  civiccore stamped at the v1.3.0 starting baseline (``civiccore_0001_baseline_v1``)
+  → ``alembic upgrade head`` → records head advances to 020, civiccore head
+  advances to ``civiccore_0002_llm``, prompt_templates schema evolves per the
+  Phase 2 delta.
 * **Gate 3 (reapplication idempotent)** — fully migrated DB → ``alembic
   upgrade head`` again → no "running upgrade" lines, no errors, both heads
   unchanged.
@@ -22,10 +24,10 @@ with ``DATABASE_URL`` overridden to point at that ephemeral DB. This mirrors
 the pattern already used by ``conftest.setup_db`` and avoids
 docker-in-docker complexity.
 
-For **Gate 2** we seed the v1.2.x state by stamping ``alembic_version`` to
+For **Gate 2** we seed the v1.3.x state by stamping ``alembic_version`` to
 ``019_encrypt_connection_config`` on a freshly-created (but otherwise empty)
 DB **without** the civiccore wiring active. This is semantically equivalent
-to "ran records v1.2.x migrations to head" for the purpose of the gate
+to "ran records v1.3.x migrations to head" for the purpose of the gate
 assertion (the gate proves: civiccore baseline runs against a DB whose
 records head is already 019, no-ops the table creates, and stamps its own
 version table). We intentionally do *not* run the records chain a second
@@ -90,21 +92,36 @@ RECORDS_TABLES: Final[frozenset[str]] = frozenset({
     "request_messages", "request_timeline", "response_letters",
 })  # 15 total — see ADR-0003 §Context records list
 
-CIVICCORE_BASELINE_REV: Final[str] = "civiccore_0001_baseline_v1"
-RECORDS_HEAD_REV: Final[str] = "019_encrypt_connection_config"
+CIVICCORE_BASELINE_REV: Final[str] = "civiccore_0002_llm"
+# Phase 2 added civiccore_0002_llm (ALTER prompt_templates) on top of the
+# baseline. The civiccore head after v0.2.0 ships is civiccore_0002_llm; the
+# constant name is retained for backwards-compat with prior phase 1 docs but
+# now reflects the current civiccore head, not just the baseline.
 
-# v1.2.0 tag's records-side alembic head as captured 2026-04-24 from the v1.2.0
-# git worktree. Source of truth: ADR-0003 §Context — records HEAD at v1.2.0 was 019.
-# Verified by the schema_v1_2_0.sql fixture capture: the alembic_version row in
+# v1.3.0 operator's civiccore-side starting revision. v1.3.0 shipped with
+# civiccore pinned at the 0001 baseline (v0.1.x); Phase 2 (v0.2.0) introduced
+# civiccore_0002_llm. The Gate 2 fixture INSERTs this stamp into
+# alembic_version_civiccore so the upgrade path runs from a properly stamped
+# starting point — a real v1.3.0 operator's DB always has this row.
+CIVICCORE_V1_3_0_STARTING_REV: Final[str] = "civiccore_0001_baseline_v1"
+# Phase 2 added 020_phase2_consumer_app_backfill on top of 019. The records-side
+# head moves to 020; v1.3.0 fixture starts at 019 (see V1_3_0_HEAD_REVISION).
+RECORDS_HEAD_REV: Final[str] = "020_phase2_consumer_app_backfill"
+
+# v1.3.0 tag's records-side alembic head, captured 2026-04-25 from the v1.3.0
+# git worktree using a Postgres testcontainer + pg_dump --schema-only. Source of
+# truth: ADR-0003 §Context — records HEAD at v1.3.0 is 019.
+# Verified by the schema_v1_3_0.sql fixture capture: the alembic_version row in
 # the live capture DB held this exact revision before pg_dump.
 # Intentionally separate from RECORDS_HEAD_REV: this constant marks the operator's
-# STARTING revision (v1.2.0); RECORDS_HEAD_REV marks the EXPECTED revision after
-# upgrade. They happen to be equal today because v1.3.0 adds no new records-side
-# migrations — but if v1.4.0 adds one, only RECORDS_HEAD_REV moves; this stays.
-V1_2_0_HEAD_REVISION: Final[str] = "019_encrypt_connection_config"
+# STARTING revision (v1.3.0); RECORDS_HEAD_REV marks the EXPECTED revision after
+# upgrade. They happen to be equal today because v1.3.0's records-side head IS 019
+# — but if v1.4.0 adds a new records migration, only RECORDS_HEAD_REV moves; this
+# stays pinned to the v1.3.0 fixture.
+V1_3_0_HEAD_REVISION: Final[str] = "019_encrypt_connection_config"
 
-V1_2_0_FIXTURE_PATH: Final[Path] = (
-    Path(__file__).parent / "fixtures" / "schema_v1_2_0.sql"
+V1_3_0_FIXTURE_PATH: Final[Path] = (
+    Path(__file__).parent / "fixtures" / "schema_v1_3_0.sql"
 )
 
 BACKEND_DIR: Final[Path] = Path(__file__).resolve().parent.parent
@@ -259,7 +276,7 @@ def _load_sql_fixture(sync_url: str, sql_path: Path) -> None:
 
     Strips psql meta-commands (lines beginning with backslash), executes the
     rest in autocommit so multi-statement DDL applies cleanly. Used by Gate 2
-    to seed a real v1.2.x schema before the upgrade-path test runs.
+    to seed a real v1.3.x schema before the upgrade-path test runs.
     """
     raw_sql = sql_path.read_text(encoding="utf-8")
     cleaned = "\n".join(
@@ -290,35 +307,31 @@ def fresh_db() -> Iterator[str]:
 
 
 @pytest.fixture
-def v1_2_0_real_schema_db() -> Iterator[str]:
-    """Database loaded with the actual v1.2.0 schema dump, stamped at v1.2.0 head.
+def v1_3_0_real_schema_db() -> Iterator[str]:
+    """Database loaded with the actual v1.3.0 schema dump, stamped at v1.3.0 head.
 
-    Replaces the prior stamped-019 approximation. The fixture file at
-    ``backend/tests/fixtures/schema_v1_2_0.sql`` was captured 2026-04-24 from
-    a clean Postgres running the v1.2.0 records-side alembic chain cold,
-    with no civiccore involvement (v1.2.0 predates Phase 1).
+    Replaces the prior v1.2.0 fixture. The fixture file at
+    ``backend/tests/fixtures/schema_v1_3_0.sql`` was captured 2026-04-25 from
+    a clean Postgres testcontainer running the v1.3.0 records-side alembic
+    chain cold, with no civiccore involvement (the v1.3.0 worktree predates
+    the Phase 2 civiccore.llm pin).
 
-    The fixture file is purely structural (``pg_dump --schema-only``). The
-    ``alembic_version`` row is INSERTed here, after fixture load, to declare
-    the operator's starting revision. This separation keeps the SQL file
-    schema-only and self-documents the revision the test cares about.
+    The fixture file is structural (``pg_dump --schema-only``) plus two
+    trailing INSERTs that stamp ``alembic_version`` at
+    ``019_encrypt_connection_config`` and ``alembic_version_civiccore`` at
+    ``civiccore_0001_baseline_v1`` — the revisions a real v1.3.0 operator's
+    DB always carries. The records-side INSERT here is also issued
+    programmatically (with ``ON CONFLICT DO NOTHING`` semantics in the
+    fixture) so the test self-documents the revision the test cares about.
     """
     name = f"gate2_{uuid.uuid4().hex[:12]}"
     _create_test_db(name)
     sync_url = _ephemeral_db_sync_url(name)
     try:
-        _load_sql_fixture(sync_url, V1_2_0_FIXTURE_PATH)
-        sync = create_engine(sync_url, echo=False)
-        try:
-            with sync.connect() as conn:
-                # Schema dump created the table; stamp the row to declare v1.2.0 head.
-                conn.execute(
-                    sa.text("INSERT INTO alembic_version (version_num) VALUES (:v)"),
-                    {"v": V1_2_0_HEAD_REVISION},
-                )
-                conn.commit()
-        finally:
-            sync.dispose()
+        _load_sql_fixture(sync_url, V1_3_0_FIXTURE_PATH)
+        # Fixture-trailing INSERTs stamp both alembic_version and
+        # alembic_version_civiccore at the v1.3.0 revisions. No additional
+        # programmatic stamping is needed here.
         yield _ephemeral_db_url(name)
     finally:
         _drop_test_db(name)
@@ -374,44 +387,49 @@ def test_gate1_fresh_install(fresh_db: str) -> None:
 
 
 @pytest.mark.integration
-def test_gate2_upgrade_from_v1_2(v1_2_0_real_schema_db: str) -> None:
-    """ADR-0003 §5 Gate 2 — operator on v1.2.0 upgrades to v1.3.0 cleanly.
+def test_gate2_upgrade_from_v1_3(v1_3_0_real_schema_db: str) -> None:
+    """ADR-0003 §5 Gate 2 — operator on v1.3.0 upgrades to current head cleanly.
 
-    Starting state: real v1.2.0 schema (33 tables, alembic_version=019, no
-    civiccore_version table). Action: ``alembic upgrade head`` (records env.py
-    invokes the civiccore runner first per Phase 1 wiring, then records' own
-    chain runs through its idempotency guards). Expected end state:
+    Starting state: real v1.3.0 schema (alembic_version=019,
+    alembic_version_civiccore=civiccore_0001_baseline_v1, no civiccore
+    Phase 2 ALTERs applied). Action:
+    ``alembic upgrade head`` (records env.py invokes the civiccore runner
+    first per Phase 1 wiring, then records' own chain runs through its
+    idempotency guards). Expected end state:
 
       * No errors during upgrade (idempotency guards correctly no-op every
         shared-table create_*, the records chain doesn't try to re-create
-        anything that already exists from the v1.2.0 dump).
-      * Records head UNCHANGED — v1.3.0 adds no new records-side migrations,
-        so 019 stays 019.
-      * Civiccore baseline now stamped at civiccore_0001_baseline_v1 — proves
-        the civiccore runner actually executed during the upgrade.
+        anything that already exists from the v1.3.0 dump).
+      * Records head moves from 019 → 020 (the consumer_app data backfill).
+        The 020 revision is data-only — no schema change — so column-set
+        fidelity is preserved.
+      * Civiccore head advances from civiccore_0001_baseline_v1 →
+        civiccore_0002_llm — proves the civiccore runner actually executed
+        during the upgrade and advanced from the v1.3.0 starting baseline to
+        the v0.2.0 head.
       * All 16 shared tables retain their pre-upgrade column sets — schema-diff
         fidelity check that the prior stamped-019 fixture could not provide.
     """
-    db_name = v1_2_0_real_schema_db.rsplit("/", 1)[1]
+    db_name = v1_3_0_real_schema_db.rsplit("/", 1)[1]
     sync_url = _ephemeral_db_sync_url(db_name)
 
     # --- Pre-upgrade invariants --------------------------------------------
     pre = create_engine(sync_url, echo=False)
     try:
         before_records_head = _alembic_version(pre, "alembic_version")
-        assert before_records_head == V1_2_0_HEAD_REVISION, (
+        assert before_records_head == V1_3_0_HEAD_REVISION, (
             f"Gate 2 fixture: expected starting alembic_version "
-            f"{V1_2_0_HEAD_REVISION!r}, got {before_records_head!r}"
+            f"{V1_3_0_HEAD_REVISION!r}, got {before_records_head!r}"
         )
         before_civiccore_head = _alembic_version(pre, "alembic_version_civiccore")
-        assert before_civiccore_head is None, (
-            "Gate 2 fixture: alembic_version_civiccore must NOT exist pre-upgrade — "
-            "the fixture represents a pre-Phase-1 v1.2.0 operator who has never "
-            "seen civiccore."
+        assert before_civiccore_head == CIVICCORE_V1_3_0_STARTING_REV, (
+            f"Gate 2 fixture: expected starting alembic_version_civiccore "
+            f"{CIVICCORE_V1_3_0_STARTING_REV!r} (v1.3.0 shipped with civiccore "
+            f"pinned at the 0001 baseline), got {before_civiccore_head!r}."
         )
         pre_tables = _table_names(pre)
         assert SHARED_TABLES.issubset(pre_tables), (
-            f"Gate 2 fixture: v1.2.0 dump should contain all 16 shared tables. "
+            f"Gate 2 fixture: v1.3.0 dump should contain all 16 shared tables. "
             f"Missing: {sorted(SHARED_TABLES - pre_tables)}"
         )
         # Capture column sets for shared tables BEFORE upgrade — used post-upgrade
@@ -421,7 +439,7 @@ def test_gate2_upgrade_from_v1_2(v1_2_0_real_schema_db: str) -> None:
         pre.dispose()
 
     # --- Action: records env.py runs civiccore runner first, then records chain
-    result = _run_alembic_upgrade_head(v1_2_0_real_schema_db)
+    result = _run_alembic_upgrade_head(v1_3_0_real_schema_db)
     assert result.returncode == 0, (
         f"Gate 2: alembic upgrade head failed (rc={result.returncode}):\n"
         f"--- stdout ---\n{result.stdout}\n"
@@ -433,8 +451,9 @@ def test_gate2_upgrade_from_v1_2(v1_2_0_real_schema_db: str) -> None:
     try:
         records_head = _alembic_version(post, "alembic_version")
         assert records_head == RECORDS_HEAD_REV, (
-            f"Gate 2: records head must be unchanged at {RECORDS_HEAD_REV!r} "
-            f"(v1.3.0 adds no new records migrations); got {records_head!r}."
+            f"Gate 2: records head must advance to {RECORDS_HEAD_REV!r} "
+            f"(Phase 2's 020 consumer_app backfill applied on top of 019); "
+            f"got {records_head!r}."
         )
 
         civiccore_head = _alembic_version(post, "alembic_version_civiccore")
@@ -450,13 +469,36 @@ def test_gate2_upgrade_from_v1_2(v1_2_0_real_schema_db: str) -> None:
             f"{sorted(missing_shared)}"
         )
 
-        # Schema-diff fidelity — every shared table's column set must be unchanged.
+        # Schema-diff fidelity — every shared table's column set must be unchanged
+        # EXCEPT prompt_templates, which civiccore_0002_llm intentionally evolves
+        # (rename name→template_name, add consumer_app, add is_override).
         # If an idempotency guard misfired and re-created a table, we'd see drift here.
+        PHASE2_PROMPT_TEMPLATES_DELTA = {
+            "added": {"consumer_app", "is_override", "template_name"},
+            "removed": {"name"},
+        }
         for tbl in sorted(SHARED_TABLES):
             post_cols = _column_set(post, tbl)
-            assert post_cols == pre_columns[tbl], (
+            pre_cols = pre_columns[tbl]
+            if tbl == "prompt_templates":
+                # Phase 2 expected delta: +consumer_app, +is_override, +template_name, -name.
+                # All other prompt_templates columns must be identical pre/post.
+                actual_added = post_cols - pre_cols
+                actual_removed = pre_cols - post_cols
+                assert actual_added == PHASE2_PROMPT_TEMPLATES_DELTA["added"], (
+                    f"Gate 2: prompt_templates added unexpected columns. "
+                    f"expected_added={sorted(PHASE2_PROMPT_TEMPLATES_DELTA['added'])} "
+                    f"actual_added={sorted(actual_added)}"
+                )
+                assert actual_removed == PHASE2_PROMPT_TEMPLATES_DELTA["removed"], (
+                    f"Gate 2: prompt_templates removed unexpected columns. "
+                    f"expected_removed={sorted(PHASE2_PROMPT_TEMPLATES_DELTA['removed'])} "
+                    f"actual_removed={sorted(actual_removed)}"
+                )
+                continue
+            assert post_cols == pre_cols, (
                 f"Gate 2: column set for shared table {tbl!r} drifted during "
-                f"upgrade. pre={sorted(pre_columns[tbl])} post={sorted(post_cols)}"
+                f"upgrade. pre={sorted(pre_cols)} post={sorted(post_cols)}"
             )
     finally:
         post.dispose()

@@ -9,11 +9,19 @@ from app.auth.dependencies import require_role
 from app.config import APP_VERSION, settings
 from app.database import get_async_session
 from app.models.audit import AuditLog
-from app.models.document import ModelRegistry
 from app.models.fees import FeeSchedule
 from app.models.user import User, UserRole
 from app.schemas.fee_schedule import FeeScheduleCreate, FeeScheduleRead, FeeScheduleUpdate
-from app.schemas.model_registry import ModelRegistryCreate, ModelRegistryRead, ModelRegistryUpdate
+# Phase 2 Step 5c: ModelRegistry ORM + pydantic schemas now live in civiccore.llm.
+# Records-ai keeps its own admin CRUD endpoints (URL-path stable) but uses the
+# civiccore types directly — chosen over mounting `model_registry_router` to
+# avoid any drift in records-ai admin URL paths or permission semantics.
+from civiccore.llm.registry import (
+    ModelRegistry,
+    ModelRegistryCreate,
+    ModelRegistryRead,
+    ModelRegistryUpdate,
+)
 from app.schemas.user import UserRead
 from app.audit.logger import write_audit_log
 

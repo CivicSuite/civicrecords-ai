@@ -1,16 +1,26 @@
-"""Central LLM generation client.
+"""Records-ai LLM generation shim — delegates to civiccore.llm OllamaProvider.
 
-All LLM generation calls route through this module to ensure:
-1. Context manager budgeting (assemble_context / blocks_to_prompt)
-2. Prompt injection sanitization (sanitize_for_llm)
-3. Consistent Ollama API interaction
-4. Centralized error handling and logging
+Phase 2 Step 5c: the records-ai-specific ``generate(...)`` entry point is
+preserved so existing callers (``app.exemptions.llm_reviewer``,
+``app.ingestion.llm_extractor``) keep working unchanged. The body now:
+
+1. Builds context blocks via the records-ai context_manager shim
+   (token-budgeted, sanitized) — same pre-flight as before.
+2. Delegates the actual HTTP call to a lazily-constructed
+   :class:`civiccore.llm.providers.OllamaProvider` bound to records-ai
+   settings (``ollama_base_url``, ``chat_model``).
+
+The provider instance is cached at module level. ``OllamaProvider``
+lazy-creates its own ``httpx.AsyncClient`` per call internally, so the
+records-ai per-call timeout still works via the ``timeout`` kwarg below.
 """
+
+from __future__ import annotations
 
 import logging
 from typing import Any
 
-import httpx
+from civiccore.llm.providers import OllamaProvider
 
 from app.config import settings
 from app.llm.context_manager import (
@@ -23,6 +33,21 @@ from app.llm.context_manager import (
 logger = logging.getLogger(__name__)
 
 _OLLAMA_TIMEOUT = 120.0
+
+_provider: OllamaProvider | None = None
+
+
+def _get_provider() -> OllamaProvider:
+    """Lazily construct the module-level OllamaProvider bound to records settings."""
+    global _provider
+    if _provider is None:
+        # OllamaProvider.__init__ is keyword-only — pass kwargs directly,
+        # NOT an OllamaConfig positional. OllamaConfig is for build_provider().
+        _provider = OllamaProvider(
+            base_url=settings.ollama_base_url,
+            default_model=settings.chat_model,
+        )
+    return _provider
 
 
 async def generate(
@@ -50,14 +75,12 @@ async def generate(
         The LLM's response text.
 
     Raises:
-        RuntimeError: If the Ollama API returns a non-200 status.
+        RuntimeError: If the underlying provider call fails.
     """
     resolved_model = model or settings.chat_model
 
-    # Get active model context window for budget scaling
     max_ctx = await get_active_model_context_window()
 
-    # Assemble context with token budgeting and sanitization
     blocks = assemble_context(
         system_prompt=system_prompt,
         request_context=sanitize_for_llm(user_content),
@@ -67,14 +90,9 @@ async def generate(
     )
     prompt = blocks_to_prompt(blocks)
 
-    # Build Ollama payload
-    payload: dict[str, Any] = {
-        "model": resolved_model,
-        "prompt": prompt,
-        "stream": False,
-    }
+    extra: dict[str, Any] = {}
     if images:
-        payload["images"] = images
+        extra["images"] = images
 
     logger.info(
         "LLM generate: model=%s tokens_est=%d chunks=%d rules=%d",
@@ -84,24 +102,27 @@ async def generate(
         len(exemption_rules or []),
     )
 
-    async with httpx.AsyncClient(timeout=timeout) as client:
-        resp = await client.post(
-            f"{settings.ollama_base_url}/api/generate",
-            json=payload,
+    provider = _get_provider()
+    try:
+        # Records-ai already pre-assembled the prompt via assemble_context +
+        # blocks_to_prompt above (system instruction inlined at the start of
+        # the prompt block). Pass it as user_content with empty system_prompt
+        # so civiccore's OllamaProvider routes it to Ollama's `prompt` field
+        # without prepending a separate system message. This preserves the
+        # records-ai legacy contract: a single text-completion call, not chat.
+        result = await provider.generate(
+            system_prompt="",
+            user_content=prompt,
+            model=resolved_model,
+            timeout=timeout,
+            **extra,
         )
+    except Exception as exc:  # noqa: BLE001 — preserve records-ai legacy contract
+        logger.error("Ollama generation failed: model=%s err=%s", resolved_model, exc)
+        raise RuntimeError(f"Ollama generation failed: {exc}") from exc
 
-    if resp.status_code != 200:
-        error_detail = resp.text[:500]
-        logger.error(
-            "Ollama API error: status=%d model=%s detail=%s",
-            resp.status_code,
-            resolved_model,
-            error_detail,
-        )
-        raise RuntimeError(
-            f"Ollama generation failed (status {resp.status_code}): {error_detail}"
-        )
-
-    result = resp.json().get("response", "")
     logger.debug("LLM response length: %d chars", len(result))
     return result
+
+
+__all__ = ["generate"]

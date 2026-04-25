@@ -2,12 +2,23 @@
 
 Verifies that llm_reviewer, synthesizer, and llm_extractor all route
 through app.llm.client.generate() instead of calling Ollama directly.
+
+Also includes regression tests for the PR #42 audit findings:
+- ``_get_provider()`` must construct ``OllamaProvider`` with kwargs (the
+  keyword-only signature), not positionally with an ``OllamaConfig``.
+- ``generate()`` must call the civiccore provider with
+  ``system_prompt`` / ``user_content`` kwargs — NOT the legacy ``prompt=``
+  kwarg the records-ai shim used to send.
 """
 
 import uuid
 from unittest.mock import AsyncMock, patch
 
 import pytest
+
+from app.llm import client as llm_client_module
+from civiccore.llm.providers import OllamaProvider
+from civiccore.llm.providers.base import LLMProvider
 
 
 @pytest.mark.asyncio
@@ -105,3 +116,96 @@ async def test_llm_extractor_uses_central_client():
         assert len(call_kwargs["images"]) == 1
 
         assert result == mock_text
+
+
+# ---------------------------------------------------------------------------
+# Regression tests for PR #42 audit findings
+# ---------------------------------------------------------------------------
+
+
+def test_get_provider_constructs_ollama_provider_with_kwargs(monkeypatch):
+    """_get_provider() must construct OllamaProvider with keyword args.
+
+    Regression test: PR #42 originally passed OllamaProvider(OllamaConfig(...))
+    positionally, which raises TypeError because OllamaProvider.__init__ is
+    keyword-only. This test would have caught that on first run.
+    """
+    # Reset the module-level provider cache so we exercise the constructor
+    monkeypatch.setattr(llm_client_module, "_provider", None)
+    provider = llm_client_module._get_provider()
+    assert isinstance(provider, OllamaProvider)
+    # Provider should be cached on second call
+    assert llm_client_module._get_provider() is provider
+    # Reset to avoid leaking module state to other tests
+    monkeypatch.setattr(llm_client_module, "_provider", None)
+
+
+class _StrictFakeProvider(LLMProvider):
+    """Fake that rejects the legacy 'prompt=' kwarg the records-ai shim used
+    to send. Mirrors the civiccore OllamaProvider strictness."""
+
+    def __init__(self) -> None:
+        self.last_call_kwargs: dict | None = None
+
+    @property
+    def name(self) -> str:
+        return "_strict_fake"
+
+    @property
+    def supports_images(self) -> bool:
+        return True
+
+    async def generate(self, *, system_prompt: str, user_content: str, **kwargs) -> str:
+        if "prompt" in kwargs:
+            raise TypeError("legacy 'prompt' kwarg not allowed")
+        self.last_call_kwargs = {
+            "system_prompt": system_prompt,
+            "user_content": user_content,
+            **kwargs,
+        }
+        return "FAKE_RESPONSE"
+
+    async def embed(self, text, *, model=None):
+        return [0.0]
+
+    async def embed_batch(self, texts, *, model=None):
+        return [[0.0] for _ in texts]
+
+
+def _async_return(value):
+    async def _coro(*args, **kwargs):
+        return value
+    return _coro
+
+
+@pytest.mark.asyncio
+async def test_generate_uses_system_prompt_and_user_content_kwargs(monkeypatch):
+    """generate() must call provider with civiccore's signature (system_prompt, user_content).
+
+    Regression: PR #42 originally called provider.generate(prompt=...) which
+    raised 'unexpected keyword argument prompt' because civiccore's OllamaProvider
+    expects system_prompt + user_content separately.
+    """
+    fake = _StrictFakeProvider()
+    monkeypatch.setattr(llm_client_module, "_provider", fake)
+
+    # Stub out the context-window query so the test doesn't need a DB.
+    monkeypatch.setattr(
+        llm_client_module,
+        "get_active_model_context_window",
+        _async_return(8192),
+    )
+
+    from app.llm.client import generate
+
+    result = await generate(
+        system_prompt="be helpful",
+        user_content="hello",
+    )
+    assert result == "FAKE_RESPONSE"
+    assert fake.last_call_kwargs is not None
+    assert "prompt" not in fake.last_call_kwargs  # legacy kwarg stripped
+    # records-ai inlines the system instruction into the assembled prompt
+    # via blocks_to_prompt, then sends it as user_content with system_prompt="".
+    assert fake.last_call_kwargs["system_prompt"] == ""
+    assert "hello" in fake.last_call_kwargs["user_content"]

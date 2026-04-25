@@ -8149,6 +8149,11 @@
             ],
             "title": "Model Card Url"
           },
+          "is_active": {
+            "type": "boolean",
+            "title": "Is Active",
+            "default": false
+          },
           "context_window_size": {
             "anyOf": [
               {
@@ -8175,7 +8180,8 @@
         "required": [
           "model_name"
         ],
-        "title": "ModelRegistryCreate"
+        "title": "ModelRegistryCreate",
+        "description": "Schema for creating a new model_registry record (POST body)."
       },
       "ModelRegistryRead": {
         "properties": {
@@ -8236,8 +8242,15 @@
             "title": "Is Active"
           },
           "added_at": {
-            "type": "string",
-            "format": "date-time",
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
             "title": "Added At"
           },
           "context_window_size": {
@@ -8264,20 +8277,26 @@
         "required": [
           "id",
           "model_name",
-          "model_version",
-          "parameter_count",
-          "license",
-          "model_card_url",
           "is_active",
-          "added_at",
-          "context_window_size",
           "supports_ner",
           "supports_vision"
         ],
-        "title": "ModelRegistryRead"
+        "title": "ModelRegistryRead",
+        "description": "Schema for returning a model_registry record (GET response).\n\n``from_attributes=True`` allows construction directly from an ORM instance."
       },
       "ModelRegistryUpdate": {
         "properties": {
+          "model_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Model Name"
+          },
           "model_version": {
             "anyOf": [
               {
@@ -8368,7 +8387,8 @@
           }
         },
         "type": "object",
-        "title": "ModelRegistryUpdate"
+        "title": "ModelRegistryUpdate",
+        "description": "Schema for partially updating a model_registry record (PATCH body).\n\nEvery field is optional so callers can send only the fields they want to\nchange."
       },
       "NotificationLogRead": {
         "properties": {

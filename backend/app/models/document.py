@@ -14,6 +14,11 @@ from sqlalchemy.orm import Mapped, mapped_column
 from app.models.user import Base
 from app.security.at_rest import decrypt_json, encrypt_json, is_encrypted
 
+# Phase 2 Step 5c: ModelRegistry ORM moved to civiccore.llm.registry. Re-export
+# here so legacy import paths (`from app.models.document import ModelRegistry`)
+# keep working without code changes elsewhere.
+from civiccore.llm.registry import ModelRegistry  # noqa: F401,E402
+
 
 class EncryptedJSONB(TypeDecorator):
     """T6 / ENG-001 — transparent at-rest encryption for a JSONB dict column.
@@ -146,19 +151,6 @@ class DocumentChunk(Base):
     __table_args__ = (Index("ix_chunks_doc_index", "document_id", "chunk_index"),)
 
 
-class ModelRegistry(Base):
-    __tablename__ = "model_registry"
-
-    id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
-    model_name: Mapped[str] = mapped_column(String(255))
-    model_version: Mapped[str | None] = mapped_column(String(100), nullable=True)
-    parameter_count: Mapped[str | None] = mapped_column(String(50), nullable=True)
-    license: Mapped[str | None] = mapped_column(String(100), nullable=True)
-    model_card_url: Mapped[str | None] = mapped_column(Text, nullable=True)
-    is_active: Mapped[bool] = mapped_column(Boolean, default=False)
-    added_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
-
-    # Phase 2 columns
-    context_window_size: Mapped[int | None] = mapped_column(Integer, nullable=True)
-    supports_ner: Mapped[bool] = mapped_column(Boolean, server_default="false")
-    supports_vision: Mapped[bool] = mapped_column(Boolean, server_default="false")
+# NOTE: The local ``class ModelRegistry(Base)`` definition was removed in
+# Phase 2 Step 5c. ``ModelRegistry`` is now imported above from
+# ``civiccore.llm.registry`` and re-exported for backward compatibility.
