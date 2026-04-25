@@ -4,11 +4,7 @@ WORKDIR /app
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
     build-essential libpq-dev curl \
-    git \
     && rm -rf /var/lib/apt/lists/*
-# git is required by pip to fetch the civiccore dependency from
-# git+https://github.com/CivicSuite/civiccore.git@<sha> until civiccore
-# 0.1.0 is published to PyPI. Once published, this line can drop git.
 
 COPY backend/pyproject.toml .
 RUN pip install --no-cache-dir ".[dev]"

@@ -10,12 +10,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 Post-v1.2.0 commits on `master`. No version bump yet.
 
 ### Added
-- New external dependency on `civiccore` (pinned to `git+https://github.com/CivicSuite/civiccore.git@e7c5570` during Phase 1; will become a versioned wheel pin before v1.3.0).
+- New external dependency on `civiccore`, now pinned to the versioned `v0.1.0` GitHub release wheel rather than a Git SHA.
 - Backend migrations now run the `civiccore` shared-schema baseline before records' own chain via `backend/alembic/env.py`. See [ADR-0003](https://github.com/CivicSuite/civicsuite/blob/main/docs/architecture/ADR-0003-civiccore-alembic-baseline-strategy.md) for the rationale and gate contract.
 - 3 migration gate tests at `backend/tests/test_civiccore_migration_gates.py` covering fresh-install, v1.2.x upgrade, and reapplication idempotency scenarios.
 
 ### Changed
-- `Dockerfile.backend` now installs `git` during image build so pip can resolve the temporary `git+https` civiccore dependency.
+- `Dockerfile.backend` no longer installs `git`; the backend now resolves `civiccore` from a versioned wheel URL and no longer needs Git at image-build time.
 - 14 records migrations updated to use `civiccore.migrations.guards.idempotent_*` helpers, making them safe to re-apply on databases where the civiccore baseline has already created the shared tables (users, service_accounts, audit_log, data_sources, documents, document_chunks, model_registry, exemption_rules, connector_templates, departments, system_catalog, city_profile, notification_templates, prompt_templates, sync_run_log, sync_failures).
 
 ## [1.2.0] - 2026-04-23

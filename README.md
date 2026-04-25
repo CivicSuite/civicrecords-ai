@@ -74,7 +74,7 @@ bash install.sh
 
 ### Phase 1 migration layer
 
-CivicRecords AI backend installs `civiccore` (the shared CivicSuite schema + migration runtime) as a dependency. During the Phase 1 transition period `civiccore` is pinned by git+SHA rather than PyPI version; see `backend/pyproject.toml`. Because of this, the backend Docker build requires `git` inside the image (already wired in `Dockerfile.backend`).
+CivicRecords AI backend installs `civiccore` (the shared CivicSuite schema + migration runtime) as a dependency. During the release-hardening window before PyPI publication, `backend/pyproject.toml` points at the versioned `v0.1.0` GitHub release wheel rather than a Git SHA. This keeps the dependency reproducible without requiring `git` inside the backend image.
 
 Migrations run in two layers: `civiccore` first (creates/updates the 16 shared tables), then this repo's Alembic chain on top. See [ADR-0003](https://github.com/CivicSuite/civicsuite/blob/main/docs/architecture/ADR-0003-civiccore-alembic-baseline-strategy.md) for the full gate contract.
 
