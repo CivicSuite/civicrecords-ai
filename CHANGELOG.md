@@ -19,6 +19,7 @@ Changes since v1.3.0.
 ### Removed
 
 ### Fixed
+- Frontend: belt-and-suspenders for the rare `DataSources.test.tsx` label-association flake observed once on PR #29's CI (issue #30). The test body now uses async `findByLabelText` instead of sync `getByLabelText`, layered on top of the prior `openWizard()` async wait (commit `e898319`). 30/30 filtered + 10/10 full-file pass post-fix. Other tests in the file using sync queries left untouched per scope-lock; if any flake later, file follow-up issues. Closes #30.
 
 ### Security
 
