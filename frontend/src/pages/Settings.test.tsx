@@ -17,9 +17,9 @@ import Settings from "./Settings";
  * fake rows are gone.
  */
 
-const HEALTH_OK = { status: "ok", version: "1.2.0" };
+const HEALTH_OK = { status: "ok", version: "1.3.0" };
 const STATUS_HEALTHY = {
-  version: "1.2.0",
+  version: "1.3.0",
   database: "connected",
   ollama: "connected",
   redis: "connected",
@@ -66,7 +66,7 @@ describe("Settings — System Info truth surface (QA-001)", () => {
     expect(screen.getByText("Redis (Task Queue)")).toBeInTheDocument();
 
     // Values come through verbatim from the backend — no invented text.
-    expect(screen.getByText("v1.2.0")).toBeInTheDocument();
+    expect(screen.getByText("v1.3.0")).toBeInTheDocument();
     expect(screen.getAllByText("connected").length).toBe(3);
   });
 

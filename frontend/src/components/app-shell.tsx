@@ -167,7 +167,7 @@ export function AppShell({ children, onSignOut, userEmail, userRole }: AppShellP
 
         {/* Footer */}
         <footer className="border-t px-4 md:px-6 py-2 text-xs text-muted-foreground flex items-center justify-between gap-2">
-          <span className="truncate">CivicRecords AI v1.2.0 &middot; Apache 2.0</span>
+          <span className="truncate">CivicRecords AI v1.3.0 &middot; Apache 2.0</span>
           <span className="whitespace-nowrap hidden sm:inline">Help &middot; Audit Log</span>
         </footer>
       </div>

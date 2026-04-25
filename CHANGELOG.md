@@ -7,17 +7,35 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-Post-v1.2.0 commits on `master`. No version bump yet.
+No commits beyond v1.3.0 yet.
 
 ### Added
-- New external dependency on `civiccore`, now pinned to the versioned `v0.1.0` GitHub release wheel rather than a Git SHA.
-- Backend migrations now run the `civiccore` shared-schema baseline before records' own chain via `backend/alembic/env.py`. See [ADR-0003](https://github.com/CivicSuite/civicsuite/blob/main/docs/architecture/ADR-0003-civiccore-alembic-baseline-strategy.md) for the rationale and gate contract.
-- 3 migration gate tests at `backend/tests/test_civiccore_migration_gates.py` covering fresh-install, v1.2.x upgrade, and reapplication idempotency scenarios.
+
+### Changed
+
+### Deprecated
+
+### Removed
+
+### Fixed
+
+### Security
+
+## [1.3.0] - 2026-04-25
+
+Phase 1 CivicCore extraction release. Records now consumes `civiccore` v0.1.0 as a versioned dependency, two-layer Alembic migration order is in place, and the release-gate scaffolding (verify-release.sh, ADR-0003 migration gates, .dockerignore build hardening) is wired into CI.
+
+### Added
+- Phase 1 CivicCore extraction landed: `civiccore` v0.1.0 is now a declared dependency (release wheel, not source). Shared models (User, Role, Department, audit_log) and migrations now live in civiccore and are consumed via the shim layer.
+- Two-layer migration order: civiccore migrations run first via `civiccore.migrations.runner.upgrade_to_head()`, then records-side migrations run as before. Fresh installs and upgrades both tested.
+- Migration idempotency guards: 14 records-side migrations carry guards for shared-table ops (create_table, add_column, alter_column, create_index, create_foreign_key, create_unique_constraint, create_check_constraint) so they no-op when civiccore has already created the objects.
+- CI merge bar hardened: 3 ADR-0003 migration gate tests (fresh install, v1.2.x upgrade, civiccore-first install) are standing required-pass checks on every PR.
+- `scripts/verify-release.sh` added: 6-step release gate (pytest, ruff, version lockstep, doc presence, build, fresh-virtualenv wheel install).
+- Build context hardening: `.dockerignore` added at the repo root. Frontend build context dropped from 241.93 MB to 0.88 MB (-99.6%) and now completes on a clean clone (was failing on transient `node_modules/.bin/.<random>` symlinks). Api build context dropped from 2.41 MB to 1.22 MB (-49%). `backend/tests/fixtures/` is intentionally NOT excluded — the v1.2.0 schema fixture lives there and must remain in the api build context. (PR #29, master `fe5d7e3`.)
 
 ### Changed
 - `Dockerfile.backend` no longer installs `git`; the backend now resolves `civiccore` from a versioned wheel URL and no longer needs Git at image-build time.
 - 14 records migrations updated to use `civiccore.migrations.guards.idempotent_*` helpers, making them safe to re-apply on databases where the civiccore baseline has already created the shared tables (users, service_accounts, audit_log, data_sources, documents, document_chunks, model_registry, exemption_rules, connector_templates, departments, system_catalog, city_profile, notification_templates, prompt_templates, sync_run_log, sync_failures).
-- Build performance: added `.dockerignore` at repo root to exclude `.git`, `node_modules`, `__pycache__`, virtualenvs, and other dev artifacts from docker build context. Image build size and time reduced — see PR description for exact delta. Frontend build also fixed: without `.dockerignore`, transient npm `.bin/.<random>` symlinks in `node_modules` could fail the BuildKit "load build context" step with `invalid file request`.
 
 ## [1.2.0] - 2026-04-23
 

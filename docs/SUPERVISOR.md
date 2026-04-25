@@ -24,7 +24,7 @@ Red flag if any of these disagree with each other. Ask Claude to reconcile befor
 2. **Run the sovereignty check yourself before a push.** `bash scripts/verify-sovereignty.sh`. No `verify-release.sh` exists in this repo — do not accept a claim that one was run.
 3. **Check lint + types on touched code.** `cd backend && ruff check app tests`. `cd frontend && npx tsc --noEmit`. `cd frontend && npm run build` is the integrated check.
 4. **Watch OpenAPI drift.** If backend schemas changed, `docs/openapi.json` must be regenerated and `frontend/src/generated/api.ts` refreshed via `npm run generate:types`. Zero-diff regen is the Tier-6 standard.
-5. **Verify version lockstep before any push.** `backend/pyproject.toml` `version = "1.2.0"` must equal `frontend/package.json` `"version": "1.2.0"` must equal the top `[x.y.z]` entry in `CHANGELOG.md` must equal the "Current release" line in `docs/UNIFIED-SPEC.md`. A mismatch is a dealbreaker — no push.
+5. **Verify version lockstep before any push.** `backend/pyproject.toml` `version = "1.3.0"` must equal `frontend/package.json` `"version": "1.3.0"` must equal the top `[x.y.z]` entry in `CHANGELOG.md` must equal the "Current release" line in `docs/UNIFIED-SPEC.md`. A mismatch is a dealbreaker — no push.
 
 ---
 

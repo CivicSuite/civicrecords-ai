@@ -610,6 +610,11 @@ def build_readme_docx(out_path):
     h = doc.add_heading("Status", level=1)
     apply_h1_style(h)
     body_para(doc,
+        "v1.3.0 — Phase 1 CivicCore extraction landed. civiccore 0.1.0 is now a "
+        "release-wheel dependency; two-layer migration order (civiccore first via "
+        "subprocess, then records). Infrastructure-only release — no API or UI changes."
+    )
+    body_para(doc,
         "v1.2.0 — Tier 5 + Tier 6 complete. Adds minimal public request portal (T5D), "
         "unsigned Windows installer (T5E), and ENG-001 closed "
         "(Tier 6 at-rest Fernet encryption on data_sources.connection_config shipped 2026-04-23). "

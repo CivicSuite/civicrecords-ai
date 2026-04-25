@@ -753,7 +753,7 @@ def build_readme_full(out_path):
         "Runs entirely on local hardware — no cloud, no telemetry, no vendor lock-in",
     ], styles)
     story.append(P(
-        "Current release: <b>v1.2.0</b> (April 23, 2026). 29 database tables, ~30 API endpoints, "
+        "Current release: <b>v1.3.0</b> (April 24, 2026). 29 database tables, ~30 API endpoints, "
         "617 backend + 36 frontend automated tests. Tier 5 and Tier 6 complete — ENG-001 "
         "(at-rest encryption for <tt>data_sources.connection_config</tt> via Fernet envelope) "
         "is closed. Tier 5 shipped the minimal public portal (T5D) and unsigned Windows "

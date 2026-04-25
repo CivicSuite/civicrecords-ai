@@ -3,7 +3,7 @@ from typing import Literal
 from pydantic import field_validator, model_validator
 from pydantic_settings import BaseSettings
 
-APP_VERSION = "1.2.0"
+APP_VERSION = "1.3.0"
 
 _INSECURE_SECRETS = {"CHANGE-ME", "CHANGE-ME-generate-with-openssl-rand-hex-32", ""}
 

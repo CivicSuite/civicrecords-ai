@@ -14,7 +14,7 @@ import Dashboard from "./Dashboard";
  */
 
 const HEALTHY_STATUS = {
-  version: "1.2.0",
+  version: "1.3.0",
   database: "connected",
   ollama: "connected",
   redis: "connected",
@@ -112,7 +112,7 @@ describe("Dashboard — service health indicators (T4B)", () => {
     // With the current flat-string code, both readings should surface as
     // non-connected because "[object Object]" isn't one of the healthy values.
     stubFetch({
-      version: "1.2.0",
+      version: "1.3.0",
       database: { status: "connected" } as unknown as string,
       ollama: { status: "connected" } as unknown as string,
       redis: { status: "connected" } as unknown as string,

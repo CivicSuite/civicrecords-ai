@@ -8,7 +8,7 @@ April 13, 2026
 | Status | Canonical — verified against repository at commit head |
 | Supersedes | All prior spec versions (v2.0, v2.2, v3.0, v3.0.1) |
 | Repository | github.com/scottconverse/civicrecords-ai |
-| Current release | v1.2.0 (April 23, 2026) — versions aligned across all files |
+| Current release | v1.3.0 (April 24, 2026) — versions aligned across all files |
 | Test suite | 617 automated backend tests + 36 frontend tests — all passing; GitHub Actions CI-verified (run 24853147133 on commit `d556904`) |
 | Method | GitHub API crawl of repo structure, README, CHANGELOG, config files, module directories, and in-repo RECONCILIATION doc |
 
@@ -19,11 +19,11 @@ This is the single source of truth for CivicRecords AI. It merges comprehensive 
 When narrative claims and repository evidence disagree, repository evidence wins. This document replaces all prior spec versions.
 
 ### 1.1 Version Alignment (Resolved)
-As of v1.2.0, version numbers are aligned across all four authoritative files:
-backend/app/config.py: APP_VERSION = "1.2.0"
-backend/pyproject.toml: version = "1.2.0"
-frontend/package.json: version = "1.2.0"
-CHANGELOG.md: [1.2.0] - 2026-04-23
+As of v1.3.0, version numbers are aligned across all four authoritative files:
+backend/app/config.py: APP_VERSION = "1.3.0"
+backend/pyproject.toml: version = "1.3.0"
+frontend/package.json: version = "1.3.0"
+CHANGELOG.md: [1.3.0] - 2026-04-24
 The version drift documented in prior spec versions has been resolved and remains resolved. The CHANGELOG now covers four releases: 0.1.0 (foundation), 1.0.0 (design system + core features), 1.1.0 (department scoping, compliance, and feature sprint), and 1.2.0 (Tier 5 installer/onboarding/seeding/model-picker/portal-mode + Tier 6 at-rest encryption ENG-001 closure).
 
 ## 2. Product Summary
