@@ -1,0 +1,58 @@
+# Build context exclusions for civicrecords-ai
+#
+# Why: every service in docker-compose.yml uses `build.context: .`. Without
+# this file Docker BuildKit ships everything in the repo as build context
+# to each `docker compose build`, including dev artifacts that no service
+# Dockerfile references. This wastes time, bloats the build context, and
+# in the frontend's case has been a hard build failure when npm leaves
+# transient `.bin/.<random>` symlinks in node_modules — see PR description
+# for the captured failure mode and before/after context-size numbers.
+#
+# CRITICAL — DO NOT exclude `backend/tests/fixtures/`. The Gate 2 test at
+# `backend/tests/test_civiccore_migration_gates.py::test_gate2_upgrade_from_v1_2`
+# reads `schema_v1_2_0.sql` from inside the api container at test time.
+# The api Dockerfile copies `backend/tests` into the image. Excluding the
+# fixtures directory would silently break Gate 2 on the next image rebuild.
+
+# --- Git / VCS / GitHub ---
+.git
+.gitignore
+.gitattributes
+.github
+
+# --- Node / frontend ---
+**/node_modules
+frontend/dist
+frontend/build
+**/.npm
+**/.yarn
+
+# --- Python / backend ---
+**/.venv
+**/venv
+**/__pycache__
+**/*.pyc
+**/*.pyo
+**/.pytest_cache
+**/.mypy_cache
+**/.ruff_cache
+**/htmlcov
+**/.coverage
+backend/dist
+backend/build
+
+# --- Local environment files (allow .env.example for onboarding/docs) ---
+**/.env
+**/.env.*
+!**/.env.example
+
+# --- Editor / OS / tooling ---
+.vscode
+.idea
+.claude
+**/.DS_Store
+**/Thumbs.db
+
+# --- Logs / runtime artifacts ---
+*.log
+*.pid

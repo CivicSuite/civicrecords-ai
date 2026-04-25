@@ -17,6 +17,7 @@ Post-v1.2.0 commits on `master`. No version bump yet.
 ### Changed
 - `Dockerfile.backend` no longer installs `git`; the backend now resolves `civiccore` from a versioned wheel URL and no longer needs Git at image-build time.
 - 14 records migrations updated to use `civiccore.migrations.guards.idempotent_*` helpers, making them safe to re-apply on databases where the civiccore baseline has already created the shared tables (users, service_accounts, audit_log, data_sources, documents, document_chunks, model_registry, exemption_rules, connector_templates, departments, system_catalog, city_profile, notification_templates, prompt_templates, sync_run_log, sync_failures).
+- Build performance: added `.dockerignore` at repo root to exclude `.git`, `node_modules`, `__pycache__`, virtualenvs, and other dev artifacts from docker build context. Image build size and time reduced — see PR description for exact delta. Frontend build also fixed: without `.dockerignore`, transient npm `.bin/.<random>` symlinks in `node_modules` could fail the BuildKit "load build context" step with `invalid file request`.
 
 ## [1.2.0] - 2026-04-23
 
