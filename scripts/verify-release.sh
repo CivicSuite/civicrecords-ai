@@ -100,20 +100,28 @@ done
 # Host-side ruff. Detection order (each fallback covers a distinct
 # Windows / POSIX shell environment):
 #   (1) `ruff` binary on PATH                     — POSIX or Windows w/ Scripts on PATH
-#   (2) `python -m ruff`                          — POSIX or Windows w/ python on PATH
-#   (3) `python3 -m ruff`                         — Git Bash on Windows (uses MSYS python3)
-#   (4) `py -3 -m ruff`                           — PowerShell on Windows (Python launcher)
-#   (5) `/c/Windows/py.exe -3 -m ruff`            — Git Bash on Windows (Python launcher
+#                                                   (incl. scoop shims dir on user PATH)
+#   (2) `ruff.exe` on PATH                        — WSL-style Bash where /mnt/c/... shims
+#                                                   are visible but `command -v ruff` doesn't
+#                                                   auto-resolve the .exe extension
+#   (3) `python -m ruff`                          — POSIX or Windows w/ python on PATH
+#   (4) `python3 -m ruff`                         — Git Bash on Windows (uses MSYS python3)
+#   (5) `py -3 -m ruff`                           — PowerShell on Windows (Python launcher)
+#   (6) `/c/Windows/py.exe -3 -m ruff`            — Git Bash on Windows (Python launcher
 #                                                   reached via direct Windows path; `py`
 #                                                   isn't on Git Bash's PATH but the .exe
-#                                                   typically lives at this absolute path)
-# Per audit REL-001 (2026-04-25 + Critical follow-up): Git Bash on Windows
-# can't reach `python`/`py` on PATH; needs python3 OR direct Windows path.
+#                                                   may live at this absolute path)
+# Per audit REL-001 (2026-04-25 + multiple follow-ups): the binary-on-PATH
+# install (scoop / brew / apt / equivalent) is the most durable; per-python
+# user-site installs are fragile across the multiple shell environments
+# this repo gets touched from (PowerShell, Git Bash, WSL Bash).
 # CI uses container ruff via .github/workflows/ci.yml because CI always
 # builds a fresh api image first.
 info "4. ruff lint"
 if command -v ruff >/dev/null 2>&1; then
     RUFF_CMD="ruff"
+elif command -v ruff.exe >/dev/null 2>&1; then
+    RUFF_CMD="ruff.exe"
 elif python -m ruff --version >/dev/null 2>&1; then
     RUFF_CMD="python -m ruff"
 elif python3 -m ruff --version >/dev/null 2>&1; then
@@ -124,7 +132,10 @@ elif [ -x /c/Windows/py.exe ] && /c/Windows/py.exe -3 -m ruff --version >/dev/nu
     RUFF_CMD="/c/Windows/py.exe -3 -m ruff"
 else
     RUFF_CMD=""
-    fail "ruff: not installed locally — install with one of (pick the python your shell can reach):
+    fail "ruff: not installed locally — preferred install is the binary on PATH (durable across shells):
+        scoop install ruff                   (Windows; binary lands in ~/scoop/shims, visible to all shells)
+        brew install ruff                    (macOS)
+        Per-python install fallbacks (fragile across shells; pick the python your shell can reach):
         pip install --user ruff              (POSIX, or Windows PowerShell w/ python on PATH)
         python3 -m pip install --user ruff   (Git Bash on Windows w/ MSYS python3)
         py -3 -m pip install --user ruff     (PowerShell on Windows w/ Python launcher)"
