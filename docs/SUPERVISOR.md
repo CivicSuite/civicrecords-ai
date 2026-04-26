@@ -8,9 +8,9 @@ One-page field card for supervising a Claude session on this repo. You are the h
 
 Skim these, in this order, so you can catch drift in real time:
 
-1. `git log --oneline -10` — confirm the master tip matches what you expect. Current tip is post-v1.2.0 on `master` (Tier 5 + Tier 6 closed; docs sync landed at `f4c159a`, seed-file fix at `3cf7719`).
-2. `CHANGELOG.md` top — `[Unreleased]` section tells you what has accumulated since v1.2.0 (2026-04-23). If `[Unreleased]` is empty and you expected changes, something was not committed.
-3. `docs/UNIFIED-SPEC.md` header (first 20 lines) — canonical version is v3.1. "617 backend + 36 frontend tests" is the current truth line; any claim that differs is stale.
+1. `git log --oneline -10` — confirm the master tip matches what you expect. Current release is **v1.4.0** on `master`. Historical anchors: post-v1.2.0 docs sync at `f4c159a`, seed-file fix at `3cf7719` (Tier 5 + Tier 6 closed before v1.3.0).
+2. `CHANGELOG.md` top — `[Unreleased]` section tells you what has accumulated since v1.4.0. If `[Unreleased]` is empty and you expected changes, something was not committed.
+3. `docs/UNIFIED-SPEC.md` header (first 20 lines) — canonical version is v3.1. Current truth on test counts is **~620 backend pytest + ~30 frontend vitest tests**; verify exact counts against the most recent CI run before quoting numbers. Any claim that diverges materially from those approximations is stale.
 4. `docs/superpowers/specs/` — most recent file is the slice Claude is working on (if any). Read it before approving work.
 5. `docs/CANONICAL-SPEC-GAP-LIST.md` + `docs/CHANGE-CONTROL.md` — if Claude proposes scope changes, these are the guardrails.
 
@@ -20,11 +20,11 @@ Red flag if any of these disagree with each other. Ask Claude to reconcile befor
 
 ## 2. During the session — what you actually do
 
-1. **Demand evidence, not narration.** When Claude says "tests pass," ask for the raw tail. Backend is `docker compose run --rm api python -m pytest tests -q` (per `CLAUDE.md` Rule 1a) or `cd backend && pytest -q`. Frontend is `cd frontend && npm test -- --run`. Expect ~617 backend + 36 frontend passing.
-2. **Run the sovereignty check yourself before a push.** `bash scripts/verify-sovereignty.sh`. No `verify-release.sh` exists in this repo — do not accept a claim that one was run.
+1. **Demand evidence, not narration.** When Claude says "tests pass," ask for the raw tail. Backend is `docker compose run --rm api python -m pytest tests -q` (per `CLAUDE.md` Rule 1a) or `cd backend && pytest -q`. Frontend is `cd frontend && npm test -- --run`. Expect roughly ~620 backend + ~30 frontend passing (verify the exact count against the latest CI run).
+2. **Run the release verification gate yourself before a push.** `bash scripts/verify-release.sh` is the standing pre-release / pre-merge gate. It checks: (1) sovereignty guard, (2) version lockstep across the 4 surfaces (`backend/pyproject.toml`, `frontend/package.json`, top of `CHANGELOG.md`, `docs/UNIFIED-SPEC.md` "Current release" line), (3) the 6 required doc artifacts, (4) ruff lint. Do not accept a "ready to push" claim without its raw output. The narrower `bash scripts/verify-sovereignty.sh` is still available for sovereignty-only checks.
 3. **Check lint + types on touched code.** `cd backend && ruff check app tests`. `cd frontend && npx tsc --noEmit`. `cd frontend && npm run build` is the integrated check.
 4. **Watch OpenAPI drift.** If backend schemas changed, `docs/openapi.json` must be regenerated and `frontend/src/generated/api.ts` refreshed via `npm run generate:types`. Zero-diff regen is the Tier-6 standard.
-5. **Verify version lockstep before any push.** `backend/pyproject.toml` `version = "1.4.0"` must equal `frontend/package.json` `"version": "1.4.0"` must equal the top `[x.y.z]` entry in `CHANGELOG.md` must equal the "Current release" line in `docs/UNIFIED-SPEC.md`. A mismatch is a dealbreaker — no push.
+5. **Verify version lockstep before any push.** `backend/pyproject.toml` `version = "1.4.0"` must equal `frontend/package.json` `"version": "1.4.0"` must equal the top `[x.y.z]` entry in `CHANGELOG.md` must equal the "Current release" line in `docs/UNIFIED-SPEC.md`. `verify-release.sh` enforces this — a mismatch is a dealbreaker, no push.
 
 ---
 
@@ -51,10 +51,10 @@ See coder-ui-qa-test skill.
 Work is done when ALL of these are true:
 
 - [ ] Matches canonical v3.1 spec (`docs/UNIFIED-SPEC.md`); any divergence is documented in `docs/CHANGE-CONTROL.md`.
-- [ ] `docker compose run --rm api python -m pytest tests -q` green, count at or above 617 backend tests (new work adds tests, never removes them).
-- [ ] `cd frontend && npm test -- --run` green at or above 36 tests.
+- [ ] `docker compose run --rm api python -m pytest tests -q` green, count at or above the current ~620 backend baseline (new work adds tests, never removes them).
+- [ ] `cd frontend && npm test -- --run` green at or above the current ~30 frontend baseline.
 - [ ] `cd frontend && npm run build` succeeds (tsc + vite clean).
-- [ ] `bash scripts/verify-sovereignty.sh` passes.
+- [ ] `bash scripts/verify-release.sh` passes (sovereignty + version lockstep + 6 doc artifacts + ruff lint).
 - [ ] Universal discovery/connection architecture (T2B/T3 connector + credentials model with `EncryptedJSONB` envelope on `data_sources.connection_config`) intact — no plaintext regression, single-key Fernet.
 - [ ] Portal-mode switch still honors `private` default; `/auth/register` is 404 in private mode, mounted in public; `/config/portal-mode` always mounted.
 - [ ] All 6 doc artifacts current (README.md, CHANGELOG.md, CONTRIBUTING.md, LICENSE, .gitignore, docs/index.html) plus the repo's extended set: README.{txt,docx,pdf}, USER-MANUAL.{md,docx,pdf}, `docs/architecture.mmd` + `docs/diagrams/`, `docs/github-discussions-seed.md`.

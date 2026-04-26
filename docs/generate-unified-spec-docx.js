@@ -293,7 +293,7 @@ const doc = new Document({
         h2("How to Read This Document"),
         p("This is the single source of truth for CivicRecords AI. Every feature, data model change, design decision, and implementation detail lives here. Each feature is tagged with a phase:"),
         spacer(),
-        bulletRuns([{ text: "[BUILT]", bold: true, color: colors.success }, { text: " \u2014 Implemented and tested in v0.1.0" }]),
+        bulletRuns([{ text: "[BUILT]", bold: true, color: colors.success }, { text: " \u2014 Available since v0.1.0; tested through v1.4.0" }]),
         bulletRuns([{ text: "[REDESIGN]", bold: true, color: colors.warning }, { text: " \u2014 Built but needs UI/UX overhaul" }]),
         bulletRuns([{ text: "[MVP-NOW]", bold: true, color: colors.danger }, { text: " \u2014 Must be added before v1.0 release" }]),
         bulletRuns([{ text: "[v1.1]", bold: true, color: colors.primary }, { text: " \u2014 Next release after initial deployment" }]),
@@ -585,7 +585,7 @@ const doc = new Document({
         spacer(),
         h3("Typography Scale"),
         makeTable(
-          ["Element", "Current (v0.1.0)", "Target (v1.0)"],
+          ["Element", "Phase 0 baseline (v0.1.0)", "Target (v1.0)"],
           [
             ["H1 (page title)", "Not used", "36px / 700 weight"],
             ["H2 (section head)", "20px / 600 weight", "28px / 600 weight"],
@@ -961,7 +961,7 @@ const doc = new Document({
         new Paragraph({ children: [new PageBreak()] }),
 
         // ===== APPENDIX A =====
-        h1("Appendix A: Migration from v0.1.0"),
+        h1("Appendix A: Migration history (v0.1.0 → v1.4.0)"),
 
         h3("Status Value Migration"),
         codeBlock("-- 'received', 'searching', 'in_review', 'drafted', 'approved' remain valid"),
@@ -989,9 +989,9 @@ const doc = new Document({
           ["File", "Purpose"],
           [
             ["docs/UNIFIED-SPEC.md", "This document \u2014 single source of truth (markdown version)"],
-            ["docs/DESIGN-CRITIQUE.md", "Design audit of v0.1.0 UI"],
+            ["docs/DESIGN-CRITIQUE.md", "Historical: design audit of v0.1.0 UI"],
             ["docs/superpowers/specs/2026-04-11-civicrecords-ai-master-design.md", "Original build spec (superseded)"],
-            ["QA-VERIFICATION-REPORT.docx", "v0.1.0 QA report"],
+            ["QA-VERIFICATION-REPORT.docx", "Historical QA report from v0.1.0 (archived)"],
             ["Municipal Open Records UX Style Guide", "External design direction document"],
           ],
           [5000, 4360]
