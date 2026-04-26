@@ -1,0 +1,36 @@
+graph TB
+    Browser["Browser<br/>(staff / admin / public)"]
+    subgraph CITY["City's network — no cloud"]
+        subgraph DOCKER["Docker Compose stack"]
+            Nginx["Frontend<br/>nginx + React<br/>:8080"]
+            API["API<br/>FastAPI<br/>:8000"]
+            Worker["Celery worker<br/>+ beat scheduler"]
+            PG[("Postgres 17<br/>+ pgvector")]
+            Redis[("Redis 7.2")]
+            Ollama["Ollama runtime<br/>local LLM"]
+            UploadVol[("uploads volume")]
+            CacheVol[("cache volume")]
+            OllamaVol[("ollama models volume")]
+            PgVol[("postgres data volume")]
+        end
+    end
+    Browser --> Nginx
+    Nginx --> API
+    API --> PG
+    API --> Redis
+    API --> Ollama
+    API --> UploadVol
+    Worker --> PG
+    Worker --> Redis
+    Worker --> Ollama
+    Worker --> CacheVol
+    Ollama --> OllamaVol
+    PG --> PgVol
+    classDef external fill:#fff8e1,stroke:#a08040,color:#000
+    classDef stack fill:#d4e1f4,stroke:#4a6aa0,color:#000
+    classDef llm fill:#d4f4dd,stroke:#3a7a4a,color:#000
+    classDef vol fill:#f0f0f0,stroke:#888,color:#000
+    class Browser external
+    class Nginx,API,Worker stack
+    class Ollama llm
+    class UploadVol,CacheVol,OllamaVol,PgVol,PG,Redis vol

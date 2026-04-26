@@ -7,7 +7,7 @@ April 13, 2026
 |---|---|
 | Status | Canonical — verified against repository at commit head |
 | Supersedes | All prior spec versions (v2.0, v2.2, v3.0, v3.0.1) |
-| Repository | github.com/scottconverse/civicrecords-ai |
+| Repository | github.com/CivicSuite/civicrecords-ai |
 | Current release | v1.4.0 (April 25, 2026) — versions aligned across all files |
 | Test suite | ~620 automated backend tests + ~30 frontend tests — all passing |
 | Method | GitHub API crawl of repo structure, README, CHANGELOG, config files, module directories, and in-repo RECONCILIATION doc |
@@ -974,7 +974,7 @@ For future documentation, use this precedence order:
 When those disagree, do not preserve the older narrative claim just because it sounds cleaner.
 
 ## Appendix A: Repository Structure
-Top-level contents of github.com/scottconverse/civicrecords-ai (master branch):
+Top-level contents of github.com/CivicSuite/civicrecords-ai (master branch):
 backend/ — Python 3.12, FastAPI, SQLAlchemy 2.0, Alembic, Celery
 frontend/ — React 18, Vite, shadcn/ui, Tailwind CSS, Geist Variable font
 docs/ — 20+ documentation files including manuals, specs, QA reports, architecture diagrams

@@ -538,10 +538,10 @@
   <ul>
     <li><strong>If your city enables the public portal (optional, off by default).</strong> Residents can now create their own account and submit a records request through a public surface (<code>/public/*</code>). Those submissions land in your normal request list and look like any other request &mdash; same statuses, same timeline, same workflow. You handle them exactly the way you handle staff-created requests today. Anonymous walk-up submission is not supported &mdash; every public submission has a logged-in resident as <code>created_by</code>.</li>
     <li><strong>Connector credentials are now encrypted at rest (ENG-001 closed).</strong> This is entirely transparent to you. Nothing in the staff UI changes. What changed: if your IT admin ever exports the database or restores a backup, connector credentials appear as ciphertext rather than plaintext. Your admin has a new <code>ENCRYPTION_KEY</code> to manage &mdash; see the Administrator Manual for the operator detail; no staff action required.</li>
-    <li><strong>Windows double-click installer is available.</strong> If your organization deploys new workstations from Windows, there is now a <code>CivicRecordsAI-1.2.0-Setup.exe</code> on the <a href="https://github.com/scottconverse/civicrecords-ai/releases/tag/v1.2.0">v1.2.0 release page</a>. It is <strong>unsigned by design</strong>, so Windows SmartScreen will show &quot;Windows protected your PC &mdash; Unknown publisher&quot; on first run. Remediation: <strong>More info &rarr; Run anyway</strong>. This is expected and safe when the installer came from the official release page with a matching SHA-256 checksum.</li>
+    <li><strong>Windows double-click installer is available.</strong> If your organization deploys new workstations from Windows, there is now a <code>CivicRecordsAI-1.2.0-Setup.exe</code> on the <a href="https://github.com/CivicSuite/civicrecords-ai/releases/tag/v1.2.0">v1.2.0 release page</a>. It is <strong>unsigned by design</strong>, so Windows SmartScreen will show &quot;Windows protected your PC &mdash; Unknown publisher&quot; on first run. Remediation: <strong>More info &rarr; Run anyway</strong>. This is expected and safe when the installer came from the official release page with a matching SHA-256 checksum.</li>
   </ul>
   <p style="margin-bottom:0;">
-    Full release narrative lives in <a href="https://github.com/scottconverse/civicrecords-ai/releases/tag/v1.2.0">the v1.2.0 release notes</a> and <a href="https://github.com/scottconverse/civicrecords-ai/blob/master/CHANGELOG.md#120---2026-04-23">CHANGELOG.md &sect;[1.2.0]</a>. Nothing else in this manual changed.
+    Full release narrative lives in <a href="https://github.com/CivicSuite/civicrecords-ai/releases/tag/v1.2.0">the v1.2.0 release notes</a> and <a href="https://github.com/CivicSuite/civicrecords-ai/blob/master/CHANGELOG.md#120---2026-04-23">CHANGELOG.md &sect;[1.2.0]</a>. Nothing else in this manual changed.
   </p>
 </div>
 
@@ -1387,8 +1387,8 @@
     CivicRecords AI is an open-source project with an active community. If you have questions about how to use a feature, want to suggest an improvement, or want to see how other cities are using the tool, visit the project's GitHub Discussions page:
   </p>
   <p style="margin: 16px 0;">
-    <a href="https://github.com/scottconverse/civicrecords-ai/discussions" style="color: var(--blue-700); font-weight: 600;">
-      github.com/scottconverse/civicrecords-ai/discussions
+    <a href="https://github.com/CivicSuite/civicrecords-ai/discussions" style="color: var(--blue-700); font-weight: 600;">
+      github.com/CivicSuite/civicrecords-ai/discussions
     </a>
   </p>
 
@@ -1400,7 +1400,7 @@
     <li>Note the exact steps you took before the problem occurred.</li>
     <li>Take a screenshot if possible (press <kbd>PrtScn</kbd> on your keyboard).</li>
     <li>Contact your IT administrator with the details. They will determine whether it is a local configuration issue or a bug in the software.</li>
-    <li>If it is a software bug, your administrator can file an issue on the project's GitHub Issues page: <a href="https://github.com/scottconverse/civicrecords-ai/issues" style="color: var(--blue-700);">github.com/scottconverse/civicrecords-ai/issues</a></li>
+    <li>If it is a software bug, your administrator can file an issue on the project's GitHub Issues page: <a href="https://github.com/CivicSuite/civicrecords-ai/issues" style="color: var(--blue-700);">github.com/CivicSuite/civicrecords-ai/issues</a></li>
   </ol>
 
   <div class="callout callout-tip">

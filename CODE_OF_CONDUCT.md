@@ -6,7 +6,7 @@ The full text is available at the link above.
 
 ## Reporting
 
-Report concerns about contributor conduct via [GitHub private security advisories](https://github.com/scottconverse/civicrecords-ai/security/advisories/new) or by opening a private discussion with a maintainer.
+Report concerns about contributor conduct via [GitHub private security advisories](https://github.com/CivicSuite/civicrecords-ai/security/advisories/new) or by opening a private discussion with a maintainer.
 
 ## Scope
 

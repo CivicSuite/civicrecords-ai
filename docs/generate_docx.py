@@ -172,7 +172,7 @@ def add_header_footer(section, header_text, include_page_num=True):
         fp = footer.add_paragraph()
     fp.clear()
     fp.alignment = WD_ALIGN_PARAGRAPH.CENTER
-    fp.add_run("Apache License 2.0  —  github.com/scottconverse/civicrecords-ai").font.size = Pt(8)
+    fp.add_run("Apache License 2.0  —  github.com/CivicSuite/civicrecords-ai").font.size = Pt(8)
     if include_page_num:
         fp.add_run("     Page ").font.size = Pt(8)
         add_page_number(fp)
@@ -500,7 +500,7 @@ def build_readme_docx(out_path):
     h2 = doc.add_heading("Install (Windows)", level=2)
     apply_h2_style(h2)
     for line in [
-        "git clone https://github.com/scottconverse/civicrecords-ai.git",
+        "git clone https://github.com/CivicSuite/civicrecords-ai.git",
         "cd civicrecords-ai",
         ".\\install.ps1",
     ]:
@@ -509,7 +509,7 @@ def build_readme_docx(out_path):
     h2 = doc.add_heading("Install (macOS / Linux)", level=2)
     apply_h2_style(h2)
     for line in [
-        "git clone https://github.com/scottconverse/civicrecords-ai.git",
+        "git clone https://github.com/CivicSuite/civicrecords-ai.git",
         "cd civicrecords-ai",
         "bash install.sh",
     ]:
@@ -638,7 +638,7 @@ def build_readme_docx(out_path):
     doc.add_paragraph()
     footer_para = doc.add_paragraph()
     footer_para.alignment = WD_ALIGN_PARAGRAPH.CENTER
-    run = footer_para.add_run("github.com/scottconverse/civicrecords-ai")
+    run = footer_para.add_run("github.com/CivicSuite/civicrecords-ai")
     run.font.name = "Calibri"
     run.font.size = Pt(11)
     run.font.color.rgb = CIVIC_MID

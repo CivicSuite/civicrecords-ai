@@ -1,0 +1,22 @@
+graph TB
+    subgraph CITY["City building / on-prem"]
+        Browser["Staff / admin / public<br/>browser"]
+        subgraph RUNTIME["records-ai runtime — no outbound by default"]
+            App["FastAPI + Celery<br/>+ frontend"]
+            DB[("Postgres + pgvector<br/>connector_config<br/>encrypted at rest (Fernet)")]
+            LLM["Ollama local LLM"]
+            Vols[("local volumes:<br/>uploads, cache,<br/>pgdata, ollama models")]
+        end
+    end
+    Cloud(("Cloud / Internet"))
+    Browser --> App
+    App --> DB
+    App --> LLM
+    App --> Vols
+    App -.optional + opt-in only.-> Cloud
+    classDef city fill:#e1ffe1,stroke:#3a7a4a,stroke-width:2px,color:#000
+    classDef cloud fill:#ffe1e1,stroke:#a04040,stroke-width:1px,stroke-dasharray:5 5,color:#000
+    classDef secure fill:#fff8e1,stroke:#a08040,color:#000
+    class Browser,App,LLM,Vols city
+    class DB secure
+    class Cloud cloud

@@ -6,16 +6,16 @@ CivicRecords AI is an open-source, locally-hosted FOIA / public-records manageme
 
 | Question type | Where |
 |---|---|
-| Usage / how-to | [GitHub Discussions](https://github.com/scottconverse/civicrecords-ai/discussions) |
-| Bugs and defects | [GitHub Issues](https://github.com/scottconverse/civicrecords-ai/issues) — use the bug report template |
-| Feature requests | [GitHub Issues](https://github.com/scottconverse/civicrecords-ai/issues) — use the feature request template |
-| Documentation gaps | [GitHub Issues](https://github.com/scottconverse/civicrecords-ai/issues) — use the documentation template |
+| Usage / how-to | [GitHub Discussions](https://github.com/CivicSuite/civicrecords-ai/discussions) |
+| Bugs and defects | [GitHub Issues](https://github.com/CivicSuite/civicrecords-ai/issues) — use the bug report template |
+| Feature requests | [GitHub Issues](https://github.com/CivicSuite/civicrecords-ai/issues) — use the feature request template |
+| Documentation gaps | [GitHub Issues](https://github.com/CivicSuite/civicrecords-ai/issues) — use the documentation template |
 | Security reports | See [SECURITY.md](SECURITY.md) — do not open public issues for security concerns |
 
 ## Before opening an issue
 
 1. Check the [README](README.md), [USER-MANUAL](USER-MANUAL.md), and [docs/index.html](docs/index.html).
-2. Search existing [Issues](https://github.com/scottconverse/civicrecords-ai/issues?q=is%3Aissue) and [Discussions](https://github.com/scottconverse/civicrecords-ai/discussions) for the same topic.
+2. Search existing [Issues](https://github.com/CivicSuite/civicrecords-ai/issues?q=is%3Aissue) and [Discussions](https://github.com/CivicSuite/civicrecords-ai/discussions) for the same topic.
 3. Confirm you are on the latest release (see [CHANGELOG](CHANGELOG.md)).
 
 ## Response expectations

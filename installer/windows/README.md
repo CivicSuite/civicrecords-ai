@@ -47,7 +47,7 @@ Get-FileHash -Algorithm SHA256 .\CivicRecordsAI-<version>-Setup.exe
 
 Compare the output against the SHA-256 value printed alongside the
 asset on the corresponding
-[GitHub release page](https://github.com/scottconverse/civicrecords-ai/releases).
+[GitHub release page](https://github.com/CivicSuite/civicrecords-ai/releases).
 If the values match, the binary is byte-identical to the one produced
 by the public CI pipeline at the tagged commit. If they differ, **do
 not run it** — download again from the release page directly.

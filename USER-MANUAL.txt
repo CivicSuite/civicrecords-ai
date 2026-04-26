@@ -298,15 +298,15 @@ Before you begin — prerequisites:
 2. Ensure Docker is running (you should see the Docker icon in your taskbar/menu bar, or docker info returns without error).
 3. Confirm system requirements: 8+ CPU cores, 32 GB RAM, 50 GB free disk.
 
-Windows (double-click installer): Download CivicRecordsAI-<version>-Setup.exe from the GitHub Releases page (https://github.com/scottconverse/civicrecords-ai/releases) for the tag you want, double-click it, acknowledge the SmartScreen "Unknown publisher" prompt (expected — see above), and follow the installer prompts. On first launch the installer automatically runs the full bootstrap (prereq check → model pull → first-boot seed).
+Windows (double-click installer): Download CivicRecordsAI-<version>-Setup.exe from the GitHub Releases page (https://github.com/CivicSuite/civicrecords-ai/releases) for the tag you want, double-click it, acknowledge the SmartScreen "Unknown publisher" prompt (expected — see above), and follow the installer prompts. On first launch the installer automatically runs the full bootstrap (prereq check → model pull → first-boot seed).
 
 Windows (script path):
-git clone https://github.com/scottconverse/civicrecords-ai.git
+git clone https://github.com/CivicSuite/civicrecords-ai.git
 cd civicrecords-ai
 .\install.ps1
 
 macOS / Linux:
-git clone https://github.com/scottconverse/civicrecords-ai.git
+git clone https://github.com/CivicSuite/civicrecords-ai.git
 cd civicrecords-ai
 bash install.sh
 

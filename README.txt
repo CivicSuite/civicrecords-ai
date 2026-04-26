@@ -52,14 +52,14 @@ No open-source tool exists for the **responder side** of open records at the mun
 
 **Windows:**
 ```powershell
-git clone https://github.com/scottconverse/civicrecords-ai.git
+git clone https://github.com/CivicSuite/civicrecords-ai.git
 cd civicrecords-ai
 .\install.ps1
 ```
 
 **macOS / Linux:**
 ```bash
-git clone https://github.com/scottconverse/civicrecords-ai.git
+git clone https://github.com/CivicSuite/civicrecords-ai.git
 cd civicrecords-ai
 bash install.sh
 ```
@@ -79,6 +79,18 @@ CivicRecords AI backend installs `civiccore` (the shared CivicSuite schema + mig
 Migrations run in two layers: `civiccore` first (creates/updates the 16 shared tables), then this repo's Alembic chain on top. See [ADR-0003](https://github.com/CivicSuite/civicsuite/blob/main/docs/architecture/ADR-0003-civiccore-alembic-baseline-strategy.md) for the full gate contract.
 
 ## Architecture
+
+### Deployment stack
+
+![Deployment stack — entire system runs inside Docker Compose on the city's network. No cloud, no outbound by default.](docs/diagrams/deployment-stack.svg)
+
+### LLM call flow
+
+![LLM call flow: records-ai application code routes through civiccore.llm (context assembly, template resolution, model registry, provider factory) to a local Ollama provider, with optional cloud providers.](docs/diagrams/llm-flow.svg)
+
+### Sovereignty / data boundary
+
+![Sovereignty boundary: all runtime components (FastAPI, Celery, Postgres+pgvector, Ollama, local volumes) live inside the city's on-prem network. No outbound by default; cloud is opt-in only.](docs/diagrams/sovereignty.svg)
 
 ```
 ┌─────────────┐     ┌─────────────┐     ┌─────────────┐

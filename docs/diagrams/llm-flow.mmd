@@ -1,0 +1,28 @@
+graph LR
+    subgraph RECORDS["records-ai application code"]
+        Caller["exemption_reviewer<br/>llm_extractor<br/>response_generator"]
+        Shim["app.llm.client.generate<br/>(thin shim)"]
+    end
+    subgraph CIVIC["civiccore.llm"]
+        Ctx["assemble_context<br/>+ sanitize_for_llm"]
+        PT["resolve_template<br/>(3-step override:<br/>app DB → code → civiccore)"]
+        MR["ModelRegistry<br/>get_active_model_<br/>context_window"]
+        Factory["get_provider /<br/>build_provider"]
+    end
+    subgraph PROV["Providers (Phase 2)"]
+        Ollama["OllamaProvider<br/>local /api/generate"]
+        OpenAI["OpenAIProvider<br/>cloud (optional extra)"]
+        Anthropic["AnthropicProvider<br/>cloud (optional extra)"]
+    end
+    Caller --> Shim
+    Shim --> Ctx
+    Shim --> Factory
+    Factory --> Ollama
+    Factory -.optional.-> OpenAI
+    Factory -.optional.-> Anthropic
+    PT --> Caller
+    MR --> Ctx
+    classDef local fill:#d4f4dd,stroke:#3a7a4a,color:#000
+    classDef cloud fill:#d4e1f4,stroke:#4a6aa0,stroke-dasharray:3 3,color:#000
+    class Ollama local
+    class OpenAI,Anthropic cloud

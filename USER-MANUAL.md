@@ -283,18 +283,18 @@ There are two supported install paths. Pick the one that matches your platform a
 2. Ensure Docker is running (you should see the Docker icon in your taskbar/menu bar, or `docker info` returns without error).
 3. Confirm system requirements: 8+ CPU cores, 32 GB RAM, 50 GB free disk.
 
-**Windows (double-click installer):** Download `CivicRecordsAI-<version>-Setup.exe` from the [GitHub Releases page](https://github.com/scottconverse/civicrecords-ai/releases) for the tag you want, double-click it, acknowledge the SmartScreen "Unknown publisher" prompt (expected — see above), and follow the installer prompts. On first launch the installer automatically runs the full bootstrap (prereq check → model pull → first-boot seed).
+**Windows (double-click installer):** Download `CivicRecordsAI-<version>-Setup.exe` from the [GitHub Releases page](https://github.com/CivicSuite/civicrecords-ai/releases) for the tag you want, double-click it, acknowledge the SmartScreen "Unknown publisher" prompt (expected — see above), and follow the installer prompts. On first launch the installer automatically runs the full bootstrap (prereq check → model pull → first-boot seed).
 
 **Windows (script path):**
 ```powershell
-git clone https://github.com/scottconverse/civicrecords-ai.git
+git clone https://github.com/CivicSuite/civicrecords-ai.git
 cd civicrecords-ai
 .\install.ps1
 ```
 
 **macOS / Linux:**
 ```bash
-git clone https://github.com/scottconverse/civicrecords-ai.git
+git clone https://github.com/CivicSuite/civicrecords-ai.git
 cd civicrecords-ai
 bash install.sh
 ```
@@ -1149,6 +1149,8 @@ stateDiagram-v2
 
 ## C.6 Deployment Topology
 
+![Deployment stack — entire system runs inside Docker Compose on the city's network. No cloud, no outbound by default.](docs/diagrams/deployment-stack.svg)
+
 ```mermaid
 graph TB
     subgraph Host["City Server (on-premises)"]
@@ -1192,6 +1194,8 @@ graph TB
 
 ## C.7 Search Architecture
 
+![LLM call flow — records-ai application code routes through civiccore.llm (context assembly, template resolution, model registry, provider factory) to a local Ollama provider, with optional cloud providers behind opt-in extras.](docs/diagrams/llm-flow.svg)
+
 Hybrid search combines two retrieval strategies and merges them with reciprocal rank fusion:
 
 ```
@@ -1226,6 +1230,8 @@ User Query
 ---
 
 ## C.8 Security Architecture
+
+![Sovereignty boundary — all runtime components (FastAPI, Celery, Postgres+pgvector, Ollama, local volumes) live inside the city's on-prem network. No outbound by default; cloud is opt-in only. Connector credentials are encrypted at rest with Fernet.](docs/diagrams/sovereignty.svg)
 
 **Authentication:** JWT tokens with configurable expiry. Tokens are signed with `JWT_SECRET` using HS256. Refresh tokens are stored in Redis with revocation support.
 

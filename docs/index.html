@@ -423,7 +423,7 @@
     <li><a href="#features">Features</a></li>
     <li><a href="#tech">Tech Stack</a></li>
     <li><a href="#links">Docs</a></li>
-    <li><a href="https://github.com/scottconverse/civicrecords-ai">GitHub</a></li>
+    <li><a href="https://github.com/CivicSuite/civicrecords-ai">GitHub</a></li>
   </ul>
 </nav>
 
@@ -465,17 +465,33 @@
   </p>
 
   <div style="display:flex;gap:.75rem;flex-wrap:wrap;justify-content:center;margin-top:1.5rem;">
-    <a href="https://github.com/scottconverse/civicrecords-ai" class="btn btn-primary">&#128008; GitHub Repository</a>
-    <a href="https://raw.githubusercontent.com/scottconverse/civicrecords-ai/v1.4.0/install.sh" class="btn btn-primary" download>&#11015; Download Installer (Linux / macOS)</a>
-    <a href="https://github.com/scottconverse/civicrecords-ai/releases/download/v1.4.0/CivicRecordsAI-1.4.0-Setup.exe" class="btn btn-primary" download>&#11015; Download Installer (Windows)</a>
-    <a href="https://github.com/scottconverse/civicrecords-ai/blob/master/USER-MANUAL.md" class="btn btn-outline">&#128462; User Manual</a>
-    <a href="https://github.com/scottconverse/civicrecords-ai/blob/master/README.md" class="btn btn-outline">&#128196; README</a>
+    <a href="https://github.com/CivicSuite/civicrecords-ai" class="btn btn-primary">&#128008; GitHub Repository</a>
+    <a href="https://raw.githubusercontent.com/CivicSuite/civicrecords-ai/v1.4.0/install.sh" class="btn btn-primary" download>&#11015; Download Installer (Linux / macOS)</a>
+    <a href="https://github.com/CivicSuite/civicrecords-ai/releases/download/v1.4.0/CivicRecordsAI-1.4.0-Setup.exe" class="btn btn-primary" download>&#11015; Download Installer (Windows)</a>
+    <a href="https://github.com/CivicSuite/civicrecords-ai/blob/master/USER-MANUAL.md" class="btn btn-outline">&#128462; User Manual</a>
+    <a href="https://github.com/CivicSuite/civicrecords-ai/blob/master/README.md" class="btn btn-outline">&#128196; README</a>
   </div>
 </header>
 
 <!-- ARCHITECTURE -->
 <div class="arch">
   <h2>Architecture</h2>
+
+  <figure style="margin: 2em auto; max-width: 1000px;">
+    <img src="diagrams/deployment-stack.svg" alt="CivicRecords AI deployment stack: browser to nginx frontend to FastAPI API plus Celery worker, backed by Postgres+pgvector, Redis, and Ollama, all running inside Docker Compose on the city's own network with no cloud dependency." style="max-width: 100%; height: auto; display: block; margin: 0 auto;">
+    <figcaption style="text-align: center; color: #cbd5e1; font-size: 0.9em; margin-top: 0.5em;">Deployment stack — entire system runs inside Docker Compose on the city's network. No cloud, no outbound by default.</figcaption>
+  </figure>
+
+  <figure style="margin: 2em auto; max-width: 1000px;">
+    <img src="diagrams/llm-flow.svg" alt="LLM call flow: records-ai application code calls a thin app.llm.client shim which routes through civiccore.llm — context assembly with sanitization, prompt template resolution with three-step override, model registry, and provider factory — into a local Ollama provider, with optional OpenAI and Anthropic providers behind opt-in extras." style="max-width: 100%; height: auto; display: block; margin: 0 auto;">
+    <figcaption style="text-align: center; color: #cbd5e1; font-size: 0.9em; margin-top: 0.5em;">LLM call flow — records-ai routes every model call through civiccore.llm. Local-first; cloud providers are optional extras.</figcaption>
+  </figure>
+
+  <figure style="margin: 2em auto; max-width: 1000px;">
+    <img src="diagrams/sovereignty.svg" alt="Sovereignty boundary: all runtime components — FastAPI plus Celery, Postgres with pgvector, Ollama, and local volumes — live inside the city's on-prem network. Connector credentials are encrypted at rest with Fernet. No outbound by default; cloud is opt-in only." style="max-width: 100%; height: auto; display: block; margin: 0 auto;">
+    <figcaption style="text-align: center; color: #cbd5e1; font-size: 0.9em; margin-top: 0.5em;">Sovereignty / data boundary — every byte of data and every model call stays on city infrastructure unless an operator explicitly opts in to a cloud provider.</figcaption>
+  </figure>
+
   <div style="max-width: 860px; margin: 0 auto;">
     <svg viewBox="0 0 860 620" xmlns="http://www.w3.org/2000/svg" style="width:100%; height:auto;">
       <defs>
@@ -833,14 +849,14 @@
 
     <!-- PRIMARY ACTION BUTTONS -->
     <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:1rem;margin-bottom:2.5rem;">
-      <a href="https://github.com/scottconverse/civicrecords-ai"
+      <a href="https://github.com/CivicSuite/civicrecords-ai"
          style="display:flex;flex-direction:column;align-items:center;gap:.5rem;padding:1.5rem 1rem;background:var(--blue-dark);color:#fff;border-radius:10px;text-decoration:none;text-align:center;font-weight:700;transition:opacity .15s;"
          onmouseover="this.style.opacity='.85'" onmouseout="this.style.opacity='1'">
         <span style="font-size:1.75rem;">&#128008;</span>
         <span style="font-size:1rem;">GitHub Repository</span>
-        <span style="font-size:.78rem;font-weight:400;color:#93c5fd;">scottconverse/civicrecords-ai</span>
+        <span style="font-size:.78rem;font-weight:400;color:#93c5fd;">CivicSuite/civicrecords-ai</span>
       </a>
-      <a href="https://raw.githubusercontent.com/scottconverse/civicrecords-ai/v1.4.0/install.sh"
+      <a href="https://raw.githubusercontent.com/CivicSuite/civicrecords-ai/v1.4.0/install.sh"
          download="install.sh"
          style="display:flex;flex-direction:column;align-items:center;gap:.5rem;padding:1.5rem 1rem;background:#15803d;color:#fff;border-radius:10px;text-decoration:none;text-align:center;font-weight:700;transition:opacity .15s;"
          onmouseover="this.style.opacity='.85'" onmouseout="this.style.opacity='1'">
@@ -848,7 +864,7 @@
         <span style="font-size:1rem;">Download Installer</span>
         <span style="font-size:.78rem;font-weight:400;color:#bbf7d0;">Linux &amp; macOS · install.sh</span>
       </a>
-      <a href="https://github.com/scottconverse/civicrecords-ai/releases/download/v1.4.0/CivicRecordsAI-1.4.0-Setup.exe"
+      <a href="https://github.com/CivicSuite/civicrecords-ai/releases/download/v1.4.0/CivicRecordsAI-1.4.0-Setup.exe"
          download="CivicRecordsAI-1.4.0-Setup.exe"
          style="display:flex;flex-direction:column;align-items:center;gap:.5rem;padding:1.5rem 1rem;background:#1d4ed8;color:#fff;border-radius:10px;text-decoration:none;text-align:center;font-weight:700;transition:opacity .15s;"
          onmouseover="this.style.opacity='.85'" onmouseout="this.style.opacity='1'">
@@ -856,14 +872,14 @@
         <span style="font-size:1rem;">Download Installer</span>
         <span style="font-size:.78rem;font-weight:400;color:#bfdbfe;">Windows · Setup.exe (unsigned — SmartScreen guidance in docs)</span>
       </a>
-      <a href="https://github.com/scottconverse/civicrecords-ai/blob/master/USER-MANUAL.md"
+      <a href="https://github.com/CivicSuite/civicrecords-ai/blob/master/USER-MANUAL.md"
          style="display:flex;flex-direction:column;align-items:center;gap:.5rem;padding:1.5rem 1rem;background:#7c3aed;color:#fff;border-radius:10px;text-decoration:none;text-align:center;font-weight:700;transition:opacity .15s;"
          onmouseover="this.style.opacity='.85'" onmouseout="this.style.opacity='1'">
         <span style="font-size:1.75rem;">&#128462;</span>
         <span style="font-size:1rem;">User Manual</span>
         <span style="font-size:.78rem;font-weight:400;color:#ddd6fe;">Staff + IT + Architecture</span>
       </a>
-      <a href="https://github.com/scottconverse/civicrecords-ai/blob/master/README.md"
+      <a href="https://github.com/CivicSuite/civicrecords-ai/blob/master/README.md"
          style="display:flex;flex-direction:column;align-items:center;gap:.5rem;padding:1.5rem 1rem;background:var(--gray-700);color:#fff;border-radius:10px;text-decoration:none;text-align:center;font-weight:700;transition:opacity .15s;"
          onmouseover="this.style.opacity='.85'" onmouseout="this.style.opacity='1'">
         <span style="font-size:1.75rem;">&#128196;</span>
@@ -884,16 +900,16 @@
       <a class="link-card" href="admin-manual-it.html">
         &#128736; IT Admin Guide <span class="arrow">&#8594;</span>
       </a>
-      <a class="link-card" href="https://github.com/scottconverse/civicrecords-ai/blob/master/CHANGELOG.md">
+      <a class="link-card" href="https://github.com/CivicSuite/civicrecords-ai/blob/master/CHANGELOG.md">
         &#128221; CHANGELOG <span class="arrow">&#8594;</span>
       </a>
-      <a class="link-card" href="https://github.com/scottconverse/civicrecords-ai/blob/master/CONTRIBUTING.md">
+      <a class="link-card" href="https://github.com/CivicSuite/civicrecords-ai/blob/master/CONTRIBUTING.md">
         &#129309; Contributing <span class="arrow">&#8594;</span>
       </a>
-      <a class="link-card" href="https://github.com/scottconverse/civicrecords-ai/blob/master/docs/UNIFIED-SPEC.md">
+      <a class="link-card" href="https://github.com/CivicSuite/civicrecords-ai/blob/master/docs/UNIFIED-SPEC.md">
         &#128195; Canonical Spec <span class="arrow">&#8594;</span>
       </a>
-      <a class="link-card" href="https://github.com/scottconverse/civicrecords-ai/blob/master/LICENSE">
+      <a class="link-card" href="https://github.com/CivicSuite/civicrecords-ai/blob/master/LICENSE">
         &#9878; Apache 2.0 License <span class="arrow">&#8594;</span>
       </a>
     </div>
@@ -911,7 +927,7 @@
 <footer>
   <p class="tagline">Built for American cities. Open source. Locally hosted. Your data stays yours.</p>
   <p class="sub">
-    <a href="https://github.com/scottconverse/civicrecords-ai">github.com/scottconverse/civicrecords-ai</a>
+    <a href="https://github.com/CivicSuite/civicrecords-ai">github.com/CivicSuite/civicrecords-ai</a>
   </p>
   <p class="copy">Copyright &copy; 2026 CivicRecords AI Contributors &nbsp;&middot;&nbsp; Apache License 2.0</p>
 </footer>

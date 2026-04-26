@@ -15,7 +15,7 @@ Thank you for your interest in contributing to CivicRecords AI. This project hel
 
 ```bash
 # Clone the repository
-git clone https://github.com/scottconverse/civicrecords-ai.git
+git clone https://github.com/CivicSuite/civicrecords-ai.git
 cd civicrecords-ai
 
 # Option A: Use the installer (recommended)
