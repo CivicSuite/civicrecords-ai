@@ -74,7 +74,7 @@ bash install.sh
 
 ### Phase 1 migration layer
 
-CivicRecords AI backend installs `civiccore` (the shared CivicSuite schema + migration runtime) as a dependency. During the release-hardening window before PyPI publication, `backend/pyproject.toml` points at the versioned `v0.1.0` GitHub release wheel rather than a Git SHA. This keeps the dependency reproducible without requiring `git` inside the backend image.
+CivicRecords AI backend installs `civiccore` (the shared CivicSuite schema + migration runtime) as a dependency. During the release-hardening window before PyPI publication, `backend/pyproject.toml` points at the versioned `v0.2.0` GitHub release wheel rather than a Git SHA. This keeps the dependency reproducible without requiring `git` inside the backend image. As of v1.4.0, civiccore v0.2.0 also ships the LLM provider abstraction, prompt-template engine, and model registry that records-ai now consumes from `civiccore.llm`.
 
 Migrations run in two layers: `civiccore` first (creates/updates the 16 shared tables), then this repo's Alembic chain on top. See [ADR-0003](https://github.com/CivicSuite/civicsuite/blob/main/docs/architecture/ADR-0003-civiccore-alembic-baseline-strategy.md) for the full gate contract.
 

@@ -1,11 +1,14 @@
 # GitHub Discussions — Seed Content for CivicRecords AI
-# v1.2.0 · April 23, 2026
+# v1.4.0 · April 25, 2026
 #
-# NOTE (2026-04-23): The live Discussions threads on github.com have been updated
-# out-of-band to reflect v1.2.0 truth (Tier 5 complete, Tier 6 / ENG-001 closed,
-# 617 backend + 36 frontend tests, T5D minimal public portal, T5E unsigned
-# Windows installer). This seed file has been synchronized to match so any fresh
-# seeding run produces the same v1.2.0 content that's currently live.
+# NOTE (2026-04-25): The live Discussions threads on github.com have been updated
+# out-of-band to reflect v1.4.0 truth (Phase 2 LLM integration via civiccore
+# v0.2.0 dependency, LLM provider abstraction, prompt template engine + 3-step
+# override resolver, model registry sourced from civiccore.llm, ~620 backend
+# pytest + ~30 frontend vitest, T5D minimal public portal carried forward, T5E
+# unsigned Windows installer rebuilt for v1.4.0). This seed file has been
+# synchronized to match so any fresh seeding run produces the same v1.4.0
+# content that's currently live.
 #
 # Instructions for seeding:
 #   gh discussion create --repo scottconverse/civicrecords-ai --category "Announcements" --title "..." --body "..."
@@ -20,7 +23,7 @@
 ## Category: Announcements
 ## Action: PIN THIS POST after creating it
 
-### Title: Welcome to CivicRecords AI — v1.2.0 is here
+### Title: CivicRecords AI v1.4.0 — Phase 2 LLM integration is here
 
 ---
 
@@ -28,33 +31,44 @@ Hello, and welcome to the CivicRecords AI community.
 
 CivicRecords AI is an open-source, locally-hosted AI system built for American cities responding to public records requests — FOIA, CORA, and their state equivalents. Everything runs on a single machine inside your network. No cloud. No vendor lock-in. Resident data never leaves the building.
 
-**New in v1.2.0 (released 2026-04-23, building on v1.1.0 + v1.0.x):**
+**New in v1.4.0 (released 2026-04-25) — Phase 2 LLM integration:**
 
-- **At-rest encryption for connector credentials (Tier 6 / ENG-001 closed)** — `data_sources.connection_config` is now stored as a Fernet envelope (AES-128-CBC + HMAC-SHA256). `pg_dump` output, restored backups, and DB-superuser sessions see ciphertext only. Runtime callers still see a plain dict — zero API/admin-UI change. Operator breaking change: set `ENCRYPTION_KEY` in `.env` before restart (installer auto-generates on fresh installs).
-- **Install-time portal mode switch (T5D)** — new `PORTAL_MODE` env var (`private` default, `public` opt-in). Public mode exposes exactly three surfaces: landing page, resident-registration, and authenticated records-request submission for `UserRole.PUBLIC`. Broader portal expansion remains planned, not in v1.2.0.
-- **Windows double-click installer (T5E, unsigned by design)** — real `CivicRecordsAI-1.2.0-Setup.exe` + matching `.sha256` on the [v1.2.0 release page](https://github.com/scottconverse/civicrecords-ai/releases/tag/v1.2.0). SmartScreen will show "Windows protected your PC — Unknown publisher" on first run; click **More info → Run anyway**, confirm UAC. macOS/Linux continue on the guided `install.sh` script.
-- **4-model Gemma 4 installer picker (T5C)** — default `gemma4:e4b`. Fake tags `gemma4:12b` and `gemma4:27b` purged repo-wide; `gemma4:26b` / `gemma4:31b` remain selectable but gated behind an explicit "stronger hardware required" acknowledgement against the locked 32 GB baseline.
-- **First-boot baseline seeding (T5B)** — `app/main.lifespan` auto-seeds 175 state-scoped exemption rules across 51 jurisdictions, 5 compliance templates, and 12 notification templates on first boot. Idempotent via skip-if-exists; admin customizations survive re-seeds.
-- **Onboarding interview persistence (T5A)** — the single-phase LLM-powered interview now actually persists each answer onto `CityProfile` and transitions `onboarding_status` through `not_started → in_progress → complete`.
-- **617 backend pytest + 36 frontend vitest**, all CI-verified (run [24867623183](https://github.com/scottconverse/civicrecords-ai/actions/runs/24867623183) on `f4c159a`).
+- **civiccore v0.2.0 dependency** — CivicRecords AI now depends on `civiccore>=0.2.0,<0.3.0`. The shared sovereignty kernel graduates from Phase 1 (config/audit/identity primitives) to Phase 2, contributing the full LLM stack so every CivicSuite consumer app uses the same provider abstraction, prompt registry, and model catalog.
+- **LLM provider abstraction** — All LLM calls now route through `civiccore.llm.providers`. Ollama remains the default; the abstraction makes it possible to plug in other on-prem or self-hosted providers without touching application code. Provider selection is config-driven (`LLM_PROVIDER` env var) and validated at startup.
+- **Prompt template engine + 3-step override resolver** — Prompts live in `civiccore.llm.prompts` as versioned templates. The override resolver checks three locations in order: (1) per-city override in the database (`prompt_overrides` table), (2) project-local override in `backend/prompts/`, (3) civiccore default. Cities can edit any prompt without forking the codebase, and edits survive upgrades.
+- **Model registry now sourced from civiccore.llm** — The Admin → Model Registry page now reads from `civiccore.llm.registry` instead of a local hardcoded list. Adding a new model in civiccore propagates to every consumer app on the next dependency bump. `gemma4:e4b` remains the default.
+- **Migration `020_phase2_consumer_app_backfill`** — Runs automatically after upgrade. Backfills the `prompt_overrides` table, registers the civiccore-sourced model catalog into the local registry table, and migrates any existing custom prompts from the v1.3 location into the new override schema. Idempotent; safe to re-run.
+- **~620 backend pytest + ~30 frontend vitest**, all CI-verified.
 
-**Carried forward from v1.1.0 + v1.0.x (unchanged):**
+**Carried forward from v1.2.0–v1.3.x (unchanged):**
 
-- **AI-powered hybrid search** — natural language queries across all ingested city documents (semantic + keyword, pgvector + PostgreSQL full-text, normalized scores, optional LLM summary)
-- **Records request lifecycle** — 10-status workflow from intake to fulfillment with deadline tracking, messaging, fee management, and AI-drafted response letters
-- **Exemption detection** — PII patterns (SSN, phone, email, credit card) + statutory keyword matching across all 50 states and DC (175 state-scoped rules + 5 universal PII). Every flag requires human confirmation — no auto-redaction
-- **Universal connector framework** — File system, manual-drop, REST API (API key / Bearer / OAuth2 / Basic auth; page/offset/cursor pagination), and ODBC (SQL databases via pyodbc) connectors with per-source cron scheduling
-- **Sync failure tracking & circuit breaker** — per-record failure tracking, two-layer retry, automatic circuit breaker after 5 consecutive full-run failures, live health status on every source card
-- **Department access controls** — staff scoped to their department; admins see all
-- **Compliance by design** — hash-chained audit logs, human-in-the-loop enforcement at every transition, 5 compliance templates (AI Use Disclosure, CAIA Impact Assessment, AI Governance Policy, Response Letter Disclosure, Data Residency Attestation)
-- **Guided onboarding** — 3-phase wizard gets a new city to production in under an hour
+- **At-rest encryption for connector credentials (Tier 6 / ENG-001)** — `data_sources.connection_config` stored as a Fernet envelope (AES-128-CBC + HMAC-SHA256). Operator requirement: set `ENCRYPTION_KEY` in `.env` before restart (installer auto-generates on fresh installs).
+- **Install-time portal mode switch (T5D)** — `PORTAL_MODE` env var (`private` default, `public` opt-in). Public mode exposes exactly three surfaces: landing page, resident-registration, and authenticated records-request submission for `UserRole.PUBLIC`.
+- **Windows double-click installer (T5E, unsigned by design)** — `CivicRecordsAI-1.4.0-Setup.exe` + matching `.sha256` on the [v1.4.0 release page](https://github.com/scottconverse/civicrecords-ai/releases/download/v1.4.0/CivicRecordsAI-1.4.0-Setup.exe). SmartScreen will show "Windows protected your PC — Unknown publisher" on first run; click **More info → Run anyway**, confirm UAC. macOS/Linux continue on the guided `install.sh` script.
+- **4-model Gemma 4 installer picker (T5C)** — default `gemma4:e4b`. `gemma4:26b` / `gemma4:31b` remain selectable but gated behind an explicit "stronger hardware required" acknowledgement against the locked 32 GB baseline.
+- **First-boot baseline seeding (T5B)** — auto-seeds 175 state-scoped exemption rules across 51 jurisdictions, 5 compliance templates, and 12 notification templates on first boot.
+- **Onboarding interview persistence (T5A)** — single-phase LLM-powered interview persists each answer onto `CityProfile`.
+- **AI-powered hybrid search** — natural language queries (semantic + keyword, pgvector + PostgreSQL full-text, normalized scores, optional LLM summary).
+- **Records request lifecycle** — 10-status workflow with deadline tracking, messaging, fee management, and AI-drafted response letters.
+- **Exemption detection** — PII patterns + statutory keyword matching across all 50 states and DC. Every flag requires human confirmation — no auto-redaction.
+- **Universal connector framework** — File system, manual-drop, REST API, ODBC connectors with per-source cron scheduling.
+- **Sync failure tracking & circuit breaker** — automatic circuit breaker after 5 consecutive full-run failures.
+- **Department access controls** — staff scoped to their department; admins see all.
+- **Compliance by design** — hash-chained audit logs, human-in-the-loop enforcement at every transition.
+- **Guided onboarding** — 3-phase wizard.
 
-**Current status:** v1.2.0 is released. The minimal public-facing surface shipped in T5D (landing + resident-registration + authenticated submission). Broader public-portal features — full resident dashboard, published-records search, track-my-request — remain planned and unscheduled.
+**Operator upgrade notes for v1.4.0:**
+
+1. Pull the new images (`docker compose pull`) and restart (`docker compose up -d`).
+2. Migration `020_phase2_consumer_app_backfill` runs automatically on first API boot. Watch the api logs for `migration 020 complete` before exercising LLM features.
+3. If you maintained custom prompts in `backend/prompts/` under v1.3, they are auto-migrated into the new override schema. Verify in Admin → Prompt Overrides.
+4. `LLM_PROVIDER` defaults to `ollama` — no action required unless you intend to swap providers.
 
 **Quick links:**
 - [README](../README.md) — quick start and feature overview
 - [User Manual](civicrecords-ai-manual.pdf) — staff operations guide + IT reference + architecture
 - [Installation](https://github.com/scottconverse/civicrecords-ai#install) — one command on Windows, macOS, or Linux
+- [v1.4.0 Windows installer](https://github.com/scottconverse/civicrecords-ai/releases/download/v1.4.0/CivicRecordsAI-1.4.0-Setup.exe) — direct download
 - [CHANGELOG](../CHANGELOG.md) — full history of every release
 
 If you're a city clerk, records officer, IT administrator, or civic technologist — we're glad you're here. Ask anything, share what you're working on, and tell us what would make this tool more useful for your city.
@@ -96,7 +110,7 @@ bash install.sh
 
 The installer starts 7 Docker services: frontend, backend API, Celery worker, Celery beat scheduler, PostgreSQL 17 + pgvector, Redis 7.2, and Ollama (local LLM). First startup pulls the Ollama model — that's the only internet download required.
 
-Full configuration options (SMTP, GPU, custom ports) are in the `.env` file the installer creates. The [IT Admin section of the User Manual](civicrecords-ai-manual.pdf) covers every option.
+Full configuration options (SMTP, GPU, custom ports, `LLM_PROVIDER`, `ENCRYPTION_KEY`) are in the `.env` file the installer creates. The [IT Admin section of the User Manual](civicrecords-ai-manual.pdf) covers every option.
 
 ---
 
@@ -108,7 +122,7 @@ Full configuration options (SMTP, GPU, custom ports) are in the `.env` file the 
 
 Yes — air-gapped operation is a core design requirement, not an afterthought.
 
-After the initial setup (which pulls Docker images and the Ollama model), the system requires zero internet connectivity. All LLM inference runs locally via Ollama. All document storage is in the local PostgreSQL instance. No telemetry, no usage reporting, no "phone home" behavior of any kind.
+After the initial setup (which pulls Docker images and the Ollama model), the system requires zero internet connectivity. All LLM inference runs locally via Ollama (or any other on-prem provider you wire in via the new Phase 2 `LLM_PROVIDER` abstraction). All document storage is in the local PostgreSQL instance. No telemetry, no usage reporting, no "phone home" behavior of any kind.
 
 The repo includes a `verify-sovereignty.sh` / `verify-sovereignty.ps1` script that runs `netstat` and confirms no outbound connections are active during normal operation. You can run it and show the output to your network security team.
 
@@ -148,7 +162,7 @@ If you need more help diagnosing, the sync run log shows exactly what happened o
 
 **A:**
 
-CivicRecords AI is model-agnostic — it works with any model available through Ollama. A few options depending on your hardware:
+CivicRecords AI is model-agnostic — as of v1.4.0, the model registry is sourced from `civiccore.llm.registry`, so adding a model in civiccore propagates to every CivicSuite consumer app on the next dependency bump. A few options depending on your hardware:
 
 | Model | Use case | RAM (advisory) |
 |---|---|---|
@@ -193,12 +207,30 @@ Unassigned sources and requests are visible to admins only. If you have sources 
 
 ---
 
+### Title: How do prompt overrides work in v1.4.0?
+
+**Q:** Phase 2 mentions a 3-step prompt override resolver. How do I customize a prompt for our city?
+
+**A:**
+
+In v1.4.0, prompts live in `civiccore.llm.prompts` as versioned templates. When CivicRecords AI needs a prompt (for AI-drafted response letters, exemption summaries, the onboarding interview, etc.), the resolver checks three locations in order and uses the first match:
+
+1. **Per-city override in the database** (`prompt_overrides` table) — edit through Admin → Prompt Overrides in the UI. Survives upgrades. This is the recommended path for city-specific tweaks.
+2. **Project-local override in `backend/prompts/`** — drop a file with the matching prompt name to override at the deployment level. Useful for fork-style customization that you want under version control alongside your `.env`.
+3. **civiccore default** — the upstream template ships with civiccore. You always get a working baseline.
+
+To customize: open Admin → Prompt Overrides, pick the prompt by name, edit the template body, save. The change takes effect on the next LLM call. To revert, delete the override row — the resolver falls back to the project-local or civiccore default.
+
+Migration `020_phase2_consumer_app_backfill` migrates any v1.3-era custom prompts from `backend/prompts/` into the override schema automatically.
+
+---
+
 ## ── IDEAS / FEATURE REQUESTS ─────────────────────────────────────────────────
 ## Category: Ideas
 
 ### Title: Public-facing requester portal — what would you need beyond the minimal T5D surface?
 
-**Update 2026-04-23:** v1.2.0 ships a *minimal* public portal (T5D) behind an install-time `PORTAL_MODE=public` switch. The three surfaces it exposes, and only these three:
+**Update 2026-04-25:** v1.4.0 carries forward the *minimal* public portal (T5D) behind an install-time `PORTAL_MODE=public` switch. The three surfaces it exposes, and only these three:
 
 - Public landing page
 - Resident-registration path (`UserRole.PUBLIC` self-signup)
@@ -206,7 +238,7 @@ Unassigned sources and requests are visible to admins only. If you have sources 
 
 Anonymous walk-up submission is intentionally not supported — every public submission has a logged-in resident as `created_by`. Staff roles get 403 on the public submit endpoint and continue to use the existing `/requests/` workflow.
 
-**Explicitly NOT shipped in v1.2.0 (and still unscheduled):**
+**Explicitly NOT shipped (and still unscheduled):**
 
 - Full resident dashboard
 - Published-records search
@@ -241,6 +273,21 @@ But I'm more interested in what's on your actual infrastructure list. A few ques
 - Are you running on-prem Microsoft environments (Active Directory, SharePoint, Exchange)?
 - Do you use any specific municipal software vendors (Tyler Technologies, Granicus, etc.) with API access?
 - What's the #1 system you'd want connected that isn't currently supported?
+
+---
+
+### Title: Phase 2 LLM abstraction — which providers should ship next?
+
+v1.4.0 introduces the `LLM_PROVIDER` abstraction in `civiccore.llm.providers`. Ollama is the default and remains the recommended on-prem option. The abstraction is now in place to add others without changing application code.
+
+What would help your city most?
+
+- **vLLM** for cities that already run a GPU inference server.
+- **llama.cpp server** as a lighter-weight alternative to Ollama.
+- **LM Studio** for cities that prefer a desktop-managed runtime.
+- **Self-hosted OpenAI-compatible endpoints** (any provider exposing the OpenAI Chat Completions API on your LAN).
+
+Cloud providers (Anthropic, OpenAI, etc.) are intentionally not on the roadmap — the air-gapped sovereignty guarantee is non-negotiable. If your city has an internal compliance-cleared cloud arrangement and you'd like to discuss how that could work without breaking the sovereignty contract for everyone else, please open a separate Idea thread.
 
 ---
 
@@ -314,7 +361,7 @@ For bugs, please open an [Issue](../../issues) with:
 
 Pull requests are welcome. The [CONTRIBUTING.md](../../blob/master/CONTRIBUTING.md) file covers:
 - Development environment setup (Python 3.12 venv + Node 20)
-- Running the test suite (617 backend tests, 36 frontend tests, as of v1.2.0)
+- Running the test suite (~620 backend tests, ~30 frontend tests, as of v1.4.0)
 - Code standards (typed Python, strict TypeScript, conventional commits)
 - How to write a good PR description
 

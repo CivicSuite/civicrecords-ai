@@ -9,10 +9,10 @@ April 13, 2026
 | Supersedes | All prior spec versions (v2.0, v2.2, v3.0, v3.0.1) |
 | Repository | github.com/scottconverse/civicrecords-ai |
 | Current release | v1.4.0 (April 25, 2026) — versions aligned across all files |
-| Test suite | 617 automated backend tests + 36 frontend tests — all passing; GitHub Actions CI-verified (run 24853147133 on commit `d556904`) |
+| Test suite | ~620 automated backend tests + ~30 frontend tests — all passing |
 | Method | GitHub API crawl of repo structure, README, CHANGELOG, config files, module directories, and in-repo RECONCILIATION doc |
 
-Status Legend: [IMPLEMENTED] evidenced in code, tests, and routes. [PARTIAL] present but incomplete. [UI SHELL] interface exists without full backend capability. [PLANNED] not implemented. [NEW in v1.1.0] / [NEW in v1.2.0] indicate which release introduced a feature.
+Status Legend: [IMPLEMENTED] evidenced in code, tests, and routes. [PARTIAL] present but incomplete. [UI SHELL] interface exists without full backend capability. [PLANNED] not implemented. [NEW in v1.1.0] / [NEW in v1.2.0] / [NEW in v1.3.0] / [NEW in v1.4.0] indicate which release introduced a feature.
 
 ## 1. Purpose of This Document
 This is the single source of truth for CivicRecords AI. It merges comprehensive design detail with implementation status verified directly against the repository at commit head. Every feature is tagged with its actual implementation state.
@@ -24,7 +24,7 @@ backend/app/config.py: APP_VERSION = "1.4.0"
 backend/pyproject.toml: version = "1.4.0"
 frontend/package.json: version = "1.4.0"
 CHANGELOG.md: [1.4.0] - 2026-04-25
-The version drift documented in prior spec versions has been resolved and remains resolved. The CHANGELOG now covers four releases: 0.1.0 (foundation), 1.0.0 (design system + core features), 1.1.0 (department scoping, compliance, and feature sprint), and 1.2.0 (Tier 5 installer/onboarding/seeding/model-picker/portal-mode + Tier 6 at-rest encryption ENG-001 closure).
+The version drift documented in prior spec versions has been resolved and remains resolved. The CHANGELOG now covers releases through v1.4.0: 0.1.0 (foundation), 1.0.0 (design system + core features), 1.1.0 (department scoping, compliance, and feature sprint), 1.2.0 (Tier 5 installer/onboarding/seeding/model-picker/portal-mode + Tier 6 at-rest encryption ENG-001 closure), 1.3.0 (release-mechanics pass + civiccore v0.1.x integration), and 1.4.0 (Phase 2 LLM integration via civiccore v0.2.0 dependency).
 
 ## 2. Product Summary
 
@@ -51,7 +51,7 @@ Operational calm over case chaos — staff views aid triage, not add clutter.
 Human-in-the-loop always — no auto-redaction, no auto-denial, no auto-release.
 
 ### 2.5 Current Product Scope
-As of v1.2.0, the system implements:
+As of v1.4.0, the system implements:
 Local deployment on a single-machine Docker stack (7 services)
 Internal authentication with 6-role RBAC hierarchy
 Department-level access controls with staff scoping
@@ -66,10 +66,10 @@ Operational analytics and dashboard with coverage gap indicators
 Guided onboarding — two modes operators can switch between: a 3-phase form wizard (City Profile → Systems → Gap Map), and a single-phase LLM-powered adaptive interview that persists each answer to the CityProfile singleton and transitions `onboarding_status` (not_started → in_progress → complete) as the walk progresses
 Municipal systems catalog (12 domains, 25+ vendors)
 Connector framework (4 shipped: file_system, manual_drop, rest_api, odbc; imap_email class exists as roadmap groundwork, not registered)
-Central LLM client with context manager, token budgeting, and prompt injection sanitization
+Central LLM client with context manager, token budgeting, and prompt injection sanitization (Phase 2 LLM integration via civiccore v0.2.0 dependency, [NEW in v1.4.0])
 Compliance templates (5 documents) and model registry
 Hash-chained audit logging with CSV/JSON export
-593 automated backend tests + 36 frontend tests (all passing; CI-verified, run 24817110396 on `a57a897`)
+~620 automated backend tests + ~30 frontend tests (all passing)
 Post-v1.1.0 Tier 5 additions (2026-04-22/23): onboarding interview persistence with `has_dedicated_it` + `onboarding_status` lifecycle (T5A `1782573`); first-boot baseline seeding of 175 state-scoped exemption rules across 51 jurisdictions + 5 compliance templates + 12 notification templates, idempotent (T5B `61449c5`); 4-model Gemma 4 installer picker (`gemma4:e2b`, `gemma4:e4b` default, `gemma4:26b`, `gemma4:31b`) purging fake `gemma4:12b` / `gemma4:27b` tags (T5C `7721cf0`); `PORTAL_MODE=public|private` install-time switch + minimal public surface — landing, resident-registration, authenticated records-request submission (T5D `a57a897`); Windows unsigned double-click installer via Inno Setup 6.x with Start-vs-Install flow split and tag-derived version sourcing (T5E `1d5429d`).
 Not yet implemented: published-records search, resident dashboard, track-my-request suite, full active network discovery engine, cross-instance federation workflows, macOS/Linux native installer (script path only), Tier 2/3 redaction, signed Windows installer (α posture locked).
 
@@ -853,7 +853,7 @@ The docs/ directory contains a comprehensive documentation set:
 | Operational analytics and coverage gap dashboard | [IMPLEMENTED] |
 | Compliance templates (5 docs) and model registry | [IMPLEMENTED] |
 | Hash-chained audit logging with export | [IMPLEMENTED] |
-| 593 automated backend tests + 36 frontend tests (all passing; CI-verified, run 24817110396 on `a57a897`) | [IMPLEMENTED] |
+| ~620 automated backend tests + ~30 frontend tests (all passing) | [IMPLEMENTED] |
 | Version alignment across all files | [IMPLEMENTED] |
 | WCAG: 44px touch targets, skip nav, icon+color badges | [IMPLEMENTED] |
 | Onboarding interview persists answers + `has_dedicated_it` + `onboarding_status` lifecycle + skip-truth | [IMPLEMENTED — T5A, 2026-04-22 at `1782573`. See §5.2 `onboarding`.] |
@@ -991,7 +991,7 @@ Frontend pages (14): AuditLog, CityProfile, Dashboard, DataSources, Discovery, E
 Test modules (45): test_admin, test_analytics, test_audit, test_auth, test_catalog, test_chunker, test_city_profile, test_compliance_templates, test_coverage_gaps, test_datasource_connection, test_datasources, test_department_scoping, test_departments, test_documents, test_embedder, test_exemption_dashboard, test_exemption_features, test_exemption_rules_seed, test_exemptions, test_fee_lifecycle, test_fee_schedules, test_fees, test_health, test_imap_connector, test_ingestion_retry, test_llm_client, test_manual_drop, test_messages, test_model_registry, test_notification_dispatch, test_notifications, test_onboarding_interview, test_parsers, test_pipeline, test_prompt_injection, test_requests, test_response_letter, test_roles, test_search_api, test_search_engine, test_search_features, test_service_accounts, test_smtp_delivery, test_timeline, test_user_management
 
 ## Appendix B: Bottom-Line Summary
-CivicRecords AI at v1.2.0 is a substantially complete internal staff platform with a minimal public surface, at-rest-encrypted connector credentials, and a real Windows double-click installer. From an 80-test foundation at v0.1.0 the codebase has grown to **617 automated backend tests + 36 frontend tests** (CI-verified, run [24861798918](https://github.com/scottconverse/civicrecords-ai/actions/runs/24861798918) on `5a99be3`, all 3 required jobs green; the v1.2.0 tag itself sits at `cc06abc`) with department-level access control, 50-state exemption coverage, a complete notification pipeline, a central LLM client with prompt injection sanitization, fee waiver workflows, a rich text editor, macro stripping, search enhancements, coverage gap monitoring, user management improvements, Tier 2 auth/authz hardening across 24 department-scoped handlers, credential redaction, bootstrap hardening, SSRF protection, and Tier 6 at-rest encryption (Fernet envelope on `data_sources.connection_config`).
+CivicRecords AI at v1.4.0 is a substantially complete internal staff platform with a minimal public surface, at-rest-encrypted connector credentials, a real Windows double-click installer, and Phase 2 LLM integration via the civiccore v0.2.0 dependency. From an 80-test foundation at v0.1.0 the codebase has grown to **~620 automated backend tests + ~30 frontend tests** (all passing) with department-level access control, 50-state exemption coverage, a complete notification pipeline, a central LLM client with prompt injection sanitization, fee waiver workflows, a rich text editor, macro stripping, search enhancements, coverage gap monitoring, user management improvements, Tier 2 auth/authz hardening across 24 department-scoped handlers, credential redaction, bootstrap hardening, SSRF protection, and Tier 6 at-rest encryption (Fernet envelope on `data_sources.connection_config`).
 
 The system is well beyond a simple MVP: it has professional security hardening (ReDoS protection, self-demotion guards, credential redaction, SSRF host validation, FIRST_ADMIN_PASSWORD validation, macro stripping), operational polish (retry, priority indicators, citation rendering, empty states), and accessibility foundations (44px touch targets, skip navigation, icon+color badges, full F1–F6 keyboard/SR audit complete).
 
@@ -1008,6 +1008,6 @@ The system is well beyond a simple MVP: it has professional security hardening (
 - **Tier 2/3 redaction** (NER, visual AI).
 - **CI hygiene — GitHub Actions Node 20 deprecation follow-through.** `5dbeed7` landed the workflow action bumps; the runner-side Node 20 → Node 24 default flip on 2026-06-02 must be clean by that date.
 
-**Release state:** `v1.2.0` was cut on 2026-04-23 at commit `cc06abc` (initial release-prep landed at `0b404c4`; two release-pipeline corrections `673e140` + `cc06abc` followed before the tag produced a clean unsigned Windows installer). The GitHub Release page has the `.exe` plus its `.sha256` and is published (not draft). The `[Unreleased]` CHANGELOG block above `[1.2.0]` is intentionally empty and is the collection point for post-v1.2.0 work.
+**Release state:** Current release is **v1.4.0** (April 25, 2026), which adds Phase 2 LLM integration via the civiccore v0.2.0 dependency on top of the v1.3.0 release-mechanics pass and the v1.2.0 Tier 5/Tier 6 closures. The `[Unreleased]` CHANGELOG block above `[1.4.0]` is the collection point for post-v1.4.0 work.
 
 This document (v3.1) is the single source of truth and is now the in-repo `docs/UNIFIED-SPEC.md`.
