@@ -74,7 +74,7 @@ bash install.sh
 
 ### Phase 1 migration layer
 
-CivicRecords AI backend installs `civiccore` (the shared CivicSuite schema + migration runtime) as a dependency. During the release-hardening window before PyPI publication, `backend/pyproject.toml` points at the versioned `v0.2.0` GitHub release wheel rather than a Git SHA. This keeps the dependency reproducible without requiring `git` inside the backend image. As of v1.4.0, civiccore v0.2.0 also ships the LLM provider abstraction, prompt-template engine, and model registry that records-ai now consumes from `civiccore.llm`.
+CivicRecords AI backend installs `civiccore` (the shared CivicSuite schema + migration runtime) as a dependency. During the release-hardening window before PyPI publication, `backend/pyproject.toml` points at the versioned `v0.3.0` GitHub release wheel rather than a Git SHA. This keeps the dependency reproducible without requiring `git` inside the backend image. As of v1.4.1, records-ai consumes the suite-wide civiccore v0.3.0 foundation, including the LLM provider abstraction, prompt-template engine, model registry, audit primitives, provenance contracts, city-profile schema, connector manifests, and export-bundle helpers.
 
 Migrations run in two layers: `civiccore` first (creates/updates the 16 shared tables), then this repo's Alembic chain on top. See [ADR-0003](https://github.com/CivicSuite/civicsuite/blob/main/docs/architecture/ADR-0003-civiccore-alembic-baseline-strategy.md) for the full gate contract.
 
@@ -199,6 +199,8 @@ Service accounts with hashed API keys enable instance-to-instance federation acc
 
 ## Status
 
+**v1.4.1 (April 28, 2026)** — CivicSuite dependency-alignment patch. Records-AI now consumes civiccore v0.3.0 as a versioned dependency. This is a dependency and release-surface update only: API URL paths, roles, permissions, and records-side database migrations are unchanged from v1.4.0.
+
 **v1.4.0 (April 25, 2026)** — Phase 2 LLM integration. civiccore advanced from v0.1.0 to v0.2.0; LLM provider abstraction, prompt-template engine + 3-step override resolver, and model registry now sourced from `civiccore.llm`. Migration `020_phase2_consumer_app_backfill` runs after upgrade. Records-AI now consumes civiccore v0.2.0 as a versioned dependency.
 
 **v1.3.0** — 2026-04-25 release. Phase 1 CivicCore extraction landed: `civiccore` v0.1.0 is now consumed as a release-wheel dependency. Two-layer migration order — civiccore migrations run first via subprocess, then records-side. No API or UI changes (infrastructure only). See [CHANGELOG](CHANGELOG.md) and the v1.3.0 release notes for operator upgrade guidance.
@@ -257,4 +259,4 @@ Service accounts with hashed API keys enable instance-to-instance federation acc
 | **Phase 3** | Public portal | Public homepage, search, guided request wizard, request tracker, help pages | Partial — T5D minimal surface shipped (landing + resident-registration + authenticated submission); published-records search, resident dashboard, and track-my-request remain Planned |
 | **Phase 4** | Transparency layer | Open records library, reporting dashboards, public archive, federation | Planned (v2.0) |
 
-*Note: Version numbers (semver) track release history. Phase numbers track design completeness per the canonical spec. They are separate systems. Current build (v1.4.0) includes backend work from Phases 0-2 and partial Phase 3 (T5D minimal public portal surface), but has not completed the full scope of any phase. See [canonical spec](docs/UNIFIED-SPEC.md) for complete requirements and [reconciliation](docs/RECONCILIATION-2026-04-13.md) for current gap analysis.*
+*Note: Version numbers (semver) track release history. Phase numbers track design completeness per the canonical spec. They are separate systems. Current build (v1.4.1) includes backend work from Phases 0-2 and partial Phase 3 (T5D minimal public portal surface), but has not completed the full scope of any phase. See [canonical spec](docs/UNIFIED-SPEC.md) for complete requirements and [reconciliation](docs/RECONCILIATION-2026-04-13.md) for current gap analysis.*

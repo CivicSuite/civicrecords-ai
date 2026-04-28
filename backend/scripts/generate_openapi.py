@@ -56,6 +56,12 @@ os.environ.setdefault(
     # ≥ 12 chars, not in _INSECURE_PASSWORDS
     "SchemaGen-CIonly-99!",
 )
+os.environ.setdefault(
+    "ENCRYPTION_KEY",
+    # 32 zero bytes as URL-safe base64. Valid Fernet shape for import-time
+    # schema generation only; no live data is encrypted during OpenAPI export.
+    "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=",
+)
 
 from app.main import app  # noqa: E402 — env must be set before this import
 

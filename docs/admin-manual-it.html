@@ -3,11 +3,11 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>CivicRecords AI &mdash; IT Administrator Manual v1.4.0</title>
+<title>CivicRecords AI &mdash; IT Administrator Manual v1.4.1</title>
 <style>
 /* ═══════════════════════════════════════════════════════════════════════════
    CivicRecords AI — IT Administrator Manual
-   Version 1.4.0 | Professional Operations Manual
+   Version 1.4.1 | Professional Operations Manual
    ═══════════════════════════════════════════════════════════════════════════ */
 
 :root {
@@ -347,7 +347,7 @@ ul ul, ol ol { margin-top: 4px; margin-bottom: 4px; }
   <h1>IT Administrator Manual</h1>
   <div class="subtitle">CivicRecords AI &mdash; AI-Powered Open Records Support for American Cities</div>
   <div class="meta">
-    <span class="badge badge-version">v1.4.0</span>
+    <span class="badge badge-version">v1.4.1</span>
     <span class="badge badge-date">April 2026</span>
     <span class="badge badge-class">CAIA: Not High-Risk</span>
     <span class="badge badge-license">Apache 2.0</span>
@@ -599,7 +599,7 @@ civicrecords-worker Up (healthy)</span>
 
 <span class="comment"># Test API health endpoint</span>
 <span class="cmd">curl http://localhost:8000/health</span>
-<span class="output">{"status":"ok","version":"1.4.0"}</span>
+<span class="output">{"status":"ok","version":"1.4.1"}</span>
 
 <span class="comment"># Verify OpenAPI documentation is accessible</span>
 <span class="cmd">curl -s http://localhost:8000/docs | head -1</span>
@@ -1353,7 +1353,7 @@ civicrecords-worker Up (healthy)</span>
 
   <h3>Health Endpoint</h3>
   <pre><span class="cmd">curl http://localhost:8000/health</span>
-<span class="output">{"status":"ok","version":"1.4.0"}</span></pre>
+<span class="output">{"status":"ok","version":"1.4.1"}</span></pre>
   <p>
     The <code>GET /health</code> endpoint returns HTTP 200 with the application version when the API is operational. Use this for load balancer health checks and monitoring systems.
   </p>
@@ -1739,7 +1739,7 @@ asyncio.run(check())
      FOOTER
      ═══════════════════════════════════════════════════════════════════════ -->
 <div class="footer">
-  CivicRecords AI v1.4.0 &mdash; IT Administrator Manual<br>
+  CivicRecords AI v1.4.1 &mdash; IT Administrator Manual<br>
   Apache License 2.0 &mdash; Open Source<br>
   Generated April 2026
 </div>

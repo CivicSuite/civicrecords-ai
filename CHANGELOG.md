@@ -9,6 +9,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 No unreleased changes.
 
+## [1.4.1] - 2026-04-28
+
+Patch release aligning CivicRecords AI with the suite-wide `civiccore` v0.3.0 release.
+
+### Changed
+- **civiccore dependency:** the `civiccore` wheel pin advances from v0.2.0 to v0.3.0. The new wheel is published at `https://github.com/CivicSuite/civiccore/releases/download/v0.3.0/civiccore-0.3.0-py3-none-any.whl`. Existing operator deployments should rebuild the API image (`docker compose build api`) so the backend image installs the updated CivicCore wheel.
+- **Release surfaces:** backend, frontend, README, landing page, manuals, and canonical spec now identify the current records-ai release as v1.4.1. No API URL paths, roles, permissions, or records-side database migrations change in this patch.
+
 ## [1.4.0] - 2026-04-25
 
 Phase 2 LLM extraction release. Records-AI now consumes `civiccore` v0.2.0 as a versioned dependency. The LLM provider abstraction, prompt-template engine, and model registry have moved to `civiccore.llm`; records-AI keeps thin re-export shims so existing call sites work unchanged.

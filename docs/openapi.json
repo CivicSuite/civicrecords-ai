@@ -3,7 +3,7 @@
   "info": {
     "title": "CivicRecords AI",
     "description": "AI-powered open records support for American cities",
-    "version": "1.4.0"
+    "version": "1.4.1"
   },
   "paths": {
     "/auth/jwt/login": {

@@ -205,7 +205,7 @@ const pageProps = {
 const defaultHeader = new Header({
   children: [new Paragraph({
     border: { bottom: { style: BorderStyle.SINGLE, size: 1, color: colors.border, space: 4 } },
-    children: [new TextRun({ text: "CivicRecords AI \u2014 Complete System Manual v1.4.0", size: 9 * 2, font: "Arial", color: colors.muted })],
+    children: [new TextRun({ text: "CivicRecords AI \u2014 Complete System Manual v1.4.1", size: 9 * 2, font: "Arial", color: colors.muted })],
   })],
 });
 
@@ -281,7 +281,7 @@ const doc = new Document({
           alignment: AlignmentType.CENTER,
           spacing: { after: 100 },
           border: { top: { style: BorderStyle.SINGLE, size: 2, color: colors.primary, space: 12 } },
-          children: [new TextRun({ text: "Version v1.4.0", size: 14 * 2, font: "Arial", color: colors.muted })],
+          children: [new TextRun({ text: "Version v1.4.1", size: 14 * 2, font: "Arial", color: colors.muted })],
         }),
         new Paragraph({
           alignment: AlignmentType.CENTER,
@@ -656,7 +656,7 @@ const doc = new Document({
         // --- 23. Monitoring & Troubleshooting ---
         h2("23. Monitoring & Troubleshooting"),
         h3("Health Check"),
-        codeBlock("GET /health  \u2192  {\"status\": \"ok\", \"version\": \"1.4.0\"}"),
+        codeBlock("GET /health  \u2192  {\"status\": \"ok\", \"version\": \"1.4.1\"}"),
         h3("Common Issues"),
         makeTable(
           ["Symptom", "Cause", "Fix"],

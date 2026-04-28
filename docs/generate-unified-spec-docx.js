@@ -330,7 +330,7 @@ const doc = new Document({
         h2("How to Read This Document"),
         p("This is the single source of truth for CivicRecords AI. Every feature, data model change, design decision, and implementation detail lives here. Each feature is tagged with a phase:"),
         spacer(),
-        bulletRuns([{ text: "[BUILT]", bold: true, color: colors.success }, { text: " \u2014 Available since v0.1.0; tested through v1.4.0" }]),
+        bulletRuns([{ text: "[BUILT]", bold: true, color: colors.success }, { text: " \u2014 Available since v0.1.0; tested through v1.4.1" }]),
         bulletRuns([{ text: "[REDESIGN]", bold: true, color: colors.warning }, { text: " \u2014 Built but needs UI/UX overhaul" }]),
         bulletRuns([{ text: "[MVP-NOW]", bold: true, color: colors.danger }, { text: " \u2014 Must be added before v1.0 release" }]),
         bulletRuns([{ text: "[v1.1]", bold: true, color: colors.primary }, { text: " \u2014 Next release after initial deployment" }]),
@@ -1005,7 +1005,7 @@ const doc = new Document({
         new Paragraph({ children: [new PageBreak()] }),
 
         // ===== APPENDIX A =====
-        h1("Appendix A: Migration history (v0.1.0 → v1.4.0)"),
+        h1("Appendix A: Migration history (v0.1.0 → v1.4.1)"),
 
         h3("Status Value Migration"),
         codeBlock("-- 'received', 'searching', 'in_review', 'drafted', 'approved' remain valid"),

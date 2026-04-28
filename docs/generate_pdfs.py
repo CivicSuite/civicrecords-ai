@@ -727,7 +727,7 @@ def build_readme_full(out_path):
     story.append(sp(80))
     story.append(P("CivicRecords AI", styles["title"]))
     story.append(sp(8))
-    story.append(P("Technical Reference — v1.1+", styles["subtitle"]))
+    story.append(P("Technical Reference — v1.4.1", styles["subtitle"]))
     story.append(sp(4))
     story.append(P(f"Generated {date.today().strftime('%B %d, %Y')}", styles["tagline"]))
     story.append(sp(4))
@@ -803,7 +803,7 @@ def build_readme_full(out_path):
         "Runs entirely on local hardware — no cloud, no telemetry, no vendor lock-in",
     ], styles)
     story.append(P(
-        "Current release: <b>v1.4.0</b> (April 25, 2026). 29 database tables, ~30 API endpoints, "
+        "Current release: <b>v1.4.1</b> (April 28, 2026). 29 database tables, ~30 API endpoints, "
         "617 backend + 36 frontend automated tests. Tier 5 and Tier 6 complete — ENG-001 "
         "(at-rest encryption for <tt>data_sources.connection_config</tt> via Fernet envelope) "
         "is closed. Tier 5 shipped the minimal public portal (T5D) and unsigned Windows "
@@ -1199,7 +1199,7 @@ def build_readme_short(out_path):
     story.append(sp(8))
     story.append(P("Open-Source Municipal Records Request AI", styles["subtitle"]))
     story.append(sp(4))
-    story.append(P(f"v1.1+ · {date.today().strftime('%B %Y')} · Apache 2.0", styles["tagline"]))
+    story.append(P(f"v1.4.1 · {date.today().strftime('%B %Y')} · Apache 2.0", styles["tagline"]))
     story.append(sp(12))
     story.append(HR())
     story.append(sp(8))
