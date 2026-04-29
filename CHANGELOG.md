@@ -26,6 +26,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   helpers are consumed from the shared platform package instead of
   records-ai-local helper copies.
 
+## [1.4.2] - 2026-04-29
+
+### Added
+- Records-AI now consumes the shared `civiccore.security` connector-host
+  validation and encrypted-config primitives instead of carrying private
+  copies of those contracts in `app.security`.
+
+### Changed
+- `backend/pyproject.toml` now targets the `civiccore` v0.12.0 release line.
+- REST and ODBC connector schema validation now imports the shared
+  `civiccore.security` host-validation helpers directly.
+- Compatibility wrappers in `app.security.host_validator` and
+  `app.security.at_rest` now delegate to the shared CivicCore helper surface.
+
 ## [1.4.1] - 2026-04-28
 
 Patch release aligning CivicRecords AI with the suite-wide `civiccore` v0.3.0 release.
