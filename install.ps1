@@ -1,4 +1,4 @@
-# CivicRecords AI — Windows Installation Script
+# CivicRecords AI Ã¢â‚¬â€ Windows Installation Script
 # Requires: Windows 10/11 with Docker Desktop
 
 Write-Host "============================================" -ForegroundColor Cyan
@@ -82,16 +82,10 @@ if (-not (Test-Path ".env")) {
     Write-Host "  Losing this key means every saved data-source"
     Write-Host "  connection configuration becomes unreadable. Store it"
     Write-Host "  alongside your JWT_SECRET in a password manager or"
-    Write-Host "  secrets vault — NOT in the same location as DB backups."
+    Write-Host "  secrets vault - NOT in the same location as DB backups."
     Write-Host ""
     Read-Host "Press Enter to continue, or Ctrl+C to edit .env first"
 
-    # T5D — install-time PORTAL_MODE selection. Default is "private" (the
-    # safer posture — staff-only, no public surface). Operators choose
-    # "public" to expose the resident landing page + submission form +
-    # resident-registration path (locked B4=(b) minimal surface).
-    # Non-interactive installs can set $env:CIVICRECORDS_PORTAL_MODE
-    # before invoking install.ps1 to skip the prompt.
     $portalMode = $env:CIVICRECORDS_PORTAL_MODE
     if ($portalMode) {
         $portalMode = $portalMode.Trim().ToLower()
@@ -135,10 +129,14 @@ if (-not (Test-Path ".env")) {
     Set-Content ".env" -Value $envContent -NoNewline
 }
 
-# ─── Hardware Detection ───────────────────────────────────────────────────────
+# Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬ Hardware Detection Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
 Write-Host ""
 Write-Host "Detecting hardware capabilities..." -ForegroundColor Cyan
 & "$PSScriptRoot\scripts\detect_hardware.ps1"
+if ($LASTEXITCODE -ne 0) {
+    Write-Host "[ERROR] Hardware detection failed. Fix the prerequisite issue above, then re-run install.ps1." -ForegroundColor Red
+    exit 1
+}
 Write-Host ""
 
 # Load hardware config
@@ -151,19 +149,19 @@ if (Test-Path ".env.hardware") {
     }
 }
 
-# ─── Select Compose Configuration ────────────────────────────────────────────
+# Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬ Select Compose Configuration Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
 $composeFiles = @("-f", "docker-compose.yml")
 $useHostOllama = $hardwareEnv["CIVICRECORDS_USE_HOST_OLLAMA"] -eq "true"
 $gpuEnabled = $hardwareEnv["CIVICRECORDS_GPU_ENABLED"] -eq "true"
 
 if ($useHostOllama) {
-    Write-Host "GPU acceleration enabled — using native Ollama on host (DirectML)" -ForegroundColor Green
+    Write-Host "GPU acceleration enabled - using native Ollama on host (DirectML)" -ForegroundColor Green
     $composeFiles += @("-f", "docker-compose.host-ollama.yml")
 } else {
-    Write-Host "Using in-container Ollama — CPU inference" -ForegroundColor Yellow
+    Write-Host "Using in-container Ollama - CPU inference" -ForegroundColor Yellow
 }
 
-# ─── Build Application Images ────────────────────────────────────────────────
+# Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬ Build Application Images Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
 Write-Host ""
 Write-Host ">>> Pulling Docker images..."
 & docker compose @composeFiles pull
@@ -171,7 +169,7 @@ Write-Host ">>> Pulling Docker images..."
 Write-Host ">>> Building application images..."
 & docker compose @composeFiles build
 
-# ─── Start Infrastructure and Wait for Database ──────────────────────────────
+# Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬ Start Infrastructure and Wait for Database Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
 Write-Host ">>> Starting database and cache..."
 $envFileArgs = @("--env-file", ".env")
 if (Test-Path ".env.hardware") {
@@ -197,11 +195,11 @@ for ($i = 1; $i -le 30; $i++) {
     Start-Sleep -Seconds 2
 }
 
-# ─── Run Migrations ──────────────────────────────────────────────────────────
+# Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬ Run Migrations Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
 Write-Host ">>> Running database migrations..."
 & docker compose @composeFiles run --rm api alembic upgrade head
 
-# ─── Start All Services ──────────────────────────────────────────────────────
+# Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬ Start All Services Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
 Write-Host ">>> Starting all services..."
 & docker compose @composeFiles @envFileArgs up -d
 
@@ -225,7 +223,7 @@ if (-not $healthy) {
     Write-Host "[WARN] API health check timed out. Check logs with: docker compose logs api" -ForegroundColor Yellow
 }
 
-# ─── Gemma 4 Model Picker + Auto-Pull ────────────────────────────────────────
+# Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬ Gemma 4 Model Picker + Auto-Pull Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
 # Tier 5 Blocker 1 (locked 2026-04-21). All four supported Gemma 4 tags are
 # presented. Default is gemma4:e4b. Target profile baseline is Windows 11 Pro
 # 23H2+ / 32 GB min (64 GB rec) / GPU optional / CPU-only supportable.
@@ -263,13 +261,13 @@ if ($useHostOllama) {
     try {
         & ollama pull nomic-embed-text
     } catch {
-        Write-Host "[WARN] Embedding model pull failed — retry: ollama pull nomic-embed-text" -ForegroundColor Yellow
+        Write-Host "[WARN] Embedding model pull failed - retry: ollama pull nomic-embed-text" -ForegroundColor Yellow
     }
 } else {
     try {
         & docker compose @composeFiles exec ollama ollama pull nomic-embed-text
     } catch {
-        Write-Host "[WARN] Embedding model pull failed — retry: docker compose exec ollama ollama pull nomic-embed-text" -ForegroundColor Yellow
+        Write-Host "[WARN] Embedding model pull failed - retry: docker compose exec ollama ollama pull nomic-embed-text" -ForegroundColor Yellow
     }
 }
 
@@ -314,7 +312,7 @@ if ($existingModel -and -not $selectedModel) {
         Write-Host "Using CIVICRECORDS_SELECTED_MODEL=$selectedModel (non-interactive override)."
     } elseif ([Console]::IsInputRedirected) {
         $selectedModel = $defaultModel
-        Write-Host "Non-interactive install — selecting default: $selectedModel"
+        Write-Host "Non-interactive install - selecting default: $selectedModel"
         Write-Host "Override by setting `$env:CIVICRECORDS_SELECTED_MODEL=<tag> before running."
     } else {
         $choice = Read-Host "Enter 1-4 (or press Enter for default gemma4:e4b)"
@@ -325,7 +323,7 @@ if ($existingModel -and -not $selectedModel) {
             "3" { $selectedModel = "gemma4:26b" }
             "4" { $selectedModel = "gemma4:31b" }
             default {
-                Write-Host "Unknown choice '$choice' — falling back to default gemma4:e4b." -ForegroundColor Yellow
+                Write-Host "Unknown choice '$choice' - falling back to default gemma4:e4b." -ForegroundColor Yellow
                 $selectedModel = "gemma4:e4b"
             }
         }

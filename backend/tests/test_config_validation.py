@@ -135,3 +135,23 @@ def test_allowlist_csv_strips_whitespace_and_empties():
         testing=False,
     )
     assert s.connector_host_allowlist == ["10.0.0.5", "internal-api.corp"]
+
+
+def test_allowlist_env_empty_string_loads_as_empty(monkeypatch):
+    monkeypatch.setenv("CONNECTOR_HOST_ALLOWLIST", "")
+    s = Settings(
+        jwt_secret=_VALID_JWT,
+        first_admin_password=_VALID_PASSWORD,
+        testing=False,
+    )
+    assert s.connector_host_allowlist == []
+
+
+def test_allowlist_env_csv_loads_without_json_decode_error(monkeypatch):
+    monkeypatch.setenv("CONNECTOR_HOST_ALLOWLIST", "10.0.0.5,internal-api.corp")
+    s = Settings(
+        jwt_secret=_VALID_JWT,
+        first_admin_password=_VALID_PASSWORD,
+        testing=False,
+    )
+    assert s.connector_host_allowlist == ["10.0.0.5", "internal-api.corp"]

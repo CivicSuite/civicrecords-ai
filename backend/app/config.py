@@ -1,7 +1,8 @@
 from typing import Literal
+from typing import Annotated
 
 from pydantic import field_validator, model_validator
-from pydantic_settings import BaseSettings
+from pydantic_settings import BaseSettings, NoDecode
 
 APP_VERSION = "1.4.1"
 
@@ -68,7 +69,7 @@ class Settings(BaseSettings):
     # T2C — explicit narrow allowlist for connector hosts that would otherwise be
     # blocked by the SSRF validator (loopback / RFC1918 / link-local / localhost).
     # Empty by default. No wildcard support, no "disable all" escape hatch.
-    connector_host_allowlist: list[str] = []
+    connector_host_allowlist: Annotated[list[str], NoDecode] = []
 
     # T5D — install-time portal switch. Locked B4=(b) minimal public surface.
     # "private" (default): staff-only posture. /auth/register is not mounted

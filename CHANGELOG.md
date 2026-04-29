@@ -7,7 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-No unreleased changes.
+### Fixed
+- Installer hardening: `install.ps1` now stops immediately when hardware detection fails, so under-spec hosts get a clear prerequisite failure instead of continuing deeper into Docker/bootstrap work. The hardware-detection output also avoids the stale mojibake strings in operator-facing warnings.
+- Config parsing: `CONNECTOR_HOST_ALLOWLIST` now accepts an empty environment value or a comma-separated string during startup without tripping Pydantic's eager JSON decoding path. Regression tests cover both env-driven cases.
 
 ## [1.4.1] - 2026-04-28
 
