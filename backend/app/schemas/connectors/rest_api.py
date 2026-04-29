@@ -63,6 +63,6 @@ class RestApiConfig(BaseModel):
         if v is None:
             return v
         from app.config import settings
-        from app.security.host_validator import validate_url_host
+        from civiccore.security import validate_url_host
         validate_url_host(str(v), settings.connector_host_allowlist)
         return v

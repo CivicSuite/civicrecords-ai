@@ -57,6 +57,6 @@ class ODBCConfig(BaseModel):
         # CONNECTOR_HOST_ALLOWLIST is the narrow explicit override. Fails closed
         # if no Server/Host/Data Source field is parseable.
         from app.config import settings
-        from app.security.host_validator import validate_odbc_connection_string
+        from civiccore.security import validate_odbc_connection_string
         validate_odbc_connection_string(v, settings.connector_host_allowlist)
         return v
