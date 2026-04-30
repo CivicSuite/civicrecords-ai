@@ -8,48 +8,16 @@ Every connector implements 4 operations:
 """
 
 from abc import ABC, abstractmethod
-from dataclasses import dataclass, field
-from datetime import datetime, timezone
-from enum import Enum
 
+from civiccore.ingest import DiscoveredRecord, FetchedDocument, HealthCheckResult, HealthStatus
 
-class HealthStatus(str, Enum):
-    HEALTHY = "healthy"
-    DEGRADED = "degraded"
-    FAILED = "failed"
-    UNREACHABLE = "unreachable"
-
-
-@dataclass
-class HealthCheckResult:
-    status: HealthStatus
-    latency_ms: int | None = None
-    error_message: str | None = None
-    records_available: int | None = None
-    schema_hash: str | None = None
-    checked_at: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
-
-
-@dataclass
-class DiscoveredRecord:
-    """A record discovered in a source system."""
-    source_path: str
-    filename: str
-    file_type: str
-    file_size: int
-    last_modified: datetime | None = None
-    metadata: dict = field(default_factory=dict)
-
-
-@dataclass
-class FetchedDocument:
-    """A document fetched from a source system, ready for ingestion."""
-    source_path: str
-    filename: str
-    file_type: str
-    content: bytes
-    file_size: int
-    metadata: dict = field(default_factory=dict)
+__all__ = [
+    "BaseConnector",
+    "DiscoveredRecord",
+    "FetchedDocument",
+    "HealthCheckResult",
+    "HealthStatus",
+]
 
 
 class BaseConnector(ABC):

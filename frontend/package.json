@@ -1,7 +1,7 @@
 {
   "name": "civicrecords-admin",
   "private": true,
-  "version": "1.4.2",
+  "version": "1.4.3",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -46,4 +46,3 @@
     "vitest": "^3.1.2"
   }
 }
-
