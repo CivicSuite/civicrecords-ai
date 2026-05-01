@@ -6,6 +6,7 @@ from httpx import AsyncClient
 async def test_write_audit_log_creates_entry(client: AsyncClient):
     from tests.conftest import test_session_maker
     from app.audit.logger import write_audit_log
+    from civiccore.audit import compute_persisted_audit_hash
 
     async with test_session_maker() as session:
         entry = await write_audit_log(
@@ -19,6 +20,13 @@ async def test_write_audit_log_creates_entry(client: AsyncClient):
         assert entry.entry_hash != ""
         assert len(entry.entry_hash) == 64
         assert entry.prev_hash == "0" * 64
+        assert entry.entry_hash == compute_persisted_audit_hash(
+            previous_hash=entry.prev_hash,
+            timestamp=entry.timestamp,
+            actor_id=entry.user_id,
+            action=entry.action,
+            details=entry.details,
+        )
 
 
 @pytest.mark.asyncio
@@ -50,6 +58,28 @@ async def test_verify_chain_passes(client: AsyncClient):
         assert is_valid is True
         assert count == 3
         assert error == ""
+
+
+@pytest.mark.asyncio
+async def test_verify_chain_detects_tampered_civiccore_hash_payload(client: AsyncClient):
+    from sqlalchemy import update
+    from tests.conftest import test_session_maker
+    from app.audit.logger import write_audit_log, verify_chain
+    from app.models.audit import AuditLog
+
+    async with test_session_maker() as session:
+        entry = await write_audit_log(session=session, action="created", resource_type="test")
+        await session.execute(
+            update(AuditLog)
+            .where(AuditLog.id == entry.id)
+            .values(details={"tampered": True})
+        )
+        await session.commit()
+
+        is_valid, count, error = await verify_chain(session)
+        assert is_valid is False
+        assert count == 0
+        assert f"Entry {entry.id}: hash mismatch" in error
 
 
 @pytest.mark.asyncio

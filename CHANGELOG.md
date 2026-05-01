@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.4.4] - 2026-05-01
+
 ### Added
 - Hybrid search now consumes `civiccore.search.reciprocal_rank_fusion()` so
   records-ai and other CivicSuite consumers share one weighted fusion contract
@@ -15,16 +17,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `civiccore.onboarding` field-order, answer-normalization, completion-state,
   and skip-aware next-question helpers instead of carrying a private copy of
   that contract inside the records-ai router.
+- Audit-log hashing and verification now consume
+  `civiccore.audit.compute_persisted_audit_hash()` and
+  `civiccore.audit.verify_persisted_audit_chain()` so records-ai no longer
+  owns reusable persisted audit-chain math.
 
 ### Fixed
 - Installer hardening: `install.ps1` now stops immediately when hardware detection fails, so under-spec hosts get a clear prerequisite failure instead of continuing deeper into Docker/bootstrap work. The hardware-detection output also avoids the stale mojibake strings in operator-facing warnings.
 - Config parsing: `CONNECTOR_HOST_ALLOWLIST` now accepts an empty environment value or a comma-separated string during startup without tripping Pydantic's eager JSON decoding path. Regression tests cover both env-driven cases.
+- Frontend dependency security: refreshed the lockfile for `postcss` and
+  transitive `hono` so `npm audit --audit-level=moderate` reports zero known
+  vulnerabilities.
 
 ### Changed
 - The development-line `backend/pyproject.toml` dependency now targets the
-  published `civiccore` v0.10.0 wheel so the shared search and onboarding
-  helpers are consumed from the shared platform package instead of
-  records-ai-local helper copies.
+  published `civiccore` v0.17.0 wheel so shared search, onboarding,
+  connector-security, ingest, and persisted audit-log helpers are consumed
+  from the shared platform package instead of records-ai-local helper copies.
 
 ## [1.4.3] - 2026-04-29
 

@@ -1,17 +1,16 @@
-import hashlib
-import json
 import uuid
 from datetime import datetime, timezone
 
+from civiccore.audit import (
+    PersistedAuditLogEntry,
+    ZERO_HASH,
+    compute_persisted_audit_hash,
+    verify_persisted_audit_chain,
+)
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.audit import AuditLog
-
-
-def _compute_hash(prev_hash: str, timestamp: str, user_id: str, action: str, details: str) -> str:
-    payload = f"{prev_hash}|{timestamp}|{user_id}|{action}|{details}"
-    return hashlib.sha256(payload.encode("utf-8")).hexdigest()
 
 
 async def get_last_hash(session: AsyncSession, *, lock: bool = False) -> str:
@@ -20,7 +19,7 @@ async def get_last_hash(session: AsyncSession, *, lock: bool = False) -> str:
         stmt = stmt.with_for_update()
     result = await session.execute(stmt)
     last = result.scalar_one_or_none()
-    return last if last else "0" * 64
+    return last if last else ZERO_HASH
 
 
 async def write_audit_log(
@@ -34,11 +33,13 @@ async def write_audit_log(
 ) -> AuditLog:
     prev_hash = await get_last_hash(session, lock=True)
     now = datetime.now(timezone.utc)
-    timestamp_str = now.isoformat()
-    user_str = str(user_id) if user_id else "system"
-    details_str = json.dumps(details, sort_keys=True, default=str) if details else ""
-
-    entry_hash = _compute_hash(prev_hash, timestamp_str, user_str, action, details_str)
+    entry_hash = compute_persisted_audit_hash(
+        previous_hash=prev_hash,
+        timestamp=now.isoformat(),
+        actor_id=user_id,
+        action=action,
+        details=details,
+    )
 
     entry = AuditLog(
         prev_hash=prev_hash,
@@ -57,16 +58,29 @@ async def write_audit_log(
     return entry
 
 
+def _persisted_entry(entry: AuditLog) -> PersistedAuditLogEntry:
+    return PersistedAuditLogEntry(
+        previous_hash=entry.prev_hash,
+        entry_hash=entry.entry_hash,
+        timestamp=entry.timestamp,
+        actor_id=str(entry.user_id) if entry.user_id else None,
+        action=entry.action,
+        details=entry.details,
+        entry_id=entry.id,
+    )
+
+
 async def verify_chain(session: AsyncSession) -> tuple[bool, int, str]:
     """Verify the full audit hash chain, paginating in batches of 1000.
 
     After archival/cleanup, the first surviving entry's prev_hash may point
-    to a deleted entry — verification starts from whatever the first entry is
-    and verifies forward from there.
+    to a deleted entry. Verification starts from the first surviving row and
+    then verifies every following link against the previous surviving hash.
     """
+
     batch_size = 1000
     total_checked = 0
-    expected_prev: str | None = None  # Will be set from first entry
+    expected_prev: str | None = None
     last_id = 0
 
     while True:
@@ -81,26 +95,22 @@ async def verify_chain(session: AsyncSession) -> tuple[bool, int, str]:
         if not entries:
             break
 
-        for entry in entries:
-            if expected_prev is None:
-                # First surviving entry — accept its prev_hash as the starting point
-                expected_prev = entry.prev_hash
-            else:
-                if entry.prev_hash != expected_prev:
-                    return False, total_checked, f"Entry {entry.id}: prev_hash mismatch at position {total_checked}"
-
-            recomputed = _compute_hash(
-                entry.prev_hash,
-                entry.timestamp.isoformat(),
-                str(entry.user_id) if entry.user_id else "system",
-                entry.action,
-                json.dumps(entry.details, sort_keys=True, default=str) if entry.details else "",
+        if expected_prev is not None and entries[0].prev_hash != expected_prev:
+            return (
+                False,
+                total_checked,
+                f"Entry {entries[0].id}: prev_hash mismatch at position {total_checked}",
             )
-            if entry.entry_hash != recomputed:
-                return False, total_checked, f"Entry {entry.id}: hash mismatch at position {total_checked}"
 
-            expected_prev = entry.entry_hash
-            total_checked += 1
-            last_id = entry.id
+        is_valid, batch_count, error = verify_persisted_audit_chain(
+            (_persisted_entry(entry) for entry in entries),
+            accept_first_previous_hash=True,
+        )
+        if not is_valid:
+            return False, total_checked + batch_count, error
+
+        total_checked += batch_count
+        expected_prev = entries[-1].entry_hash
+        last_id = entries[-1].id
 
     return True, total_checked, ""
