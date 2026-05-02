@@ -47,13 +47,12 @@ def check_scheduled_sources():
 async def _check_scheduled_sources_async(session) -> dict:
     """Core scheduling logic, extracted for testability.
 
-    anchor = source.last_sync_at or epoch
-    next_scheduled = croniter(expr, anchor).get_next(datetime)
+    next_scheduled = compute_next_sync_at(source.sync_schedule, source.last_sync_at)
     trigger if next_scheduled <= now()
     """
     from datetime import datetime, timezone
     from sqlalchemy import select
-    from croniter import croniter
+    from app.ingestion.cron_utils import compute_next_sync_at
     from app.models.document import DataSource
     from app.ingestion.tasks import task_ingest_source
 
@@ -72,9 +71,7 @@ async def _check_scheduled_sources_async(session) -> dict:
     triggered = 0
 
     for source in sources:
-        anchor = source.last_sync_at or datetime(1970, 1, 1, tzinfo=UTC)
-        it = croniter(source.sync_schedule, anchor)
-        next_scheduled = it.get_next(datetime)
+        next_scheduled = compute_next_sync_at(source.sync_schedule, source.last_sync_at)
         if next_scheduled <= now:
             task_ingest_source.delay(str(source.id))
             triggered += 1

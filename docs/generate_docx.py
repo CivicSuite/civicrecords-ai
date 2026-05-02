@@ -472,7 +472,7 @@ def build_readme_docx(out_path):
 
     add_header_footer(
         doc.sections[0],
-        "CivicRecords AI  |  v1.4.1  |  Open-Source Municipal Records AI"
+        "CivicRecords AI  |  v1.4.8  |  Open-Source Municipal Records AI"
     )
 
     # Title block
@@ -493,7 +493,7 @@ def build_readme_docx(out_path):
 
     meta_para = doc.add_paragraph()
     meta_para.alignment = WD_ALIGN_PARAGRAPH.CENTER
-    meta_run = meta_para.add_run(f"v1.4.1  ·  {date.today().strftime('%B %Y')}  ·  Apache 2.0")
+    meta_run = meta_para.add_run(f"v1.4.8  ·  {date.today().strftime('%B %Y')}  ·  Apache 2.0")
     meta_run.font.name   = "Calibri"
     meta_run.font.size   = Pt(11)
     meta_run.font.italic = True
@@ -666,8 +666,8 @@ def build_readme_docx(out_path):
     h = doc.add_heading("Status", level=1)
     apply_h1_style(h)
     body_para(doc,
-        "v1.4.1 — Patch release aligning CivicRecords AI with civiccore 0.3.0 while "
-        "preserving the records-ai runtime surface from v1.4.0."
+        "v1.4.8 — Patch release aligning CivicRecords AI with civiccore 0.21.0 while "
+        "preserving the records-ai runtime surface and moving reusable schedule validation into CivicCore."
     )
     body_para(doc,
         "v1.4.0 — Phase 2 CivicCore LLM extraction landed. civiccore 0.2.0 became the "
@@ -687,7 +687,7 @@ def build_readme_docx(out_path):
     for item in [
         "29 database tables managed by 16 Alembic migration scripts",
         "~30 REST API endpoints under /api/v1/",
-        "617 backend + 36 frontend automated tests passing",
+        "627 backend + 36 frontend automated tests passing",
         "Tested on Windows 11 (Docker Desktop) and Ubuntu 22.04 (Docker Engine)",
         "AMD GPU/NPU hardware auto-detection (ROCm on Linux, DirectML on Windows)",
     ]:
@@ -789,7 +789,7 @@ def build_user_manual_docx(out_path):
 
     add_header_footer(
         doc.sections[0],
-        "CivicRecords AI User Manual  |  v1.4.1"
+        "CivicRecords AI User Manual  |  v1.4.8"
     )
 
     lines = USER_MANUAL.read_text(encoding="utf-8").splitlines()
@@ -821,7 +821,7 @@ def build_user_manual_docx(out_path):
 
     meta_para = doc.add_paragraph()
     meta_para.alignment = WD_ALIGN_PARAGRAPH.CENTER
-    meta_run = meta_para.add_run(f"v1.4.1  ·  For Municipal Records Staff  ·  {date.today().strftime('%B %Y')}")
+    meta_run = meta_para.add_run(f"v1.4.8  ·  For Municipal Records Staff  ·  {date.today().strftime('%B %Y')}")
     meta_run.font.name   = "Calibri"
     meta_run.font.size   = Pt(11)
     meta_run.font.italic = True

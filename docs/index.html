@@ -429,7 +429,7 @@
 
 <!-- HERO -->
 <header class="hero">
-  <div class="hero-badge">v1.4.7 &nbsp;·&nbsp; Apache 2.0 &nbsp;·&nbsp; Open Source &nbsp;·&nbsp; Security Hardened</div>
+  <div class="hero-badge">v1.4.8 &nbsp;·&nbsp; Apache 2.0 &nbsp;·&nbsp; Open Source &nbsp;·&nbsp; Security Hardened</div>
   <h1>Civic<span>Records AI</span></h1>
   <p class="hero-tagline">Open-source AI for municipal open records</p>
 
@@ -466,8 +466,8 @@
 
   <div style="display:flex;gap:.75rem;flex-wrap:wrap;justify-content:center;margin-top:1.5rem;">
     <a href="https://github.com/CivicSuite/civicrecords-ai" class="btn btn-primary">&#128008; GitHub Repository</a>
-    <a href="https://raw.githubusercontent.com/CivicSuite/civicrecords-ai/v1.4.7/install.sh" class="btn btn-primary" download>&#11015; Download Installer (Linux / macOS)</a>
-    <a href="https://github.com/CivicSuite/civicrecords-ai/releases/download/v1.4.7/CivicRecordsAI-1.4.7-Setup.exe" class="btn btn-primary" download>&#11015; Download Installer (Windows)</a>
+    <a href="https://raw.githubusercontent.com/CivicSuite/civicrecords-ai/v1.4.8/install.sh" class="btn btn-primary" download>&#11015; Download Installer (Linux / macOS)</a>
+    <a href="https://github.com/CivicSuite/civicrecords-ai/releases/download/v1.4.8/CivicRecordsAI-1.4.8-Setup.exe" class="btn btn-primary" download>&#11015; Download Installer (Windows)</a>
     <a href="https://github.com/CivicSuite/civicrecords-ai/blob/master/USER-MANUAL.md" class="btn btn-outline">&#128462; User Manual</a>
     <a href="https://github.com/CivicSuite/civicrecords-ai/blob/master/README.md" class="btn btn-outline">&#128196; README</a>
   </div>
@@ -642,7 +642,7 @@
 <!-- STATS BAR -->
 <div class="stats-bar">
   <div class="stat">
-    <div class="stat-num">17</div>
+    <div class="stat-num">18</div>
     <div class="stat-label">Core Features</div>
   </div>
   <div class="stat">
@@ -654,7 +654,7 @@
     <div class="stat-label">Jurisdictions (50 States + DC)</div>
   </div>
   <div class="stat">
-    <div class="stat-num">1.4.7</div>
+    <div class="stat-num">1.4.8</div>
     <div class="stat-label">Stable Release</div>
   </div>
 </div>
@@ -663,7 +663,7 @@
 <section class="features" id="features">
   <div class="container">
     <h2 class="section-title">What it does</h2>
-    <p class="section-sub">Seventeen integrated capabilities — all running locally, all under your control.</p>
+    <p class="section-sub">Eighteen integrated capabilities — all running locally, all under your control.</p>
     <div class="grid-6">
 
       <div class="card">
@@ -717,7 +717,7 @@
       <div class="card">
         <div class="card-icon">&#128268;</div>
         <h3>Connector Framework</h3>
-        <p>Pluggable adapter architecture lets administrators connect CivicRecords AI directly to live record sources. Ships with four implemented connector types: <strong>file_system</strong> (local/mounted directories), <strong>manual_drop</strong> (watched drop folders), <strong>rest_api</strong> (generic REST API — API key / Bearer / OAuth2 / Basic; JSON/XML/CSV; page/offset/cursor pagination), and <strong>odbc</strong> (SQL databases via pyodbc, row-as-document with SQL-injection guards). Per-source cron scheduling (croniter, UTC) with configurable presets. Idempotent sync via content-hash dedup for binary sources and source-path dedup for structured sources. Roadmap: IMAP email, SMB/NFS, SharePoint.</p>
+        <p>Pluggable adapter architecture lets administrators connect CivicRecords AI directly to live record sources. Ships with four implemented connector types: <strong>file_system</strong> (local/mounted directories), <strong>manual_drop</strong> (watched drop folders), <strong>rest_api</strong> (generic REST API — API key / Bearer / OAuth2 / Basic; JSON/XML/CSV; page/offset/cursor pagination), and <strong>odbc</strong> (SQL databases via pyodbc, row-as-document with SQL-injection guards). Per-source cron scheduling uses CivicCore's shared UTC schedule validation with configurable presets. Idempotent sync via content-hash dedup for binary sources and source-path dedup for structured sources. Roadmap: IMAP email, SMB/NFS, SharePoint.</p>
       </div>
 
       <div class="card">
@@ -766,6 +766,12 @@
         <div class="card-icon">&#128308;</div>
         <h3>Sync Failure Tracking &amp; Circuit Breaker</h3>
         <p>Per-record failure tracking with two-layer retry — task-level exponential backoff absorbs transient network errors; record-level retry handles persistent connector failures (up to 5 attempts over 7 days). Automatic circuit breaker suspends a source after 5 consecutive full-run failures and sends admin notifications. Health status (Healthy / Degraded / Circuit Open) displayed live on every source card. Admin UI surfaces failed records with bulk retry and dismiss actions, per-record history, and a one-click unpause path once the underlying issue is resolved.</p>
+      </div>
+
+      <div class="card">
+        <div class="card-icon">&#128337;</div>
+        <h3>Shared Schedule Validation</h3>
+        <p>Cron schedule validation and next-run computation now come from CivicCore v0.21.0, so Records-AI and future CivicSuite modules share the same minimum-interval guardrails and UTC scheduling semantics instead of carrying private copies.</p>
       </div>
 
     </div>
@@ -856,7 +862,7 @@
         <span style="font-size:1rem;">GitHub Repository</span>
         <span style="font-size:.78rem;font-weight:400;color:#93c5fd;">CivicSuite/civicrecords-ai</span>
       </a>
-      <a href="https://raw.githubusercontent.com/CivicSuite/civicrecords-ai/v1.4.7/install.sh"
+      <a href="https://raw.githubusercontent.com/CivicSuite/civicrecords-ai/v1.4.8/install.sh"
          download="install.sh"
          style="display:flex;flex-direction:column;align-items:center;gap:.5rem;padding:1.5rem 1rem;background:#15803d;color:#fff;border-radius:10px;text-decoration:none;text-align:center;font-weight:700;transition:opacity .15s;"
          onmouseover="this.style.opacity='.85'" onmouseout="this.style.opacity='1'">
@@ -864,8 +870,8 @@
         <span style="font-size:1rem;">Download Installer</span>
         <span style="font-size:.78rem;font-weight:400;color:#bbf7d0;">Linux &amp; macOS · install.sh</span>
       </a>
-      <a href="https://github.com/CivicSuite/civicrecords-ai/releases/download/v1.4.7/CivicRecordsAI-1.4.7-Setup.exe"
-         download="CivicRecordsAI-1.4.7-Setup.exe"
+      <a href="https://github.com/CivicSuite/civicrecords-ai/releases/download/v1.4.8/CivicRecordsAI-1.4.8-Setup.exe"
+         download="CivicRecordsAI-1.4.8-Setup.exe"
          style="display:flex;flex-direction:column;align-items:center;gap:.5rem;padding:1.5rem 1rem;background:#1d4ed8;color:#fff;border-radius:10px;text-decoration:none;text-align:center;font-weight:700;transition:opacity .15s;"
          onmouseover="this.style.opacity='.85'" onmouseout="this.style.opacity='1'">
         <span style="font-size:1.75rem;">&#11015;</span>

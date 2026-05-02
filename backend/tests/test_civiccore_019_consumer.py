@@ -1,4 +1,4 @@
-"""CivicCore v0.20.0 shared contract smoke tests for Records-AI."""
+"""CivicCore v0.21.0 shared contract smoke tests for Records-AI."""
 
 from datetime import datetime, timezone
 
@@ -16,6 +16,7 @@ from civiccore.security import (
     validate_password_setting,
     validate_secret_setting,
 )
+from civiccore.scheduling import compute_next_sync_at, validate_cron_expression
 
 
 def test_records_ai_can_use_shared_vendor_delta_planner():
@@ -60,3 +61,12 @@ def test_records_ai_consumes_shared_startup_config_validation():
     from cryptography.fernet import Fernet
 
     validate_fernet_key_setting(Fernet.generate_key().decode(), setting_name="ENCRYPTION_KEY")
+
+
+def test_records_ai_consumes_shared_schedule_validation():
+    """Records-AI scheduler hardening should come from CivicCore, not local copies."""
+
+    validate_cron_expression("*/5 * * * *")
+    next_run = compute_next_sync_at("0 2 * * *", None)
+
+    assert next_run.isoformat() == "1970-01-01T02:00:00+00:00"
