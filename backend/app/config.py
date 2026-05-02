@@ -4,7 +4,7 @@ from typing import Annotated
 from pydantic import field_validator, model_validator
 from pydantic_settings import BaseSettings, NoDecode
 
-APP_VERSION = "1.4.5"
+APP_VERSION = "1.4.6"
 
 _INSECURE_SECRETS = {"CHANGE-ME", "CHANGE-ME-generate-with-openssl-rand-hex-32", ""}
 
