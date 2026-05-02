@@ -7,6 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.4.7] - 2026-05-02
+
+### Changed
+- `backend/pyproject.toml` now targets the published `civiccore` v0.20.0 wheel
+  and Records-AI now consumes shared CivicCore startup config validation for
+  JWT secret, Fernet encryption key, first-admin password, and CSV allowlist
+  parsing checks instead of carrying module-local copies.
+
+### Added
+- Added a Records-AI consumer smoke test for the CivicCore v0.20.0 startup
+  config validation helpers so future modules can adopt the same bootstrap
+  hardening surface.
+
 ## [1.4.6] - 2026-05-02
 
 ### Changed
