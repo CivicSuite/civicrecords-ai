@@ -1,4 +1,5 @@
-import { render, screen, act, fireEvent } from "@testing-library/react";
+import { render, screen, act, fireEvent, cleanup } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import DataSources, { formatNextRun } from "./DataSources";
 
@@ -41,15 +42,14 @@ describe("DataSources — Add Source wizard accessibility + validation (T4C)", (
 
   afterEach(() => {
     vi.restoreAllMocks();
+    cleanup();
   });
 
   async function openWizard() {
     render(<DataSources token="test-token" />);
     // Wait past the loading skeleton
     const addBtn = await screen.findByRole("button", { name: /add source/i });
-    await act(async () => {
-      fireEvent.click(addBtn);
-    });
+    await userEvent.click(addBtn);
     // The wizard is a base-ui Dialog mounted into a portal. The click
     // returning does not guarantee the portal subtree is in the DOM yet;
     // on slow/contended runners (CI) the sync getByLabelText/getByRole
