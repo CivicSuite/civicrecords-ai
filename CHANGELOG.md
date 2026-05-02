@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.4.6] - 2026-05-02
+
+### Changed
+- `backend/pyproject.toml` now targets the published `civiccore` v0.19.0 wheel so Records-AI can consume shared vendor-delta request planning and reusable mock-city contract suites alongside the previously extracted search, onboarding, connector-security, ingest, persisted audit-log, retry, and circuit-breaker helpers.
+
+### Added
+- Added a Records-AI consumer smoke test for the CivicCore v0.19.0 delta planner and mock-city contract report so future extraction work has a reusable proof point before downstream modules adopt the same shared surfaces.
+
 ## [1.4.5] - 2026-05-02
 
 ### Changed
