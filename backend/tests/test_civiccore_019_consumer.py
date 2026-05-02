@@ -1,4 +1,4 @@
-"""CivicCore v0.19.0 shared contract smoke tests for Records-AI."""
+"""CivicCore v0.20.0 shared contract smoke tests for Records-AI."""
 
 from datetime import datetime, timezone
 
@@ -9,6 +9,12 @@ from civiccore.testing.mock_city import (
     run_mock_city_backup_retention_suite,
     run_mock_city_contract_suite,
     run_mock_city_idp_contract_suite,
+)
+from civiccore.security import (
+    parse_csv_setting,
+    validate_fernet_key_setting,
+    validate_password_setting,
+    validate_secret_setting,
 )
 
 
@@ -42,3 +48,15 @@ def test_records_ai_can_use_shared_mock_city_contract_report():
     assert all(check.ok for check in run_mock_city_idp_contract_suite())
     assert all(check.ok for check in run_mock_city_backup_retention_suite())
     assert_secret_free_report(report)
+
+
+def test_records_ai_consumes_shared_startup_config_validation():
+    """Records-AI startup hardening should come from CivicCore, not local copies."""
+
+    assert parse_csv_setting("roles, groups, ,department") == ["roles", "groups", "department"]
+    validate_secret_setting("a" * 64, setting_name="JWT_SECRET")
+    validate_password_setting("S3cure!FreshAdminPwd-2026", setting_name="FIRST_ADMIN_PASSWORD")
+
+    from cryptography.fernet import Fernet
+
+    validate_fernet_key_setting(Fernet.generate_key().decode(), setting_name="ENCRYPTION_KEY")
