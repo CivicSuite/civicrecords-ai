@@ -5,8 +5,8 @@ from datetime import datetime, timezone
 from unittest.mock import patch
 
 import pytest
-from croniter import croniter
 
+from app.ingestion.cron_utils import compute_next_sync_at
 from app.models.document import SourceType
 from tests.conftest import build_data_source
 
@@ -22,10 +22,8 @@ class TestCronTriggerLogic:
     """These tests validate the trigger decision in isolation (pure logic)."""
 
     def _should_trigger(self, cron_expr: str, last_sync_at: datetime | None, now: datetime) -> bool:
-        """Reference implementation of the trigger decision (D1 from spec)."""
-        anchor = last_sync_at or datetime(1970, 1, 1, tzinfo=UTC)
-        it = croniter(cron_expr, anchor)
-        next_scheduled = it.get_next(datetime)
+        """Reference the shared CivicCore helper used by the production scheduler."""
+        next_scheduled = compute_next_sync_at(cron_expr, last_sync_at)
         return next_scheduled <= now
 
     def test_overdue_source_triggers(self):

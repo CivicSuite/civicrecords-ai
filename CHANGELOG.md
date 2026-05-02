@@ -7,6 +7,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.4.8] - 2026-05-02
+
+### Changed
+- `backend/pyproject.toml` now targets the published `civiccore` v0.21.0 wheel
+  and Records-AI consumes shared CivicCore cron schedule validation and next-run
+  computation helpers instead of carrying module-local scheduling copies.
+- `app.ingestion.cron_utils` is now a compatibility wrapper around
+  `civiccore.scheduling`, preserving the Records-AI import surface while making
+  reusable scheduling behavior available suite-wide.
+
+### Added
+- Added a Records-AI consumer smoke test for the CivicCore v0.21.0 scheduling
+  helpers so future modules can adopt the same cron validation contract.
+
 ## [1.4.7] - 2026-05-02
 
 ### Changed

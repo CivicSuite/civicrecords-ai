@@ -727,7 +727,7 @@ def build_readme_full(out_path):
     story.append(sp(80))
     story.append(P("CivicRecords AI", styles["title"]))
     story.append(sp(8))
-    story.append(P("Technical Reference — v1.4.1", styles["subtitle"]))
+    story.append(P("Technical Reference — v1.4.8", styles["subtitle"]))
     story.append(sp(4))
     story.append(P(f"Generated {date.today().strftime('%B %d, %Y')}", styles["tagline"]))
     story.append(sp(4))
@@ -803,11 +803,10 @@ def build_readme_full(out_path):
         "Runs entirely on local hardware — no cloud, no telemetry, no vendor lock-in",
     ], styles)
     story.append(P(
-        "Current release: <b>v1.4.1</b> (April 28, 2026). 29 database tables, ~30 API endpoints, "
-        "617 backend + 36 frontend automated tests. Tier 5 and Tier 6 complete — ENG-001 "
-        "(at-rest encryption for <tt>data_sources.connection_config</tt> via Fernet envelope) "
-        "is closed. Tier 5 shipped the minimal public portal (T5D) and unsigned Windows "
-        "installer (T5E).",
+        "Current release: <b>v1.4.8</b> (May 2, 2026). 29 database tables, ~30 API endpoints, "
+        "627 backend + 36 frontend automated tests. Records-AI consumes CivicCore v0.21.0 "
+        "for shared schedule validation and next-run computation alongside the earlier "
+        "CivicCore extractions.",
         styles["body"]
     ))
 
@@ -899,7 +898,7 @@ def build_readme_full(out_path):
         ["UI library",  "shadcn/ui + Tailwind CSS", "latest",   "Civic blue design tokens"],
         ["Auth",        "JWT + bcrypt",             "—",        "6-role RBAC hierarchy"],
         ["Containers",  "Docker Compose",           "v2",       "7-service stack"],
-        ["Testing",     "pytest / vitest",          "latest",   "617 backend + 36 frontend tests"],
+        ["Testing",     "pytest / vitest",          "latest",   "627 backend + 36 frontend tests"],
     ]
     story.append(make_table(tech_data, [1.0*inch, 1.6*inch, 0.7*inch, 3.2*inch], styles))
 
@@ -1110,7 +1109,7 @@ def build_readme_full(out_path):
     # --- 12. Test Suite ---
     story += section_header("12. Test Suite", styles, 1)
     story.append(P(
-        "CivicRecords AI ships 617 backend tests across 45+ pytest modules and 36 frontend "
+        "CivicRecords AI ships 627 backend tests across 45+ pytest modules and 36 frontend "
         "component tests. Tests are a first-class artifact — every key engineering decision "
         "is enforced by a named test function.",
         styles["body"]
@@ -1199,7 +1198,7 @@ def build_readme_short(out_path):
     story.append(sp(8))
     story.append(P("Open-Source Municipal Records Request AI", styles["subtitle"]))
     story.append(sp(4))
-    story.append(P(f"v1.4.1 · {date.today().strftime('%B %Y')} · Apache 2.0", styles["tagline"]))
+    story.append(P(f"v1.4.8 · {date.today().strftime('%B %Y')} · Apache 2.0", styles["tagline"]))
     story.append(sp(12))
     story.append(HR())
     story.append(sp(8))
