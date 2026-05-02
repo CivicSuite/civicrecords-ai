@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.4.5] - 2026-05-02
+
+### Changed
+- `backend/pyproject.toml` now targets the published `civiccore` v0.18.1 wheel so Records-AI consumes shared live connector retry and circuit-breaker primitives in addition to shared search, onboarding, connector-security, ingest, and persisted audit-log helpers.
+- `app.connectors.retry` is now a compatibility wrapper around `civiccore.connectors.with_http_retry()` and `compute_retry_delay()`, preserving the Records-AI `Retry-After` cap behavior while moving reusable retry policy to CivicCore.
+- `app.ingestion.sync_runner` now applies `civiccore.connectors.apply_sync_run_result()` for the circuit-breaker state transition while keeping Records-AI's ORM tables, run logs, notifications, and cursor handling local.
+
 ## [1.4.4] - 2026-05-01
 
 ### Added

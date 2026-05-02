@@ -5,6 +5,7 @@ import uuid
 from datetime import datetime, timezone, timedelta
 from typing import Any
 
+from civiccore.connectors import SyncCircuitState, SyncRunResult, apply_sync_run_result
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -17,7 +18,6 @@ logger = logging.getLogger(__name__)
 UTC = timezone.utc
 _DEFAULT_RETRY_BATCH_SIZE = 100
 _DEFAULT_RETRY_TIME_LIMIT_SECONDS = 90
-_CIRCUIT_OPEN_THRESHOLD = 5
 _DEAD_LETTER_MAX_RETRIES = 5
 _DEAD_LETTER_MAX_AGE_DAYS = 7
 
@@ -51,7 +51,6 @@ async def run_connector_sync_with_retry(
     succeeded = 0
     failed = 0
     retries_attempted = 0
-    any_success = False
     discovered_count = 0
     retry_start = datetime.now(UTC)
 
@@ -96,8 +95,6 @@ async def run_connector_sync_with_retry(
                 failure.status = "resolved"
                 failure.resolved_at = now
                 succeeded += 1
-                any_success = True
-
             except FileNotFoundError:
                 failure.status = "tombstone"
                 failure.last_retried_at = now
@@ -148,7 +145,6 @@ async def run_connector_sync_with_retry(
                     )
 
                 succeeded += 1
-                any_success = True
                 if record.last_modified:
                     last_successful_modified = record.last_modified
 
@@ -188,24 +184,34 @@ async def run_connector_sync_with_retry(
         )
 
         # === Circuit breaker counter update ===
-        if any_success:
-            source.consecutive_failure_count = 0
-            source.last_sync_status = "partial" if failed > 0 else "success"
-            if source.sync_paused_reason == "grace_period":
-                source.sync_paused_reason = None
-        elif failed > 0 and not any_success:
-            source.consecutive_failure_count += 1
-            source.last_error_at = datetime.now(UTC)
-            source.last_sync_status = "failed"
-
-            threshold = 2 if source.sync_paused_reason == "grace_period" else _CIRCUIT_OPEN_THRESHOLD
-            if source.consecutive_failure_count >= threshold:
-                source.sync_paused = True
-                source.sync_paused_at = datetime.now(UTC)
-                source.sync_paused_reason = (
-                    f"Circuit open after {source.consecutive_failure_count} consecutive full-run failures"
-                )
-                await _fire_circuit_open_notification(session, source)
+        previous_sync_paused = bool(source.sync_paused)
+        updated_sync_state = apply_sync_run_result(
+            SyncCircuitState(
+                connector=connector_type,
+                source_name=source.name,
+                consecutive_failure_count=source.consecutive_failure_count or 0,
+                sync_paused=bool(source.sync_paused),
+                sync_paused_at=source.sync_paused_at,
+                sync_paused_reason=source.sync_paused_reason,
+                last_sync_status=source.last_sync_status,
+                last_error_at=source.last_error_at,
+            ),
+            SyncRunResult(
+                records_discovered=discovered_count,
+                records_succeeded=succeeded,
+                records_failed=failed,
+                retries_attempted=retries_attempted,
+            ),
+            now=datetime.now(UTC),
+        )
+        source.consecutive_failure_count = updated_sync_state.consecutive_failure_count
+        source.last_sync_status = updated_sync_state.last_sync_status
+        source.last_error_at = updated_sync_state.last_error_at
+        source.sync_paused = updated_sync_state.sync_paused
+        source.sync_paused_at = updated_sync_state.sync_paused_at
+        source.sync_paused_reason = updated_sync_state.sync_paused_reason
+        if source.sync_paused and not previous_sync_paused:
+            await _fire_circuit_open_notification(session, source)
 
         # === Update run log ===
         run_log.finished_at = datetime.now(UTC)
