@@ -1,4 +1,6 @@
 import uuid
+from datetime import datetime, timezone
+
 import pytest
 from httpx import AsyncClient
 from sqlalchemy import text
@@ -108,6 +110,41 @@ async def test_health_status_healthy_default(client: AsyncClient, admin_token: s
     assert src is not None
     assert src["health_status"] == "healthy"
     assert src["active_failure_count"] == 0
+
+
+@pytest.mark.asyncio
+async def test_datasource_list_uses_shared_civiccore_next_run_projection(
+    client: AsyncClient,
+    admin_token: str,
+    db_session,
+):
+    """Scheduled source list status should include CivicCore-computed next run."""
+    source_id = uuid.uuid4()
+    user_id = (await db_session.execute(text("SELECT id FROM users LIMIT 1"))).scalar_one()
+    await build_data_source(
+        db_session,
+        id=source_id,
+        name=f"health-next-run-{source_id.hex[:8]}",
+        source_type=SourceType.REST_API,
+        connection_config={},
+        is_active=True,
+        sync_schedule="0 2 * * *",
+        schedule_enabled=True,
+        sync_paused=False,
+        consecutive_failure_count=0,
+        last_sync_at=datetime(2026, 5, 2, 2, 0, tzinfo=timezone.utc),
+        created_by=user_id,
+    )
+    await db_session.commit()
+
+    resp = await client.get("/datasources/", headers={"Authorization": f"Bearer {admin_token}"})
+
+    assert resp.status_code == 200
+    src = next((s for s in resp.json() if s["id"] == str(source_id)), None)
+    assert src is not None
+    assert src["health_status"] == "healthy"
+    assert src["active_failure_count"] == 0
+    assert src["next_sync_at"] == "2026-05-03T02:00:00Z"
 
 
 # --- T2B response-shape redaction tests ---

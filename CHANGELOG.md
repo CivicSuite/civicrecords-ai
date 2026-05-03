@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.4.9] - 2026-05-03
+
+### Changed
+- `backend/pyproject.toml` now targets the published `civiccore` v0.22.0 wheel
+  and Records-AI consumes `civiccore.connectors.build_sync_source_status()` for
+  datasource list health, active-failure count, pause, and next-run projection.
+  The API response shape is unchanged; the reusable health/next-run semantics now
+  live in CivicCore for CivicClerk and future modules to share.
+- Added Records-AI consumer coverage proving the new CivicCore source-status
+  projection is importable and preserves the expected degraded/next-run contract.
+
 ## [1.4.8] - 2026-05-02
 
 ### Changed
