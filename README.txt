@@ -199,6 +199,8 @@ Service accounts with hashed API keys enable instance-to-instance federation acc
 
 ## Status
 
+**v1.4.10 (May 3, 2026)** — Documentation-only release alignment patch. The v1.4.9 CivicCore source-status projection code is unchanged; this tag publishes the audit-corrected 631-backend-test evidence in the release source snapshot and installer/download docs.
+
 **v1.4.9 (May 3, 2026)** — CivicCore source-status projection consumer patch. Records-AI now consumes civiccore v0.22.0 for datasource list health, active-failure count, pause, and next-run projection, preserving the existing `/datasources/` response shape while moving reusable operator-state semantics into CivicCore. API URL paths, roles, permissions, and records-side database migrations are unchanged from v1.4.8.
 
 **v1.4.8 (May 2, 2026)** — CivicCore schedule validation consumer patch. Records-AI now consumes civiccore v0.21.0 for cron schedule validation and next-run computation, preserving the local `app.ingestion.cron_utils` import surface as a compatibility wrapper. API URL paths, roles, permissions, and records-side database migrations are unchanged from v1.4.7.
@@ -271,4 +273,4 @@ Service accounts with hashed API keys enable instance-to-instance federation acc
 | **Phase 3** | Public portal | Public homepage, search, guided request wizard, request tracker, help pages | Partial — T5D minimal surface shipped (landing + resident-registration + authenticated submission); published-records search, resident dashboard, and track-my-request remain Planned |
 | **Phase 4** | Transparency layer | Open records library, reporting dashboards, public archive, federation | Planned (v2.0) |
 
-*Note: Version numbers (semver) track release history. Phase numbers track design completeness per the canonical spec. They are separate systems. Current build (v1.4.9) includes backend work from Phases 0-2 and partial Phase 3 (T5D minimal public portal surface), but has not completed the full scope of any phase. See [canonical spec](docs/UNIFIED-SPEC.md) for complete requirements and [reconciliation](docs/RECONCILIATION-2026-04-13.md) for current gap analysis.*
+*Note: Version numbers (semver) track release history. Phase numbers track design completeness per the canonical spec. They are separate systems. Current build (v1.4.10) includes backend work from Phases 0-2 and partial Phase 3 (T5D minimal public portal surface), but has not completed the full scope of any phase. See [canonical spec](docs/UNIFIED-SPEC.md) for complete requirements and [reconciliation](docs/RECONCILIATION-2026-04-13.md) for current gap analysis.*
