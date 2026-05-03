@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.4.10] - 2026-05-03
+
+### Changed
+- Documentation-only release alignment patch. The v1.4.9 CivicCore source-status
+  projection code is unchanged; this tag publishes the audit-corrected
+  631-backend-test evidence in the release source snapshot and docs download
+  surfaces instead of leaving the correction only on `master`.
+
 ## [1.4.9] - 2026-05-03
 
 ### Changed
