@@ -1,8 +1,13 @@
-"""CivicCore v0.21.0 shared contract smoke tests for Records-AI."""
+"""CivicCore v0.22.0 shared contract smoke tests for Records-AI."""
 
 from datetime import datetime, timezone
 
-from civiccore.connectors import DELTA_QUERY_PARAMS, plan_vendor_delta_request
+from civiccore.connectors import (
+    DELTA_QUERY_PARAMS,
+    SyncCircuitState,
+    build_sync_source_status,
+    plan_vendor_delta_request,
+)
 from civiccore.testing.mock_city import (
     assert_secret_free_report,
     mock_city_report,
@@ -70,3 +75,24 @@ def test_records_ai_consumes_shared_schedule_validation():
     next_run = compute_next_sync_at("0 2 * * *", None)
 
     assert next_run.isoformat() == "1970-01-01T02:00:00+00:00"
+
+
+def test_records_ai_consumes_shared_sync_source_status_projection():
+    """Datasource list health and next-run status should come from CivicCore."""
+
+    status = build_sync_source_status(
+        SyncCircuitState(
+            connector="rest_api",
+            source_name="Records vendor API",
+            active_failure_count=1,
+            last_sync_status="partial",
+        ),
+        sync_schedule="0 2 * * *",
+        last_sync_at=None,
+    )
+
+    assert status.health_status == "degraded"
+    assert status.active_failure_count == 1
+    assert status.last_sync_status == "partial"
+    assert status.next_sync_at.isoformat() == "1970-01-01T02:00:00+00:00"
+    assert "Review active failures" in status.fix

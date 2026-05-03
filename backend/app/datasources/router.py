@@ -8,6 +8,7 @@ from pathlib import Path
 from typing import Any
 
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, File
+from civiccore.connectors import SyncCircuitState, build_sync_source_status
 from pydantic import BaseModel
 from sqlalchemy import select, func
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -86,7 +87,6 @@ async def create_datasource(data: DataSourceCreate, session: AsyncSession = Depe
 
 @router.get("/", response_model=list[DataSourceRead])
 async def list_datasources(session: AsyncSession = Depends(get_async_session), user: User = Depends(require_role(UserRole.STAFF))):
-    from app.ingestion.cron_utils import compute_next_sync_at
     from app.models.sync_failure import SyncFailure
 
     result = await session.execute(select(DataSource).order_by(DataSource.created_at.desc()))
@@ -106,17 +106,30 @@ async def list_datasources(session: AsyncSession = Depends(get_async_session), u
     for source in sources:
         data = DataSourceRead.model_validate(source)
         active_failures = failure_counts.get(str(source.id), 0)
-        data.active_failure_count = active_failures
-
-        if source.sync_paused:
-            data.health_status = "circuit_open"
-        elif source.consecutive_failure_count > 0 or active_failures > 0:
-            data.health_status = "degraded"
-        else:
-            data.health_status = "healthy"
-
-        if source.sync_schedule and source.schedule_enabled and not source.sync_paused:
-            data.next_sync_at = compute_next_sync_at(source.sync_schedule, source.last_sync_at)
+        connector_type = (
+            source.source_type.value
+            if hasattr(source.source_type, "value")
+            else str(source.source_type)
+        )
+        sync_status = build_sync_source_status(
+            SyncCircuitState(
+                connector=connector_type,
+                source_name=source.name,
+                consecutive_failure_count=source.consecutive_failure_count or 0,
+                active_failure_count=active_failures,
+                sync_paused=bool(source.sync_paused),
+                sync_paused_at=source.sync_paused_at,
+                sync_paused_reason=source.sync_paused_reason,
+                last_sync_status=source.last_sync_status,
+                last_error_at=source.last_error_at,
+            ),
+            sync_schedule=source.sync_schedule,
+            schedule_enabled=bool(source.schedule_enabled),
+            last_sync_at=source.last_sync_at,
+        )
+        data.active_failure_count = sync_status.active_failure_count
+        data.health_status = sync_status.health_status
+        data.next_sync_at = sync_status.next_sync_at
         output.append(data)
     return output
 
