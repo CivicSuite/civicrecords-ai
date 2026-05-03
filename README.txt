@@ -233,7 +233,7 @@ Service accounts with hashed API keys enable instance-to-instance federation acc
 **Carried from v1.0.x:**
 - 13 staff workbench pages + Login with shadcn/ui design system
 - 29 database tables, ~30 API endpoints
-- 627 backend + 36 frontend automated tests passing (CI-verified on PR #57, run 25250142438)
+- 631 backend + 36 frontend automated tests passing (CI-verified on PR #61, run 25272823105)
 - Guided onboarding, systems catalog, connector framework
 - Request timeline, messaging, fee tracking, response letter generation
 - Operational analytics and notification service
@@ -257,7 +257,7 @@ Service accounts with hashed API keys enable instance-to-instance federation acc
 - **Tier 6 / ENG-001 — At-rest encryption for `data_sources.connection_config`, 2026-04-23:** Connector credentials are now encrypted at rest using Fernet (AES-128-CBC + HMAC-SHA256) via a transparent SQLAlchemy `EncryptedJSONB` TypeDecorator; envelope shape is `{"v": 1, "ct": "<fernet-token>"}`. A new required `ENCRYPTION_KEY` env var (installer auto-generates on fresh installs) drives the encryption; a reversible Alembic migration (`019_encrypt_connection_config`) encrypts existing plaintext rows and decrypts on downgrade. Operator verification: `docker compose run --rm --no-deps api python scripts/verify_at_rest.py`. **ENG-001 now fully closed.** Key rotation is not supported in this release and is tracked as a future slice; the versioned envelope (`"v": 1`) leaves the door open.
 - **T2C** — `FIRST_ADMIN_PASSWORD` startup validator (rejects `.env.example` placeholder, empty, <12 chars, and common defaults); SSRF host validator blocks loopback, IMDS, and RFC1918 ranges on REST and ODBC connector URLs at schema-validation time
 - **T3A** — Create-user form now POSTs to `/api/admin/users` (was `/api/auth/register`, which silently downgraded submitted roles to STAFF)
-- **CI** — 627 backend + 36 frontend tests (CI-verified on PR #57, run 25250142438); bootstrap-failure smoke test confirms stack rejects placeholder admin password; `docs/openapi.json` and `frontend/src/generated/api.ts` stale-check enforced on every build (T3D)
+- **CI** — 631 backend + 36 frontend tests (CI-verified on PR #61, run 25272823105); bootstrap-failure smoke test confirms stack rejects placeholder admin password; `docs/openapi.json` and `frontend/src/generated/api.ts` stale-check enforced on every build (T3D)
 
 > **ENG-001 standing caveat (historical — closed 2026-04-23):** At-rest encryption for `data_sources.connection_config` landed as Tier 6 / ENG-001. Prior to Tier 6 the JSONB column was plaintext and visible to any database superuser, `pg_dump` output, or restored backup. Post-Tier-6 the column is stored as a Fernet envelope keyed off `ENCRYPTION_KEY`; `pg_dump` output and raw backups contain ciphertext only. T2B runtime exposure closed in an earlier sprint; Tier 6 closes the at-rest gap. ENG-001 is now fully closed. See Section 8.10 of [docs/UNIFIED-SPEC.md](docs/UNIFIED-SPEC.md) and the Operator section on the encryption key in [USER-MANUAL.md](USER-MANUAL.md) for details.
 
