@@ -1,0 +1,81 @@
+name: release-preflight
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Existing signed release tag to verify before publishing the GitHub Release
+        required: true
+        type: string
+      expected_target:
+        description: Expected target commit SHA for the release tag
+        required: false
+        type: string
+      expected_tree:
+        description: Expected target tree SHA from the verified release build
+        required: false
+        type: string
+      fixtures_only:
+        description: Run only CivicCore's adversarial fixture suite as a hypothetical corrected-release dry-run
+        required: false
+        default: "false"
+        type: choice
+        options:
+          - "false"
+          - "true"
+
+jobs:
+  preflight-release-provenance:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.13"
+      - name: Install CivicCore release-provenance helper
+        run: python -m pip install "git+https://github.com/CivicSuite/civiccore.git@main"
+      - name: Verify hypothetical corrected-release fixture
+        run: |
+          mkdir -p .tmp-release-provenance-fixtures
+          cat > .tmp-release-provenance-fixtures/known-good.json <<'JSON'
+          {
+            "name": "known-good signed web-flow release tag",
+            "tag_name": "vfixture-good",
+            "expected": "pass",
+            "expected_tree": "tree-good",
+            "responses": {
+              "ref": {"object": {"type": "tag", "sha": "tag-good"}},
+              "tag": {
+                "tag": "vfixture-good",
+                "tagger": {"name": "GitHub", "email": "noreply@github.com"},
+                "object": {"type": "commit", "sha": "commit-good"},
+                "verification": {"verified": true, "reason": "valid"}
+              },
+              "commit": {
+                "sha": "commit-good",
+                "commit": {
+                  "committer": {"name": "GitHub", "email": "noreply@github.com"},
+                  "tree": {"sha": "tree-good"},
+                  "verification": {"verified": true, "reason": "valid"}
+                }
+              }
+            }
+          }
+          JSON
+          python -m civiccore.release_provenance --fixtures-dir .tmp-release-provenance-fixtures
+      - name: Verify current release tag provenance
+        if: ${{ inputs.fixtures_only != 'true' }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ inputs.tag }}
+          EXPECTED_TARGET: ${{ inputs.expected_target }}
+          EXPECTED_TREE: ${{ inputs.expected_tree }}
+        run: >
+          python scripts/verify-release-provenance.py "${RELEASE_TAG}"
+          --repo "${{ github.repository }}"
+          --expected-target "${EXPECTED_TARGET}"
+          --expected-tree "${EXPECTED_TREE}"
