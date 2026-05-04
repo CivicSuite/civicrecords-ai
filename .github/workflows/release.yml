@@ -47,7 +47,7 @@ jobs:
           path: .tmp-civiccore
 
       - name: Verify adversarial release provenance fixtures
-        run: python -m civiccore.release_provenance --fixtures-dir .tmp-civiccore/tests/fixtures/release_provenance
+        run: python scripts/verify-release-provenance.py --fixtures-dir .tmp-civiccore/tests/fixtures/release_provenance
 
   build-windows-installer:
     name: Build Windows installer (unsigned)
