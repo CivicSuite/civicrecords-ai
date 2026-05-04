@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+- Wired the GitHub release workflow to the new CivicCore Sigstore attestation
+  provenance model. Future release builds run the canonical adversarial fixture
+  suite first, build the unsigned Windows installer, generate and cosign
+  `release-attestation.json`, verify it before publication, and upload the
+  attestation plus bundle alongside the installer and checksum. No existing
+  release, tag, or release notes were modified by this change.
+
 ## [1.4.10] - 2026-05-03
 
 ### Changed

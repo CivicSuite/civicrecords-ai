@@ -84,11 +84,14 @@ CivicRecords AI now wires release preflight to CivicCore's canonical
 `civiccore.release_provenance` helper. This matters because GitHub release pages
 can show the target commit as "Verified" even when the release tag is
 lightweight or unsigned. Treat that badge as a commit signal only; the actual
-release-tag gate lives in [docs/ops/release-signing.md](docs/ops/release-signing.md).
+trust artifact for post-baseline releases is the Sigstore-signed
+`release-attestation.json` plus bundle documented in
+[docs/ops/release-signing.md](docs/ops/release-signing.md).
 
 The current public `v1.4.10` release is in the Tier 1 correction window because
-its tag is lightweight. Do not republish, mirror, or rely on it as the corrected
-provenance baseline until the Tier 1 correction is complete.
+its tag predates the attestation model. Do not republish, mirror, or rely on it
+as the corrected provenance baseline until the authorized attestation retrofit is
+complete.
 
 ## Architecture
 

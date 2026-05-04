@@ -430,7 +430,7 @@
 <!-- HERO -->
 <header class="hero">
   <div class="hero-badge">v1.4.10 &nbsp;·&nbsp; Apache 2.0 &nbsp;·&nbsp; Open Source &nbsp;·&nbsp; Security Hardened</div>
-  <p style="max-width: 860px; margin: 1rem auto 0; color: #bfdbfe;">Release provenance note: GitHub release pages can show a target commit as Verified even when the release tag itself is lightweight or unsigned. CivicRecords AI now uses CivicCore's <code>civiccore.release_provenance</code> preflight gate. The current public <code>v1.4.10</code> artifact is held in the Tier 1 correction window until it is republished with a verified annotated tag object; see <code>docs/ops/release-signing.md</code>.</p>
+  <p style="max-width: 860px; margin: 1rem auto 0; color: #bfdbfe;">Release provenance note: GitHub release pages can show a target commit as Verified even when the release tag itself is lightweight or unsigned. CivicRecords AI now uses CivicCore's <code>civiccore.release_provenance</code> preflight gate. Post-baseline releases are verified by a Sigstore-signed <code>release-attestation.json</code> plus bundle. The current public <code>v1.4.10</code> artifact is held in the Tier 1 correction window until its authorized attestation retrofit is complete; see <code>docs/ops/release-signing.md</code>.</p>
   <h1>Civic<span>Records AI</span></h1>
   <p class="hero-tagline">Open-source AI for municipal open records</p>
 

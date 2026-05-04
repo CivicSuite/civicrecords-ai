@@ -20,11 +20,39 @@ on:
 
 permissions:
   contents: write
+  id-token: write
 
 jobs:
+  preflight:
+    name: Preflight release provenance fixtures
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python for release provenance preflight
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.13"
+
+      - name: Install CivicCore release-provenance helper
+        run: python -m pip install "git+https://github.com/CivicSuite/civiccore.git@main"
+
+      - name: Checkout canonical CivicCore provenance fixtures
+        uses: actions/checkout@v6
+        with:
+          repository: CivicSuite/civiccore
+          ref: main
+          path: .tmp-civiccore
+
+      - name: Verify adversarial release provenance fixtures
+        run: python -m civiccore.release_provenance --fixtures-dir .tmp-civiccore/tests/fixtures/release_provenance
+
   build-windows-installer:
     name: Build Windows installer (unsigned)
     runs-on: windows-latest
+    needs: preflight
     steps:
       - uses: actions/checkout@v6
         with:
@@ -39,16 +67,9 @@ jobs:
         shell: bash
         run: python -m pip install "git+https://github.com/CivicSuite/civiccore.git@main"
 
-      - name: Verify release provenance before building installer
+      - name: Run release verification
         shell: bash
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          expected_tree="$(git show -s --format=%T "${{ github.sha }}")"
-          python scripts/verify-release-provenance.py "${{ github.ref_name }}" \
-            --repo "${{ github.repository }}" \
-            --expected-target "${{ github.sha }}" \
-            --expected-tree "$expected_tree"
+        run: bash scripts/verify-release.sh
 
       - name: Install Inno Setup
         run: choco install innosetup -y
@@ -114,13 +135,79 @@ jobs:
           echo "$SHA  $BASENAME" > "build/${BASENAME}.sha256"
           cat "build/${BASENAME}.sha256"
 
+      - name: Stage release assets
+        shell: bash
+        run: |
+          ART="${{ steps.locate.outputs.artifact }}"
+          BASENAME=$(basename "$ART")
+          rm -rf release-assets
+          mkdir -p release-assets
+          cp "$ART" "release-assets/$BASENAME"
+          cp "build/${BASENAME}.sha256" "release-assets/${BASENAME}.sha256"
+
+      - name: Resolve release ref
+        id: release_ref
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          ref_json="$(gh api "repos/${{ github.repository }}/git/ref/tags/${{ github.ref_name }}")"
+          tag_ref_type="$(echo "$ref_json" | python -c "import json,sys; print(json.load(sys.stdin)['object']['type'])")"
+          tag_ref_sha="$(echo "$ref_json" | python -c "import json,sys; print(json.load(sys.stdin)['object']['sha'])")"
+          if [ "$tag_ref_type" = "tag" ]; then
+            tag_json="$(gh api "repos/${{ github.repository }}/git/tags/${tag_ref_sha}")"
+            target_commit="$(echo "$tag_json" | python -c "import json,sys; print(json.load(sys.stdin)['object']['sha'])")"
+          else
+            target_commit="$tag_ref_sha"
+          fi
+          target_tree="$(git show -s --format=%T "$target_commit")"
+          echo "tag_ref_type=$tag_ref_type" >> "$GITHUB_OUTPUT"
+          echo "tag_ref_sha=$tag_ref_sha" >> "$GITHUB_OUTPUT"
+          echo "target_commit=$target_commit" >> "$GITHUB_OUTPUT"
+          echo "target_tree=$target_tree" >> "$GITHUB_OUTPUT"
+
+      - name: Build release attestation
+        shell: bash
+        run: |
+          python scripts/build-release-attestation.py \
+            --repo "${{ github.repository }}" \
+            --tag "${{ github.ref_name }}" \
+            --tag-ref-type "${{ steps.release_ref.outputs.tag_ref_type }}" \
+            --tag-ref-sha "${{ steps.release_ref.outputs.tag_ref_sha }}" \
+            --target-commit "${{ steps.release_ref.outputs.target_commit }}" \
+            --target-tree "${{ steps.release_ref.outputs.target_tree }}" \
+            --workflow-run-id "${{ github.run_id }}" \
+            --artifacts-dir release-assets \
+            --output release-attestation.json
+
+      - name: Install cosign
+        uses: sigstore/cosign-installer@v4.1.1
+
+      - name: Sign release attestation
+        shell: bash
+        run: cosign sign-blob release-attestation.json --bundle release-attestation.json.bundle --yes
+
+      - name: Verify release attestation before publication
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          python scripts/verify-release-provenance.py "${{ github.ref_name }}" \
+            --repo "${{ github.repository }}" \
+            --attestation release-attestation.json \
+            --bundle release-attestation.json.bundle \
+            --artifacts-dir release-assets \
+            --expected-target "${{ steps.release_ref.outputs.target_commit }}" \
+            --expected-tree "${{ steps.release_ref.outputs.target_tree }}"
+
       - name: Upload installer artifact
         uses: actions/upload-artifact@v7
         with:
           name: windows-installer
           path: |
-            build/CivicRecordsAI-*-Setup.exe
-            build/CivicRecordsAI-*-Setup.exe.sha256
+            release-assets/*
+            release-attestation.json
+            release-attestation.json.bundle
 
   create-release:
     name: Create GitHub Release
@@ -133,6 +220,30 @@ jobs:
         with:
           path: artifacts/
 
+      - name: Write release notes with exact provenance command
+        shell: bash
+        run: |
+          VERSION="${GITHUB_REF_NAME#v}"
+          cp .github/release-notes-preamble.md release-notes.md
+          cat >> release-notes.md <<EOF
+
+## Verify release provenance
+
+\`\`\`bash
+cosign verify-blob release-attestation.json \\
+  --bundle release-attestation.json.bundle \\
+  --certificate-identity "https://github.com/${{ github.repository }}/.github/workflows/release.yml@refs/tags/${{ github.ref_name }}" \\
+  --certificate-oidc-issuer https://token.actions.githubusercontent.com
+
+sha256sum -c CivicRecordsAI-${VERSION}-Setup.exe.sha256
+python scripts/verify-release-provenance.py "${{ github.ref_name }}" \\
+  --repo "${{ github.repository }}" \\
+  --attestation release-attestation.json \\
+  --bundle release-attestation.json.bundle \\
+  --artifacts-dir .
+\`\`\`
+EOF
+
       - name: Create draft release
         env:
           GH_TOKEN: ${{ github.token }}
@@ -141,11 +252,12 @@ jobs:
             --draft \
             --generate-notes \
             --title "CivicRecords AI ${{ github.ref_name }}" \
-            --notes-file .github/release-notes-preamble.md || \
+            --notes-file release-notes.md || \
           gh release create "${{ github.ref_name }}" \
             --draft \
             --generate-notes \
-            --title "CivicRecords AI ${{ github.ref_name }}"
+            --title "CivicRecords AI ${{ github.ref_name }}" \
+            --notes-file release-notes.md
 
       - name: Upload Windows installer + checksum
         env:
@@ -167,7 +279,17 @@ jobs:
           fi
           echo "Uploading installer: $EXE"
           echo "Uploading checksum:  $SHA"
-          gh release upload "${{ github.ref_name }}" "$EXE" "$SHA" --clobber
+          ATTEST=$(find artifacts -name 'release-attestation.json' -type f | head -1)
+          BUNDLE=$(find artifacts -name 'release-attestation.json.bundle' -type f | head -1)
+          if [ -z "$ATTEST" ] || [ -z "$BUNDLE" ]; then
+            echo "::error::Could not locate release attestation + bundle in artifacts/"
+            echo "Contents of artifacts/:"
+            find artifacts -type f || true
+            exit 1
+          fi
+          echo "Uploading attestation: $ATTEST"
+          echo "Uploading bundle:      $BUNDLE"
+          gh release upload "${{ github.ref_name }}" "$EXE" "$SHA" "$ATTEST" "$BUNDLE" --clobber
 
       - name: Publish release
         env:

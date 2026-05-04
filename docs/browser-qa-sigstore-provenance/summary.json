@@ -1,0 +1,30 @@
+[
+  {
+    "viewport": "desktop",
+    "hasSigstore": true,
+    "hasRetrofit": true,
+    "overflowX": false,
+    "activeBefore": "BODY",
+    "focusAfterTab": {
+      "tag": "A",
+      "text": "CivicRecords AI",
+      "href": "#"
+    },
+    "consoleMessages": [],
+    "screenshot": "C:\\Users\\scott\\OneDrive\\Desktop\\Claude\\civicrecords-ai\\docs\\browser-qa-sigstore-provenance\\desktop.png"
+  },
+  {
+    "viewport": "mobile-390",
+    "hasSigstore": true,
+    "hasRetrofit": true,
+    "overflowX": false,
+    "activeBefore": "BODY",
+    "focusAfterTab": {
+      "tag": "A",
+      "text": "CivicRecords AI",
+      "href": "#"
+    },
+    "consoleMessages": [],
+    "screenshot": "C:\\Users\\scott\\OneDrive\\Desktop\\Claude\\civicrecords-ai\\docs\\browser-qa-sigstore-provenance\\mobile-390.png"
+  }
+]

@@ -15,6 +15,18 @@ on:
         description: Expected target tree SHA from the verified release build
         required: false
         type: string
+      attestation:
+        description: Optional path to a prepared release-attestation.json in the checked-out tree
+        required: false
+        type: string
+      bundle:
+        description: Optional path to a prepared release-attestation.json.bundle in the checked-out tree
+        required: false
+        type: string
+      artifacts_dir:
+        description: Optional path to release artifacts named by the attestation
+        required: false
+        type: string
       fixtures_only:
         description: Run only CivicCore's adversarial fixture suite as a hypothetical corrected-release dry-run
         required: false
@@ -38,35 +50,17 @@ jobs:
           python-version: "3.13"
       - name: Install CivicCore release-provenance helper
         run: python -m pip install "git+https://github.com/CivicSuite/civiccore.git@main"
-      - name: Verify hypothetical corrected-release fixture
-        run: |
-          mkdir -p .tmp-release-provenance-fixtures
-          cat > .tmp-release-provenance-fixtures/known-good.json <<'JSON'
-          {
-            "name": "known-good signed web-flow release tag",
-            "tag_name": "vfixture-good",
-            "expected": "pass",
-            "expected_tree": "tree-good",
-            "responses": {
-              "ref": {"object": {"type": "tag", "sha": "tag-good"}},
-              "tag": {
-                "tag": "vfixture-good",
-                "tagger": {"name": "GitHub", "email": "noreply@github.com"},
-                "object": {"type": "commit", "sha": "commit-good"},
-                "verification": {"verified": true, "reason": "valid"}
-              },
-              "commit": {
-                "sha": "commit-good",
-                "commit": {
-                  "committer": {"name": "GitHub", "email": "noreply@github.com"},
-                  "tree": {"sha": "tree-good"},
-                  "verification": {"verified": true, "reason": "valid"}
-                }
-              }
-            }
-          }
-          JSON
-          python -m civiccore.release_provenance --fixtures-dir .tmp-release-provenance-fixtures
+      - name: Checkout canonical CivicCore provenance fixtures
+        uses: actions/checkout@v6
+        with:
+          repository: CivicSuite/civiccore
+          ref: main
+          path: .tmp-civiccore
+      - name: Verify adversarial release provenance fixtures
+        run: python -m civiccore.release_provenance --fixtures-dir .tmp-civiccore/tests/fixtures/release_provenance
+      - name: Install cosign
+        if: ${{ inputs.fixtures_only != 'true' }}
+        uses: sigstore/cosign-installer@v4.1.1
       - name: Verify current release tag provenance
         if: ${{ inputs.fixtures_only != 'true' }}
         env:
@@ -74,8 +68,14 @@ jobs:
           RELEASE_TAG: ${{ inputs.tag }}
           EXPECTED_TARGET: ${{ inputs.expected_target }}
           EXPECTED_TREE: ${{ inputs.expected_tree }}
-        run: >
-          python scripts/verify-release-provenance.py "${RELEASE_TAG}"
-          --repo "${{ github.repository }}"
-          --expected-target "${EXPECTED_TARGET}"
-          --expected-tree "${EXPECTED_TREE}"
+          ATTESTATION: ${{ inputs.attestation }}
+          BUNDLE: ${{ inputs.bundle }}
+          ARTIFACTS_DIR: ${{ inputs.artifacts_dir }}
+        run: |
+          cmd=(python scripts/verify-release-provenance.py "${RELEASE_TAG}" --repo "${{ github.repository }}")
+          if [ -n "${ATTESTATION}" ]; then cmd+=(--attestation "${ATTESTATION}"); fi
+          if [ -n "${BUNDLE}" ]; then cmd+=(--bundle "${BUNDLE}"); fi
+          if [ -n "${ARTIFACTS_DIR}" ]; then cmd+=(--artifacts-dir "${ARTIFACTS_DIR}"); fi
+          if [ -n "${EXPECTED_TARGET}" ]; then cmd+=(--expected-target "${EXPECTED_TARGET}"); fi
+          if [ -n "${EXPECTED_TREE}" ]; then cmd+=(--expected-tree "${EXPECTED_TREE}"); fi
+          "${cmd[@]}"
