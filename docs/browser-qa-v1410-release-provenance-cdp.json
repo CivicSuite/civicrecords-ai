@@ -1,0 +1,33 @@
+{
+  "url": "file:///C:/Users/scott/OneDrive/Desktop/Claude/civicrecords-ai/docs/index.html",
+  "desktop": {
+    "title": "CivicRecords AI \u2014 Open-Source AI for Municipal Open Records",
+    "innerWidth": 1440,
+    "scrollWidth": 1440,
+    "bodyScrollWidth": 1440,
+    "horizontalOverflow": false,
+    "activeElement": "CivicRecords AI",
+    "hasProvenance": true,
+    "hasVerifiedWarning": true,
+    "hasCorrection": true,
+    "hasRunbook": true,
+    "consoleMessages": [],
+    "consoleErrorCount": 0,
+    "screenshot": "C:\\Users\\scott\\OneDrive\\Desktop\\Claude\\civicrecords-ai\\docs\\browser-qa-v1410-release-provenance-desktop.png"
+  },
+  "mobile": {
+    "title": "CivicRecords AI \u2014 Open-Source AI for Municipal Open Records",
+    "innerWidth": 390,
+    "scrollWidth": 390,
+    "bodyScrollWidth": 390,
+    "horizontalOverflow": false,
+    "activeElement": "CivicRecords AI",
+    "hasProvenance": true,
+    "hasVerifiedWarning": true,
+    "hasCorrection": true,
+    "hasRunbook": true,
+    "consoleMessages": [],
+    "consoleErrorCount": 0,
+    "screenshot": "C:\\Users\\scott\\OneDrive\\Desktop\\Claude\\civicrecords-ai\\docs\\browser-qa-v1410-release-provenance-mobile.png"
+  }
+}

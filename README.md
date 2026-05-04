@@ -78,6 +78,18 @@ CivicRecords AI backend installs `civiccore` (the shared CivicSuite schema + mig
 
 Migrations run in two layers: `civiccore` first (creates/updates the 16 shared tables), then this repo's Alembic chain on top. See [ADR-0003](https://github.com/CivicSuite/civicsuite/blob/main/docs/architecture/ADR-0003-civiccore-alembic-baseline-strategy.md) for the full gate contract.
 
+### Release provenance
+
+CivicRecords AI now wires release preflight to CivicCore's canonical
+`civiccore.release_provenance` helper. This matters because GitHub release pages
+can show the target commit as "Verified" even when the release tag is
+lightweight or unsigned. Treat that badge as a commit signal only; the actual
+release-tag gate lives in [docs/ops/release-signing.md](docs/ops/release-signing.md).
+
+The current public `v1.4.10` release is in the Tier 1 correction window because
+its tag is lightweight. Do not republish, mirror, or rely on it as the corrected
+provenance baseline until the Tier 1 correction is complete.
+
 ## Architecture
 
 ### Deployment stack

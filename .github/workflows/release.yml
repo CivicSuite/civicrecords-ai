@@ -27,6 +27,28 @@ jobs:
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python for release provenance preflight
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.13"
+
+      - name: Install CivicCore release-provenance helper
+        shell: bash
+        run: python -m pip install "git+https://github.com/CivicSuite/civiccore.git@main"
+
+      - name: Verify release provenance before building installer
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          expected_tree="$(git show -s --format=%T "${{ github.sha }}")"
+          python scripts/verify-release-provenance.py "${{ github.ref_name }}" \
+            --repo "${{ github.repository }}" \
+            --expected-target "${{ github.sha }}" \
+            --expected-tree "$expected_tree"
 
       - name: Install Inno Setup
         run: choco install innosetup -y
