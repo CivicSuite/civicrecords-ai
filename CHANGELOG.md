@@ -14,6 +14,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `release-attestation.json`, verify it before publication, and upload the
   attestation plus bundle alongside the installer and checksum. No existing
   release, tag, or release notes were modified by this change.
+- Release-preflight fixture checks invoke the local provenance wrapper script so
+  Actions logs stay free of Python module re-execution warnings.
 
 ## [1.4.10] - 2026-05-03
 
