@@ -6,7 +6,17 @@ import sys
 from pathlib import Path
 
 
-REPO_ROOT = Path(__file__).resolve().parents[2]
+def find_repo_root() -> Path:
+    for candidate in Path(__file__).resolve().parents:
+        if (
+            (candidate / "docs" / "ops" / "tier1-retrofit-ledger.json").exists()
+            and (candidate / "scripts" / "check-tier1-ledger.py").exists()
+        ):
+            return candidate
+    raise AssertionError("Could not locate CivicRecords AI repository root.")
+
+
+REPO_ROOT = find_repo_root()
 LEDGER = REPO_ROOT / "docs" / "ops" / "tier1-retrofit-ledger.json"
 CHECK = REPO_ROOT / "scripts" / "check-tier1-ledger.py"
 
