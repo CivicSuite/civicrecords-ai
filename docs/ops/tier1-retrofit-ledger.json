@@ -1,0 +1,40 @@
+{
+  "schema_version": 1,
+  "sprint": "CO-4",
+  "repo": "CivicSuite/civicrecords-ai",
+  "status": "closed_by_repo_ledger_no_public_release_artifact_changes",
+  "generated_at": "2026-05-05",
+  "upstream_attested_baseline": {
+    "repo": "CivicSuite/civiccore",
+    "tag": "v0.22.1",
+    "release_url": "https://github.com/CivicSuite/civiccore/releases/tag/v0.22.1",
+    "target_commit": "46c99854adbce6dc8a056ae5215278bb1eba9a19",
+    "attestation_status": "sigstore_verified"
+  },
+  "target_release_count": 1,
+  "entries": [
+    {
+      "tag": "v1.4.10",
+      "published_at": "2026-05-03T08:40:47Z",
+      "release_url": "https://github.com/CivicSuite/civicrecords-ai/releases/tag/v1.4.10",
+      "tag_ref_type": "commit",
+      "tag_ref_sha": "d50b9ee75f5e0ce29fddfb22e5e53c4943c041b0",
+      "target_commit": "d50b9ee75f5e0ce29fddfb22e5e53c4943c041b0",
+      "release_assets": [
+        {
+          "name": "CivicRecordsAI-1.4.10-Setup.exe",
+          "sha256": "7123774d631a39ea8f4e54a1915479e9e5fb543fae61c1a739a5460a6a2460f8"
+        },
+        {
+          "name": "CivicRecordsAI-1.4.10-Setup.exe.sha256",
+          "sha256": "63c7070f25be96169b5645fb3beeca5938ef97726ca6467d0356e59c0f4388f5"
+        }
+      ],
+      "workflow_run_url": "https://github.com/CivicSuite/civicrecords-ai/actions/runs/25274510497",
+      "ledger_status": "pre_gate_no_attestation_do_not_promote",
+      "attestation_status": "none_pre_gate",
+      "rationale": "The public release assets contain the unsigned Windows installer and checksum only. The original tag workflow artifact download also contains no release-attestation.json or release-attestation.json.bundle, so there is no existing Sigstore attestation to promote.",
+      "downstream_rule": "Retain for historical installs only. Do not mirror or promote v1.4.10 as an attested provenance baseline."
+    }
+  ]
+}

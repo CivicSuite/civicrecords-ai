@@ -7,7 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- Added the CO-4 Tier 1 retrofit ledger for `v1.4.10`, marking the release as
+  historical pre-gate/no-attestation/do-not-promote without changing public
+  release notes, tags, or assets.
+
 ### Changed
+- Updated the active CivicCore dependency and current install/provenance docs to
+  the first attested CivicCore baseline, `v0.22.1`.
 - Wired the GitHub release workflow to the new CivicCore Sigstore attestation
   provenance model. Future release builds run the canonical adversarial fixture
   suite first, build the unsigned Windows installer, generate and cosign
