@@ -74,7 +74,7 @@ bash install.sh
 
 ### Phase 1 migration layer
 
-CivicRecords AI backend installs `civiccore` (the shared CivicSuite schema + migration runtime) as a dependency. During the release-hardening window before PyPI publication, `backend/pyproject.toml` points at a versioned GitHub release wheel rather than a Git SHA. This keeps the dependency reproducible without requiring `git` inside the backend image. The current development line targets the published civiccore v0.22.0 wheel so records-ai can consume shared search, onboarding, connector security, startup config validation, schedule validation, datasource source-list status projection, ingest contracts, persisted audit-log hash/verification primitives, live connector retry/circuit-breaker state transitions, vendor-delta request planning, and reusable mock-city contract suites from CivicCore instead of carrying local copies. The shipped civiccore dependency surface already covers the LLM provider abstraction, prompt-template engine, model registry, audit primitives, provenance contracts, city-profile schema, connector manifests, export-bundle helpers, onboarding interview field/order lifecycle contract, connector security/config substrate, storage-neutral persisted audit-log verification, reusable live-sync operator-state helpers, source-list status projection helpers, vendor delta URL planning, reusable startup config validation and cron schedule helpers, and reusable mock municipal environment contracts for connector, IdP, and backup-retention rehearsals.
+CivicRecords AI backend installs `civiccore` (the shared CivicSuite schema + migration runtime) as a dependency. During the release-hardening window before PyPI publication, `backend/pyproject.toml` points at a versioned GitHub release wheel rather than a Git SHA. This keeps the dependency reproducible without requiring `git` inside the backend image. The current development line targets the published, Sigstore-attested civiccore v0.22.1 wheel so records-ai can consume shared search, onboarding, connector security, startup config validation, schedule validation, datasource source-list status projection, ingest contracts, persisted audit-log hash/verification primitives, live connector retry/circuit-breaker state transitions, vendor-delta request planning, and reusable mock-city contract suites from CivicCore instead of carrying local copies. The shipped civiccore dependency surface already covers the LLM provider abstraction, prompt-template engine, model registry, audit primitives, provenance contracts, city-profile schema, connector manifests, export-bundle helpers, onboarding interview field/order lifecycle contract, connector security/config substrate, storage-neutral persisted audit-log verification, reusable live-sync operator-state helpers, source-list status projection helpers, vendor delta URL planning, reusable startup config validation and cron schedule helpers, and reusable mock municipal environment contracts for connector, IdP, and backup-retention rehearsals.
 
 Migrations run in two layers: `civiccore` first (creates/updates the 16 shared tables), then this repo's Alembic chain on top. See [ADR-0003](https://github.com/CivicSuite/civicsuite/blob/main/docs/architecture/ADR-0003-civiccore-alembic-baseline-strategy.md) for the full gate contract.
 
@@ -88,10 +88,12 @@ trust artifact for post-baseline releases is the Sigstore-signed
 `release-attestation.json` plus bundle documented in
 [docs/ops/release-signing.md](docs/ops/release-signing.md).
 
-The current public `v1.4.10` release is in the Tier 1 correction window because
-its tag predates the attestation model. Do not republish, mirror, or rely on it
-as the corrected provenance baseline until the authorized attestation retrofit is
-complete.
+The current public `v1.4.10` release is a historical pre-gate artifact because
+its tag predates the attestation model and its public release assets do not
+include `release-attestation.json` or `release-attestation.json.bundle`. CO-4
+records the decision in
+[docs/ops/tier1-retrofit-ledger.md](docs/ops/tier1-retrofit-ledger.md): do not
+republish, mirror, or promote `v1.4.10` as an attested provenance baseline.
 
 ## Architecture
 

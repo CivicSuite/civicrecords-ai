@@ -17,7 +17,7 @@ dependencies = [
     "python-jose[cryptography]>=3.5.0",
     "passlib[bcrypt]>=1.7.4",
     "celery>=5.6.0",
-    "civiccore @ https://github.com/CivicSuite/civiccore/releases/download/v0.22.0/civiccore-0.22.0-py3-none-any.whl",
+    "civiccore @ https://github.com/CivicSuite/civiccore/releases/download/v0.22.1/civiccore-0.22.1-py3-none-any.whl",
     "redis>=5.0.0,<8.0.0",
     "httpx>=0.28.0",
     "pdfplumber>=0.11.0",
