@@ -364,15 +364,18 @@ jobs:
             exit 1
           fi
 
+      - name: Install Playwright Chromium
+        # `npm test` runs an inline Playwright spec (the skip-link regression
+        # guard), so the browser must be installed BEFORE the vitest step, not
+        # after it.
+        run: npx playwright install chromium
+
       - name: Run vitest suite
         # package.json "test" is already `vitest run`, so no -- --run needed.
         run: npm test
 
       - name: Production build
         run: npm run build
-
-      - name: Install Playwright Chromium
-        run: npx playwright install chromium
 
       - name: Accessibility gate (axe critical/serious)
         run: npm run a11y:ci
