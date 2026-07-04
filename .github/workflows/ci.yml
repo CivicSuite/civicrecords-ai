@@ -51,7 +51,7 @@ jobs:
   # -------------------------------------------------------------------------
   backend:
     name: Backend (pytest via docker compose)
-    runs-on: [self-hosted, linux, x64]
+    runs-on: ubuntu-latest
     timeout-minutes: 25
 
     steps:
@@ -214,7 +214,7 @@ jobs:
   # -------------------------------------------------------------------------
   bootstrap-failure:
     name: T2C bootstrap-failure smoke test
-    runs-on: [self-hosted, linux, x64]
+    runs-on: ubuntu-latest
     timeout-minutes: 10
 
     steps:
@@ -323,7 +323,7 @@ jobs:
   # -------------------------------------------------------------------------
   frontend:
     name: Frontend (vitest + build)
-    runs-on: [self-hosted, linux, x64]
+    runs-on: ubuntu-latest
     timeout-minutes: 10
     defaults:
       run:
@@ -364,15 +364,18 @@ jobs:
             exit 1
           fi
 
+      - name: Install Playwright Chromium
+        # `npm test` runs an inline Playwright spec (the skip-link regression
+        # guard), so the browser must be installed BEFORE the vitest step, not
+        # after it.
+        run: npx playwright install chromium
+
       - name: Run vitest suite
         # package.json "test" is already `vitest run`, so no -- --run needed.
         run: npm test
 
       - name: Production build
         run: npm run build
-
-      - name: Install Playwright Chromium
-        run: npx playwright install chromium
 
       - name: Accessibility gate (axe critical/serious)
         run: npm run a11y:ci
@@ -382,7 +385,7 @@ jobs:
 
   recovery-gates:
     name: Release recovery gates
-    runs-on: [self-hosted, linux, x64]
+    runs-on: ubuntu-latest
     timeout-minutes: 5
 
     steps:
@@ -413,7 +416,7 @@ jobs:
   # -------------------------------------------------------------------------
   ruff:
     name: ruff (lint)
-    runs-on: [self-hosted, linux, x64]
+    runs-on: ubuntu-latest
     timeout-minutes: 5
 
     steps:
