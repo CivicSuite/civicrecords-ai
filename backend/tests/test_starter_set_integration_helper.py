@@ -35,7 +35,7 @@ def _write_umbrella_fixture(root: Path) -> None:
                     },
                     {
                         "id": "civicclerk",
-                        "current_version": "1.0.1",
+                        "current_version": "1.0.4",
                         "selectable": True,
                         "dependencies": ["civiccore"],
                     },
@@ -48,7 +48,7 @@ def _write_umbrella_fixture(root: Path) -> None:
         "\n".join(
             [
                 "CivicSunshine reports v1.7.3",
-                "CivicMeetings reports v1.0.1 with CivicCore v1.2.0",
+                "CivicMeetings reports v1.0.4 with CivicCore v1.2.0",
                 "--staff-mode bearer --workflow-proof",
                 "Package Cleanroom Contract",
                 "workflow_proof_requested=true",
