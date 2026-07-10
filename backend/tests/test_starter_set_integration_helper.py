@@ -48,11 +48,11 @@ def _write_umbrella_fixture(root: Path) -> None:
         "\n".join(
             [
                 "CivicSunshine reports v1.7.3",
-                "CivicClerk reports v1.0.1 with CivicCore v1.2.0",
+                "CivicMeetings reports v1.0.1 with CivicCore v1.2.0",
                 "--staff-mode bearer --workflow-proof",
                 "Package Cleanroom Contract",
                 "workflow_proof_requested=true",
-                "not yet a claim that CivicSunshine and CivicClerk exchange workflow records",
+                "not yet a claim that CivicSunshine and CivicMeetings exchange workflow records",
             ]
         ),
         encoding="utf-8",
@@ -86,7 +86,7 @@ def test_starter_set_integration_passes_with_umbrella_contract(tmp_path: Path) -
     assert "release_evidence_ready=true" in result.stdout
     assert "[PASS] clerk-core profile order" in result.stdout
     assert "[PASS] CivicSunshine module contract" in result.stdout
-    assert "[PASS] CivicClerk pairing" in result.stdout
+    assert "[PASS] CivicMeetings pairing" in result.stdout
     assert "[PASS] starter-set release contract" in result.stdout
     assert "[PASS] starter-set archives" in result.stdout
     assert "STARTER-SET-INTEGRATION: RELEASE-EVIDENCE-READY" in result.stdout
