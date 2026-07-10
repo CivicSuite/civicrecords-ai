@@ -1,7 +1,7 @@
 """T5B (Tier 5 Blocker B) — first-boot baseline seeding.
 
 Runs automatically from ``app.main`` lifespan after the first admin user
-has been created. Populates the three baseline datasets CivicRecords AI
+has been created. Populates the three baseline datasets CivicSunshine
 requires for a fresh deployment to be usable:
 
   1. **Exemption rules** — 175 state-scoped keyword rules across 50 states + DC from

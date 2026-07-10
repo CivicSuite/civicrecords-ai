@@ -114,7 +114,7 @@ async def lifespan(app: FastAPI):
 
 def create_app() -> FastAPI:
     app = FastAPI(
-        title="CivicRecords AI",
+        title="CivicSunshine",
         description="AI-powered open records support for American cities",
         version=APP_VERSION,
         lifespan=lifespan,

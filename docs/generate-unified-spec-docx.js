@@ -253,7 +253,7 @@ const doc = new Document({
         new Paragraph({
           alignment: AlignmentType.CENTER,
           spacing: { after: 200 },
-          children: [new TextRun({ text: "CivicRecords AI", size: 48 * 2, bold: true, font: "Arial", color: colors.primaryDark })],
+          children: [new TextRun({ text: "CivicSunshine", size: 48 * 2, bold: true, font: "Arial", color: colors.primaryDark })],
         }),
         new Paragraph({
           alignment: AlignmentType.CENTER,
@@ -310,7 +310,7 @@ const doc = new Document({
         default: new Header({
           children: [new Paragraph({
             border: { bottom: { style: BorderStyle.SINGLE, size: 1, color: colors.border, space: 4 } },
-            children: [new TextRun({ text: "CivicRecords AI \u2014 Unified Design Specification v2.0", size: 9 * 2, font: "Arial", color: colors.muted })],
+            children: [new TextRun({ text: "CivicSunshine \u2014 Unified Design Specification v2.0", size: 9 * 2, font: "Arial", color: colors.muted })],
           })],
         }),
       },
@@ -328,7 +328,7 @@ const doc = new Document({
       },
       children: [
         h2("How to Read This Document"),
-        p("This is the single source of truth for CivicRecords AI. Every feature, data model change, design decision, and implementation detail lives here. Each feature is tagged with a phase:"),
+        p("This is the single source of truth for CivicSunshine. Every feature, data model change, design decision, and implementation detail lives here. Each feature is tagged with a phase:"),
         spacer(),
         bulletRuns([{ text: "[BUILT]", bold: true, color: colors.success }, { text: " \u2014 Available since v0.1.0; tested through v1.4.1" }]),
         bulletRuns([{ text: "[REDESIGN]", bold: true, color: colors.warning }, { text: " \u2014 Built but needs UI/UX overhaul" }]),
@@ -820,7 +820,7 @@ const doc = new Document({
         bullet("Open records library with curated collections"),
         bullet("Reporting dashboards and trend analytics"),
         bullet("Public request archive (closed requests, opt-in)"),
-        bullet("Federation between CivicRecords AI instances"),
+        bullet("Federation between CivicSunshine instances"),
 
         new Paragraph({ children: [new PageBreak()] }),
 
@@ -828,8 +828,8 @@ const doc = new Document({
         h1("12. Universal Discovery & Connection Architecture"),
 
         h3("12.0 Why This Section Matters"),
-        p("Open records requests can touch any system a city operates. Clerks often spend more time finding records than reviewing them. This section defines how CivicRecords AI finds, connects to, and monitors data sources automatically."),
-        quote("Instead of you tracking down every system that might have responsive records, CivicRecords AI learns what systems your city uses and goes looking for you. You still decide what gets released."),
+        p("Open records requests can touch any system a city operates. Clerks often spend more time finding records than reviewing them. This section defines how CivicSunshine finds, connects to, and monitors data sources automatically."),
+        quote("Instead of you tracking down every system that might have responsive records, CivicSunshine learns what systems your city uses and goes looking for you. You still decide what gets released."),
 
         h3("12.1 Municipal Knowledge Graph"),
         p("The system ships with a curated Municipal Systems Catalog \u2014 a structured graph mapping functional domains to systems, data shapes, access protocols, and discovery hints. Organized by 12 functional domains."),
@@ -1070,7 +1070,7 @@ Packer.toBuffer(doc).then(buffer => {
   // The spec is currently at v3.1 (see §1 of UNIFIED-SPEC.md); when the
   // spec bumps to v3.2 or higher, add a new pinned name here and keep the
   // old ones as archival.
-  const pinnedV31 = path.join(__dirname, "CivicRecordsAI-UnifiedSpec-v3.1.docx");
+  const pinnedV31 = path.join(__dirname, "CivicSunshine-UnifiedSpec-v3.1.docx");
   fs.writeFileSync(pinnedV31, buffer);
   console.log(`Written to ${pinnedV31} (${(buffer.length / 1024).toFixed(0)} KB)`);
 });

@@ -1,5 +1,5 @@
 #!/bin/bash
-# Build the CivicRecords AI Windows installer using Inno Setup.
+# Build the CivicSunshine Windows installer using Inno Setup.
 #
 # T5E (Tier 5 Blocker E) — UNSIGNED BY DESIGN. No code-signing step here.
 # Scott locked B3 signing posture = α (unsigned) on 2026-04-22.
@@ -14,7 +14,7 @@ set -e
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 REPO_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
 
-echo "=== Building CivicRecords AI Windows Installer (UNSIGNED) ==="
+echo "=== Building CivicSunshine Windows Installer (UNSIGNED) ==="
 echo "Repo root: $REPO_ROOT"
 
 # ─── Locate Inno Setup compiler ───────────────────────────────────────────
@@ -137,10 +137,10 @@ echo "Compiling installer…"
 ISS_SCRIPT_WIN="$(cygpath -w "$REPO_ROOT/installer/windows/civicrecords-ai.iss")"
 MSYS_NO_PATHCONV=1 MSYS2_ARG_CONV_EXCL='*' "$ISCC" "/DMyAppVersion=$APP_VERSION" "$ISS_SCRIPT_WIN"
 
-# OutputBaseFilename in the .iss is CivicRecordsAI-{#MyAppVersion}-Setup,
+# OutputBaseFilename in the .iss is CivicSunshine-{#MyAppVersion}-Setup,
 # so the expected artifact name below is derived from the same resolved
 # version. Any drift here is a bug in this script or in the .iss.
-OUTPUT="$REPO_ROOT/build/CivicRecordsAI-${APP_VERSION}-Setup.exe"
+OUTPUT="$REPO_ROOT/build/CivicSunshine-${APP_VERSION}-Setup.exe"
 if [ -f "$OUTPUT" ]; then
     SIZE=$(du -h "$OUTPUT" | cut -f1)
     # SHA-256 for release-page verification (operators can compare

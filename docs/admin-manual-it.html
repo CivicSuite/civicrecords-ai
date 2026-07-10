@@ -3,10 +3,10 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>CivicRecords AI &mdash; IT Administrator Manual v1.4.1</title>
+<title>CivicSunshine &mdash; IT Administrator Manual v1.4.1</title>
 <style>
 /* ═══════════════════════════════════════════════════════════════════════════
-   CivicRecords AI — IT Administrator Manual
+   CivicSunshine — IT Administrator Manual
    Version 1.4.1 | Professional Operations Manual
    ═══════════════════════════════════════════════════════════════════════════ */
 
@@ -321,7 +321,7 @@ ul ul, ol ol { margin-top: 4px; margin-bottom: 4px; }
      TOP NAVIGATION
      ═══════════════════════════════════════════════════════════════════════ -->
 <nav class="topnav">
-  <span class="brand">CivicRecords AI</span>
+  <span class="brand">CivicSunshine</span>
   <a href="#overview">Overview</a>
   <a href="#hardware">Hardware</a>
   <a href="#installation">Installation</a>
@@ -345,7 +345,7 @@ ul ul, ol ol { margin-top: 4px; margin-bottom: 4px; }
      ═══════════════════════════════════════════════════════════════════════ -->
 <header class="cover">
   <h1>IT Administrator Manual</h1>
-  <div class="subtitle">CivicRecords AI &mdash; AI-Powered Open Records Support for American Cities</div>
+  <div class="subtitle">CivicSunshine &mdash; AI-Powered Open Records Support for American Cities</div>
   <div class="meta">
     <span class="badge badge-version">v1.4.1</span>
     <span class="badge badge-date">April 2026</span>
@@ -369,7 +369,7 @@ ul ul, ol ol { margin-top: 4px; margin-bottom: 4px; }
   <ul>
     <li><strong>T6 at-rest encryption for connector credentials (ENG-001 closed).</strong> <code>data_sources.connection_config</code> is now stored as a Fernet envelope (AES-128-CBC + HMAC-SHA256). A new required <code>ENCRYPTION_KEY</code> env var drives the encryption; the installer auto-generates a Fernet key on fresh install and prints a loud &quot;BACK IT UP SEPARATELY FROM YOUR DATABASE&quot; banner. Operator section: <a href="https://github.com/CivicSuite/civicrecords-ai/blob/master/USER-MANUAL.md">USER-MANUAL.md §B.3.2</a>. Spec: <a href="https://github.com/CivicSuite/civicrecords-ai/blob/master/docs/UNIFIED-SPEC.md">UNIFIED-SPEC §8.10</a>. Reversible Alembic migration <code>019_encrypt_connection_config</code>. <em>Losing the key means losing decryption access to every connector&apos;s credentials — no recovery path in v1.2.0.</em></li>
     <li><strong>T5D install-time portal switch.</strong> New <code>PORTAL_MODE</code> env var (<code>private</code> default, <code>public</code> opt-in). Private mode is the existing staff-only posture; public mode exposes exactly three surfaces — landing page, resident-registration path, authenticated records-request submission for <code>UserRole.PUBLIC</code>. Nothing else. Operator section: USER-MANUAL.md §B.3.1. Spec: UNIFIED-SPEC §8.9.</li>
-    <li><strong>T5E Windows unsigned double-click installer.</strong> Real <code>.exe</code> shipped as a GitHub Release asset (<code>CivicRecordsAI-1.2.0-Setup.exe</code> + <code>.sha256</code>). <strong>Unsigned by design</strong> per locked signing posture α — SmartScreen will show &quot;Windows protected your PC — Unknown publisher.&quot; Remediation: <strong>More info → Run anyway</strong>, then confirm UAC. Two-shortcut flow: <em>Start CivicRecords AI</em> (daily <code>docker compose up -d</code>) and <em>Install or Repair CivicRecords AI</em> (full bootstrap + model pick + pull). macOS/Linux remain on the guided-script path (<code>install.sh</code>).</li>
+    <li><strong>T5E Windows unsigned double-click installer.</strong> Real <code>.exe</code> shipped as a GitHub Release asset (<code>CivicSunshine-1.2.0-Setup.exe</code> + <code>.sha256</code>). <strong>Unsigned by design</strong> per locked signing posture α — SmartScreen will show &quot;Windows protected your PC — Unknown publisher.&quot; Remediation: <strong>More info → Run anyway</strong>, then confirm UAC. Two-shortcut flow: <em>Start CivicSunshine</em> (daily <code>docker compose up -d</code>) and <em>Install or Repair CivicSunshine</em> (full bootstrap + model pick + pull). macOS/Linux remain on the guided-script path (<code>install.sh</code>).</li>
     <li><strong>T5C 4-model Gemma 4 installer picker.</strong> <code>gemma4:e4b</code> is the default selected model. The fake tags <code>gemma4:12b</code> and <code>gemma4:27b</code> that appeared in earlier hardware-detect scripts have been purged. <code>gemma4:26b</code> / <code>gemma4:31b</code> are still selectable but gated behind an explicit &quot;requires stronger hardware&quot; acknowledgement against the locked 32 GB target profile. The embedding model <code>nomic-embed-text</code> is auto-pulled alongside the selected LLM.</li>
     <li><strong>T5A/T5B operator surface.</strong> T5A makes the single-phase adaptive onboarding interview actually persist each answer and transition <code>onboarding_status</code> through the <code>not_started → in_progress → complete</code> lifecycle. T5B auto-seeds 175 state-scoped exemption rules, 5 compliance templates, and 12 notification templates on first boot via <code>app/main.lifespan</code>; idempotent via skip-if-exists so admin customizations survive re-seeds.</li>
   </ul>
@@ -386,7 +386,7 @@ ul ul, ol ol { margin-top: 4px; margin-bottom: 4px; }
 
   <h3>Architecture Summary</h3>
   <p>
-    CivicRecords AI is a locally-hosted, Docker Compose-based application that assists municipal clerks in processing open records (public records / FOIA) requests. The system runs entirely on-premises with no cloud dependencies, no telemetry, and no outbound data transmission. All AI inference is performed locally via Ollama using open-weight models.
+    CivicSunshine is a locally-hosted, Docker Compose-based application that assists municipal clerks in processing open records (public records / FOIA) requests. The system runs entirely on-premises with no cloud dependencies, no telemetry, and no outbound data transmission. All AI inference is performed locally via Ollama using open-weight models.
   </p>
   <p>
     The architecture follows a standard three-tier pattern: a React single-page application serves as the administrative front end, communicating with a FastAPI REST backend, which in turn interfaces with PostgreSQL (with pgvector for semantic search), Redis (for task queuing), and Ollama (for local LLM inference). Asynchronous document ingestion is handled by Celery workers with Redis as the message broker.
@@ -479,7 +479,7 @@ ul ul, ol ol { margin-top: 4px; margin-bottom: 4px; }
 
   <h3>License Compliance</h3>
   <p>
-    CivicRecords AI is released under the <strong>Apache License 2.0</strong>. All runtime dependencies use permissive or weak-copyleft licenses (MIT, Apache 2.0, BSD, LGPL, MPL). Redis is pinned to version 7.2 (BSD licensed); version 8.x and later changed to a non-permissive license and must not be used.
+    CivicSunshine is released under the <strong>Apache License 2.0</strong>. All runtime dependencies use permissive or weak-copyleft licenses (MIT, Apache 2.0, BSD, LGPL, MPL). Redis is pinned to version 7.2 (BSD licensed); version 8.x and later changed to a non-permissive license and must not be used.
   </p>
   <div class="callout callout-warn">
     <div class="callout-title">Warning</div>
@@ -625,7 +625,7 @@ civicrecords-worker Up (healthy)</span>
     The application refuses to start if <code>JWT_SECRET</code> is left at its default placeholder value. The installer generates a secure secret automatically, but if you are configuring <code>.env</code> manually, generate one with: <code>openssl rand -hex 32</code>
   </div>
   <p>
-    After installation, navigate to <code>http://&lt;server-ip&gt;:8080</code> to access the admin panel and log in with the configured credentials. CivicRecords AI locks staff/admin screens until the initial administrator password is changed from the account screen.
+    After installation, navigate to <code>http://&lt;server-ip&gt;:8080</code> to access the admin panel and log in with the configured credentials. CivicSunshine locks staff/admin screens until the initial administrator password is changed from the account screen.
   </p>
 </div>
 
@@ -958,7 +958,7 @@ civicrecords-worker Up (healthy)</span>
 
   <h3>Recommended Models</h3>
   <p>
-    CivicRecords AI is optimized for the <strong>Gemma 4</strong> family of open-weight models from Google. These models provide strong instruction-following, good factual accuracy, and are released under permissive licenses suitable for government use.
+    CivicSunshine is optimized for the <strong>Gemma 4</strong> family of open-weight models from Google. These models provide strong instruction-following, good factual accuracy, and are released under permissive licenses suitable for government use.
   </p>
   <p>The installer picker presents all four supported Gemma 4 tags. The default is <code>gemma4:e4b</code>. Only <code>e2b</code> and <code>e4b</code> are supportable at the 32 GB baseline target profile; <code>26b</code> and <code>31b</code> require stronger hardware and are gated behind an explicit confirmation in the installer.</p>
   <table>
@@ -1052,7 +1052,7 @@ civicrecords-worker Up (healthy)</span>
 
   <h3>How the Rules Engine Works</h3>
   <p>
-    CivicRecords AI uses a <strong>rules-primary, LLM-secondary</strong> architecture for exemption detection. When a document is scanned for potential exemptions (e.g., personal privacy, law enforcement confidentiality, trade secrets):
+    CivicSunshine uses a <strong>rules-primary, LLM-secondary</strong> architecture for exemption detection. When a document is scanned for potential exemptions (e.g., personal privacy, law enforcement confidentiality, trade secrets):
   </p>
   <ol>
     <li><strong>Deterministic rules</strong> are evaluated first. These are pattern-based rules tied to specific state statutes. Each rule defines keywords, patterns, and the statutory citation it implements.</li>
@@ -1189,7 +1189,7 @@ civicrecords-worker Up (healthy)</span>
 
   <h3>CAIA Classification</h3>
   <p>
-    Under the Colorado Artificial Intelligence Act (SB 24-205), CivicRecords AI is classified as <strong>not high-risk</strong>. The system does not autonomously make or substantially contribute to consequential decisions. All exemption flags and document classifications require human review and approval before any action is taken. The system is an assistive tool, not a decision-maker. The full impact assessment is documented in <code>backend/compliance_templates/caia-impact-assessment.md</code>.
+    Under the Colorado Artificial Intelligence Act (SB 24-205), CivicSunshine is classified as <strong>not high-risk</strong>. The system does not autonomously make or substantially contribute to consequential decisions. All exemption flags and document classifications require human review and approval before any action is taken. The system is an assistive tool, not a decision-maker. The full impact assessment is documented in <code>backend/compliance_templates/caia-impact-assessment.md</code>.
   </p>
 </div>
 
@@ -1211,7 +1211,7 @@ civicrecords-worker Up (healthy)</span>
 
   <h3>HTTPS / TLS Setup</h3>
   <p>
-    CivicRecords AI does not include a built-in TLS certificate. To enable HTTPS, place a reverse proxy in front of the application:
+    CivicSunshine does not include a built-in TLS certificate. To enable HTTPS, place a reverse proxy in front of the application:
   </p>
   <pre><span class="comment"># Example: nginx reverse proxy configuration</span>
 <span class="keyword">server</span> {
@@ -1250,7 +1250,7 @@ civicrecords-worker Up (healthy)</span>
 
   <h3>No Telemetry or Outbound Connections</h3>
   <p>
-    CivicRecords AI makes <strong>zero outbound network connections</strong> during normal operation. There is no telemetry, no analytics, no update checking, and no "phone home" behavior. All AI inference happens locally via Ollama. The system can operate on a completely air-gapped network after initial Docker image pulls.
+    CivicSunshine makes <strong>zero outbound network connections</strong> during normal operation. There is no telemetry, no analytics, no update checking, and no "phone home" behavior. All AI inference happens locally via Ollama. The system can operate on a completely air-gapped network after initial Docker image pulls.
   </p>
 
   <h3>Role-Based Access Control</h3>
@@ -1493,7 +1493,7 @@ asyncio.run(check())
 
   <h3>Database Migrations</h3>
   <p>
-    CivicRecords AI uses <strong>Alembic</strong> for database schema migrations. Migration files are stored in <code>backend/alembic/versions/</code>. Key commands:
+    CivicSunshine uses <strong>Alembic</strong> for database schema migrations. Migration files are stored in <code>backend/alembic/versions/</code>. Key commands:
   </p>
   <pre><span class="comment"># Apply all pending migrations</span>
 <span class="cmd">docker compose exec api alembic upgrade head</span>
@@ -1739,7 +1739,7 @@ asyncio.run(check())
      FOOTER
      ═══════════════════════════════════════════════════════════════════════ -->
 <div class="footer">
-  CivicRecords AI v1.4.1 &mdash; IT Administrator Manual<br>
+  CivicSunshine v1.4.1 &mdash; IT Administrator Manual<br>
   Apache License 2.0 &mdash; Open Source<br>
   Generated April 2026
 </div>

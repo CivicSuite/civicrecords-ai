@@ -1,7 +1,7 @@
-# CivicRecords AI - Data Sovereignty Check (Windows)
+# CivicSunshine - Data Sovereignty Check (Windows)
 
 Write-Host "============================================" -ForegroundColor Cyan
-Write-Host "  CivicRecords AI - Data Sovereignty Check"
+Write-Host "  CivicSunshine - Data Sovereignty Check"
 Write-Host "============================================"
 Write-Host ""
 

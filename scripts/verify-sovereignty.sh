@@ -2,7 +2,7 @@
 set -euo pipefail
 
 echo "============================================"
-echo "  CivicRecords AI - Data Sovereignty Check"
+echo "  CivicSunshine - Data Sovereignty Check"
 echo "============================================"
 echo ""
 

@@ -76,14 +76,14 @@ async function mockApi(page: Page, role: "admin" | "public" = "admin") {
   });
 }
 
-test.describe("CivicRecords AI user flows (mock-labeled)", () => {
+test.describe("CivicSunshine user flows (mock-labeled)", () => {
   test("staff can load dashboard and navigate with keyboard-visible shell", async ({ page }) => {
     await mockApi(page, "admin");
     await page.addInitScript(token => localStorage.setItem("token", token), fakeJwt("admin"));
     await page.goto("/");
 
     await expect(page.getByRole("heading", { name: "Dashboard" })).toBeVisible();
-    await expect(page.getByText("CivicRecords AI v1.6.0-recovery")).toBeVisible();
+    await expect(page.getByText("CivicSunshine v1.6.0-recovery")).toBeVisible();
     await expect(page.getByText("Database (PostgreSQL)")).toBeVisible();
 
     await page.keyboard.press("Tab");

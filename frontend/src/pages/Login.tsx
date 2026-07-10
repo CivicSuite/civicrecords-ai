@@ -38,7 +38,7 @@ export default function Login({ onLogin }: LoginProps) {
           <div className="mx-auto mb-4 h-12 w-12 rounded-xl bg-primary flex items-center justify-center">
             <span className="text-lg font-bold text-primary-foreground">CR</span>
           </div>
-          <h1 id="login-title" className="text-section-head text-foreground">CivicRecords AI</h1>
+          <h1 id="login-title" className="text-section-head text-foreground">CivicSunshine</h1>
           <p className="text-sm text-muted-foreground">Sign in to the admin panel</p>
         </CardHeader>
         <CardContent>

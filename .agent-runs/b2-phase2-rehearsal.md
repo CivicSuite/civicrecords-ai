@@ -1,4 +1,4 @@
-# CivicRecords AI B2 Phase 2 Rehearsal
+# CivicSunshine B2 Phase 2 Rehearsal
 
 Date: 2026-05-11
 Branch: master

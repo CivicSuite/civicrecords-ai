@@ -50,7 +50,7 @@ router = APIRouter(prefix="/onboarding", tags=["onboarding"])
 _FIELD_NAMES: set[str] = {field.name for field in DEFAULT_PROFILE_FIELDS}
 
 _SYSTEM_PROMPT = """You are a friendly municipal records system setup assistant. Your job is
-to help a city clerk configure CivicRecords AI for their municipality.
+to help a city clerk configure CivicSunshine for their municipality.
 
 Ask ONE question at a time. Be conversational but concise. If the user's
 previous answer was unclear, ask a brief clarifying follow-up. Otherwise,

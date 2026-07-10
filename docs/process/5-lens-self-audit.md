@@ -46,7 +46,7 @@ This is the specific drift that has bitten this project most. Run every item bef
 - [ ] Non-ASCII scan on every new/modified durable doc: em-dashes, arrows, and section signs should be ASCII unless intentional. Run `LC_ALL=C.UTF-8 grep -P '[^\x00-\x7F]' <files>` before push.
 
 <!-- Project-specific items accumulate here. When the auditor surfaces a new drift pattern,
-     add it as a checklist item AND add the longer entry in CivicRecords-AI_AUDIT_PROTOCOL.md
+     add it as a checklist item AND add the longer entry in CivicSunshine_AUDIT_PROTOCOL.md
      section 22.
 
      Example:

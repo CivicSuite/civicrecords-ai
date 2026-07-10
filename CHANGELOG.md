@@ -7,6 +7,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+- Renamed the module's public name from CivicRecords AI to **CivicSunshine**
+  (sunshine laws being exactly this module's domain), avoiding confusion with
+  an unrelated commercial records-request product marketed as
+  CivicRecordsOnline. Brand-layer rename: repository (now
+  `CivicSuite/civicsunshine`, old URLs redirect), display names, docs, manuals,
+  compliance templates, installer title, and the installer artifact naming
+  contract (`.iss` + release workflow + release-notes templates move together;
+  the next release produces `CivicSunshine-<version>-Setup.exe`). Machine
+  identifiers (package/module ids, env vars, lowercase `civicrecords` URL
+  slugs) are unchanged in this pass, so existing installs and the suite
+  installer are unaffected. Historical records (dated audits, QA reports,
+  reconciliations, handoffs, prior CHANGELOG entries, published release
+  assets) keep the name they shipped under.
+
 ### Security
 - Enforced first-login password rotation for the initial administrator account:
   the startup-created admin is marked `must_change_password`, staff/admin

@@ -1,6 +1,6 @@
-# Contributing to CivicRecords AI
+# Contributing to CivicSunshine
 
-Thank you for your interest in contributing to CivicRecords AI. This project helps American cities respond to open records requests using AI-powered document search — contributions that improve accuracy, coverage, or usability directly benefit municipal transparency.
+Thank you for your interest in contributing to CivicSunshine. This project helps American cities respond to open records requests using AI-powered document search — contributions that improve accuracy, coverage, or usability directly benefit municipal transparency.
 
 ## Development Setup
 

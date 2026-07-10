@@ -11,7 +11,7 @@
 	<g id="group" transform="scale(1,-1) translate(0,-780)" style="clip-path: url(#clip)">
 		<g transform="">
 			<rect x="0" y="0" width="920" height="780" style="stroke: none; stroke-linecap: butt; stroke-width: 1; fill: rgb(100%,100%,100%); fill-rule: evenodd;"/>
-			<text x="305.573" y="756" style="font-family: Helvetica-Bold; font-size: 14px;fill: rgb(10%,22%,36%); stroke:none;" transform="translate(0,1512) scale(1,-1)">CivicRecords AI — System Components (v1.2)</text>
+			<text x="305.573" y="756" style="font-family: Helvetica-Bold; font-size: 14px;fill: rgb(10%,22%,36%); stroke:none;" transform="translate(0,1512) scale(1,-1)">CivicSunshine — System Components (v1.2)</text>
 			<rect x="30" y="144" width="860" height="102" rx="4" ry="4" style="stroke: rgb(10%,22%,36%); stroke-linecap: butt; stroke-width: 1.5; fill: rgb(93%,96%,100%); fill-rule: evenodd;"/>
 			<rect x="30" y="220" width="860" height="26" style="stroke: none; stroke-linecap: butt; stroke-width: 1; fill: rgb(10%,22%,36%); fill-rule: evenodd;"/>
 			<text x="261.8075" y="228" style="font-family: Helvetica-Bold; font-size: 11px;fill: rgb(100%,100%,100%); stroke:none;" transform="translate(0,456) scale(1,-1)">Browser Layer (Staff; optional Public surface when PORTAL_MODE=public)</text>

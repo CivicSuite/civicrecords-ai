@@ -1,6 +1,6 @@
 # Release Signing and Provenance
 
-CivicRecords AI consumes the canonical CivicSuite release-provenance gate from
+CivicSunshine consumes the canonical CivicSuite release-provenance gate from
 `civiccore.release_provenance`. The local `scripts/verify-release-provenance.py`
 wrapper exists only so repo workflows have a stable command.
 
@@ -27,7 +27,7 @@ cosign verify-blob release-attestation.json \
   --certificate-identity "https://github.com/CivicSuite/civicrecords-ai/.github/workflows/release.yml@refs/tags/<tag>" \
   --certificate-oidc-issuer https://token.actions.githubusercontent.com
 
-sha256sum -c CivicRecordsAI-<version>-Setup.exe.sha256
+sha256sum -c CivicSunshine-<version>-Setup.exe.sha256
 python scripts/verify-release-provenance.py <tag> \
   --repo CivicSuite/civicrecords-ai \
   --attestation release-attestation.json \

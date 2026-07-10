@@ -1,7 +1,7 @@
 """
 render_diagrams.py
 Generates 6 professional SVG (and PNG where available) architecture diagrams
-for the CivicRecords AI project using reportlab.
+for the CivicSunshine project using reportlab.
 
 Output directory: same directory as this script.
 """
@@ -153,7 +153,7 @@ def make_component():
     d.add(Rect(0, 0, W, H, fillColor=WHITE, strokeColor=None))
 
     # Title
-    d.add(label("CivicRecords AI — System Components (v1.2)", W/2, H - 24,
+    d.add(label("CivicSunshine — System Components (v1.2)", W/2, H - 24,
                 size=14, color=DARK, bold=True))
 
     layers = [
@@ -307,7 +307,7 @@ def make_class():
     W, H = 920, 720
     d = Drawing(W, H)
     d.add(Rect(0, 0, W, H, fillColor=WHITE, strokeColor=None))
-    d.add(label("CivicRecords AI — Domain Class Diagram", W/2, H - 24,
+    d.add(label("CivicSunshine — Domain Class Diagram", W/2, H - 24,
                 size=14, color=DARK, bold=True))
 
     HDR = 22
@@ -492,7 +492,7 @@ def make_sequence_ingestion():
     W, H = 920, 680
     d = Drawing(W, H)
     d.add(Rect(0, 0, W, H, fillColor=WHITE, strokeColor=None))
-    d.add(label("CivicRecords AI — Ingestion Pipeline Sequence", W/2, H - 24,
+    d.add(label("CivicSunshine — Ingestion Pipeline Sequence", W/2, H - 24,
                 size=14, color=DARK, bold=True))
 
     participants = [
@@ -613,7 +613,7 @@ def make_deployment():
     W, H = 920, 640
     d = Drawing(W, H)
     d.add(Rect(0, 0, W, H, fillColor=WHITE, strokeColor=None))
-    d.add(label("CivicRecords AI — Docker Deployment Topology", W/2, H - 24,
+    d.add(label("CivicSunshine — Docker Deployment Topology", W/2, H - 24,
                 size=14, color=DARK, bold=True))
 
     # Browser node (external)
@@ -719,13 +719,13 @@ def make_sequence_request():
     W, H = 920, 700
     d = Drawing(W, H)
     d.add(Rect(0, 0, W, H, fillColor=WHITE, strokeColor=None))
-    d.add(label("CivicRecords AI — Records Request Lifecycle", W/2, H - 24,
+    d.add(label("CivicSunshine — Records Request Lifecycle", W/2, H - 24,
                 size=14, color=DARK, bold=True))
 
     participants = [
         ("Requester",       HexColor("#0369a1"), HexColor("#e0f2fe")),
         ("Clerk",           GREEN,               GREEN2),
-        ("CivicRecords AI", MID,                 PALE),
+        ("CivicSunshine", MID,                 PALE),
         ("Local LLM",       TEAL,                TEAL2),
         ("Supervisor",      PURPLE,              PURPLE2),
         ("Audit Log",       GRAY,                GRAY2),
@@ -752,7 +752,7 @@ def make_sequence_request():
         d.add(dashed_line(xs[i], LIFE_TOP, xs[i], LIFE_BOT,
                           color=GRAY_BORDER, width=1))
 
-    # Activation on CivicRecords AI
+    # Activation on CivicSunshine
     d.add(Rect(xs[2] - 5, 80, 10, 540,
                fillColor=PALE, strokeColor=MID, strokeWidth=1))
 
@@ -819,7 +819,7 @@ def make_sync_failure():
     W, H = 920, 600
     d = Drawing(W, H)
     d.add(Rect(0, 0, W, H, fillColor=WHITE, strokeColor=None))
-    d.add(label("CivicRecords AI — Sync Failure State Machine", W/2, H - 24,
+    d.add(label("CivicSunshine — Sync Failure State Machine", W/2, H - 24,
                 size=14, color=DARK, bold=True))
 
     STATE_W = 140

@@ -1,8 +1,8 @@
-# CivicRecords AI Tier 1 Retrofit Ledger
+# CivicSunshine Tier 1 Retrofit Ledger
 
 Status: CO-4 ledger, live-release scan current as of 2026-05-05.
 
-This ledger records the CO-4 decision for the CivicRecords AI release named in
+This ledger records the CO-4 decision for the CivicSunshine release named in
 the CivicSuite finish directive. It does not rewrite history and does not alter
 public release notes, tags, or assets. The correction action taken here is a
 repo-controlled ledger plus documentation truth update.

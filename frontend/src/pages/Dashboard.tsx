@@ -183,7 +183,7 @@ export default function Dashboard({ token }: { token: string }) {
     <div className="space-y-8">
       <PageHeader
         title="Dashboard"
-        description={`CivicRecords AI v${status.version}`}
+        description={`CivicSunshine v${status.version}`}
       />
 
       {/* Stat cards */}

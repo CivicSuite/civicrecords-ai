@@ -114,7 +114,7 @@ async function generateDocx(src, dest) {
   const md  = fs.readFileSync(src, 'utf8');
   const baseDir = path.dirname(src);
   const doc = new Document({
-    creator: 'CivicRecords AI',
+    creator: 'CivicSunshine',
     title:   path.basename(src, '.md'),
     sections: [{ children: mdToDocxParagraphs(md, baseDir) }],
   });

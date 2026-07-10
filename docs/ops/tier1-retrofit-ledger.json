@@ -22,11 +22,11 @@
       "target_commit": "d50b9ee75f5e0ce29fddfb22e5e53c4943c041b0",
       "release_assets": [
         {
-          "name": "CivicRecordsAI-1.4.10-Setup.exe",
+          "name": "CivicSunshine-1.4.10-Setup.exe",
           "sha256": "7123774d631a39ea8f4e54a1915479e9e5fb543fae61c1a739a5460a6a2460f8"
         },
         {
-          "name": "CivicRecordsAI-1.4.10-Setup.exe.sha256",
+          "name": "CivicSunshine-1.4.10-Setup.exe.sha256",
           "sha256": "63c7070f25be96169b5645fb3beeca5938ef97726ca6467d0356e59c0f4388f5"
         }
       ],

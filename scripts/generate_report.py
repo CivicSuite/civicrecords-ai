@@ -18,7 +18,7 @@ for level in range(1, 4):
     h.font.color.rgb = RGBColor(0x1a, 0x36, 0x5d)
 
 # Title
-title = doc.add_heading('CivicRecords AI', level=0)
+title = doc.add_heading('CivicSunshine', level=0)
 title.alignment = WD_ALIGN_PARAGRAPH.CENTER
 subtitle = doc.add_paragraph('QA Verification & Testing Report')
 subtitle.alignment = WD_ALIGN_PARAGRAPH.CENTER
@@ -28,7 +28,7 @@ subtitle.style.font.size = Pt(14)
 meta = doc.add_table(rows=4, cols=2)
 meta.style = 'Light Shading Accent 1'
 for i, (k, v) in enumerate([
-    ('Project', 'CivicRecords AI v1.0.0'),
+    ('Project', 'CivicSunshine v1.0.0'),
     ('Date', 'April 12, 2026'),
     ('Prepared by', 'Claude Opus 4.6 (automated QA)'),
     ('Environment', 'Windows 11 Pro, Docker Desktop 4.68.0, Python 3.12.8'),
@@ -41,7 +41,7 @@ doc.add_paragraph()
 # Executive Summary
 doc.add_heading('Executive Summary', level=1)
 doc.add_paragraph(
-    'CivicRecords AI has completed its initial development cycle covering all 5 sub-projects. '
+    'CivicSunshine has completed its initial development cycle covering all 5 sub-projects. '
     'This report documents the overnight QA sprint conducted per the project\'s development standards. '
     'Eight sprints were completed covering UI fixes, UX polish, real-data testing, end-to-end browser '
     'validation, security review, repo hygiene, documentation, and final verification.'

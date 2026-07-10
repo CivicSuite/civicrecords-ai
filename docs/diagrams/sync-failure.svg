@@ -11,7 +11,7 @@
 	<g id="group" transform="scale(1,-1) translate(0,-600)" style="clip-path: url(#clip)">
 		<g transform="">
 			<rect x="0" y="0" width="920" height="600" style="stroke: none; stroke-linecap: butt; stroke-width: 1; fill: rgb(100%,100%,100%); fill-rule: evenodd;"/>
-			<text x="304.78200000000004" y="576" style="font-family: Helvetica-Bold; font-size: 14px;fill: rgb(10%,22%,36%); stroke:none;" transform="translate(0,1152) scale(1,-1)">CivicRecords AI — Sync Failure State Machine</text>
+			<text x="304.78200000000004" y="576" style="font-family: Helvetica-Bold; font-size: 14px;fill: rgb(10%,22%,36%); stroke:none;" transform="translate(0,1152) scale(1,-1)">CivicSunshine — Sync Failure State Machine</text>
 			<rect x="390.0" y="480" width="140.0" height="52" rx="8" ry="8" style="stroke: rgb(8%,39%,20%); stroke-linecap: butt; stroke-width: 2; fill: rgb(86%,98%,90%); fill-rule: evenodd;"/>
 			<rect x="390.0" y="510" width="140.0" height="22" rx="8" ry="0" style="stroke: none; stroke-linecap: butt; stroke-width: 1; fill: rgb(8%,39%,20%); fill-rule: evenodd;"/>
 			<text x="443.746" y="518" style="font-family: Helvetica-Bold; font-size: 9px;fill: rgb(100%,100%,100%); stroke:none;" transform="translate(0,1036) scale(1,-1)">Healthy</text>

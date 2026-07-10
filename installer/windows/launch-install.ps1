@@ -1,12 +1,12 @@
-# CivicRecords AI — Install / Repair flow (T5E).
+# CivicSunshine — Install / Repair flow (T5E).
 #
 # This script runs the full first-run bootstrap or an on-demand repair.
 # Invoked from:
 #   - Inno Setup's [Run] section immediately after Setup completes (first run)
-#   - Start Menu shortcut "Install or Repair CivicRecords AI" (manual repair)
+#   - Start Menu shortcut "Install or Repair CivicSunshine" (manual repair)
 #
 # It is NOT the daily-start flow. The daily-start flow is launch-start.ps1,
-# wired to the Start Menu / Desktop shortcut "Start CivicRecords AI".
+# wired to the Start Menu / Desktop shortcut "Start CivicSunshine".
 #
 # Steps:
 #   1. Run prereq-check.ps1. Exit if a required prereq is missing.
@@ -36,7 +36,7 @@ Set-Location $appRoot
 
 Write-Host ""
 Write-Host "======================================================" -ForegroundColor Cyan
-Write-Host "  CivicRecords AI -- Install / Repair (UNSIGNED)" -ForegroundColor Cyan
+Write-Host "  CivicSunshine -- Install / Repair (UNSIGNED)" -ForegroundColor Cyan
 Write-Host "======================================================" -ForegroundColor Cyan
 Write-Host ""
 Write-Host "This flow runs the full bootstrap: prereq check, Docker" -ForegroundColor Yellow
@@ -44,7 +44,7 @@ Write-Host "Compose bring-up, Gemma 4 model picker + auto-pull, and" -Foreground
 Write-Host "first-boot baseline seeding. Use this after a fresh install," -ForegroundColor Yellow
 Write-Host "after changing the selected LLM, or to repair a broken stack." -ForegroundColor Yellow
 Write-Host ""
-Write-Host "For normal day-to-day starts, use the 'Start CivicRecords AI'" -ForegroundColor Yellow
+Write-Host "For normal day-to-day starts, use the 'Start CivicSunshine'" -ForegroundColor Yellow
 Write-Host "shortcut instead -- it brings the stack up without re-running" -ForegroundColor Yellow
 Write-Host "the installer or pulling models." -ForegroundColor Yellow
 Write-Host ""
@@ -61,7 +61,7 @@ if ($prereqExit -ne 0) {
     Write-Host ""
     Write-Host "Prereq check failed with exit code $prereqExit." -ForegroundColor Red
     Write-Host "Address the items listed above, then re-run 'Install or" -ForegroundColor Yellow
-    Write-Host "Repair CivicRecords AI' from the Start Menu." -ForegroundColor Yellow
+    Write-Host "Repair CivicSunshine' from the Start Menu." -ForegroundColor Yellow
     Write-Host ""
     Read-Host "Press Enter to close"
     exit $prereqExit
@@ -95,10 +95,10 @@ Write-Host "Opening admin panel: $adminUrl" -ForegroundColor Green
 Start-Process $adminUrl
 
 Write-Host ""
-Write-Host "CivicRecords AI is running. For daily starts from now on, use" -ForegroundColor Green
-Write-Host "the 'Start CivicRecords AI' shortcut -- it brings the stack" -ForegroundColor Green
+Write-Host "CivicSunshine is running. For daily starts from now on, use" -ForegroundColor Green
+Write-Host "the 'Start CivicSunshine' shortcut -- it brings the stack" -ForegroundColor Green
 Write-Host "up without re-running the installer or re-pulling models." -ForegroundColor Green
 Write-Host ""
-Write-Host "To stop the stack, use the 'Stop CivicRecords AI' shortcut or" -ForegroundColor Green
+Write-Host "To stop the stack, use the 'Stop CivicSunshine' shortcut or" -ForegroundColor Green
 Write-Host "run 'docker compose down' in $appRoot" -ForegroundColor Green
 Write-Host ""

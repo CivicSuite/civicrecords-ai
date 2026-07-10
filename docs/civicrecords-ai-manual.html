@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>CivicRecords AI &mdash; Unified Manual v1.4.1</title>
+<title>CivicSunshine &mdash; Unified Manual v1.4.1</title>
 <style>
 /* ===== RESET & BASE ===== */
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -138,7 +138,7 @@ pre code { background: none; padding: 0; color: inherit; }
 <!-- ==================== COVER PAGE ==================== -->
 <div class="cover">
   <div class="cover-logo">Municipal Open Records Platform</div>
-  <h1>CivicRecords AI</h1>
+  <h1>CivicSunshine</h1>
   <div class="subtitle">Unified Operations Manual</div>
   <div class="version-badge">Version 1.4.1</div>
   <div class="meta">
@@ -161,7 +161,7 @@ pre code { background: none; padding: 0; color: inherit; }
   <ul>
     <li><strong>At-rest encryption (ENG-001 closed).</strong> Connector credentials stored in <code>data_sources.connection_config</code> are now encrypted at rest via a Fernet envelope. New required <code>ENCRYPTION_KEY</code> env var (installer auto-generates on fresh install; losing the key means losing credential access — there is no recovery path in v1.2.0, so back it up separately from your database). Full operator guide: <a href="https://github.com/CivicSuite/civicrecords-ai/blob/master/USER-MANUAL.md">USER-MANUAL.md §B.3.2</a>.</li>
     <li><strong>Install-time portal switch.</strong> New <code>PORTAL_MODE</code> env var (<code>private</code> default, <code>public</code> opt-in). Public mode exposes a minimal three-surface public area — landing page, resident-registration, and authenticated records-request submission — and nothing more. No anonymous submission, no published-records search, no resident dashboard. See USER-MANUAL.md §B.3.1.</li>
-    <li><strong>Windows double-click installer (unsigned).</strong> A real <code>.exe</code> (<code>CivicRecordsAI-1.2.0-Setup.exe</code> + <code>.sha256</code>) now ships on every <code>v*</code> tag. <strong>Unsigned by design</strong> — SmartScreen will warn on first run; click <strong>More info → Run anyway</strong>. macOS/Linux continue on the guided-script path (<code>install.sh</code>).</li>
+    <li><strong>Windows double-click installer (unsigned).</strong> A real <code>.exe</code> (<code>CivicSunshine-1.2.0-Setup.exe</code> + <code>.sha256</code>) now ships on every <code>v*</code> tag. <strong>Unsigned by design</strong> — SmartScreen will warn on first run; click <strong>More info → Run anyway</strong>. macOS/Linux continue on the guided-script path (<code>install.sh</code>).</li>
     <li><strong>4-model Gemma 4 installer picker.</strong> Default is <code>gemma4:e4b</code>; the older fake tags <code>gemma4:12b</code> / <code>gemma4:27b</code> have been purged repo-wide; <code>gemma4:26b</code> / <code>gemma4:31b</code> remain selectable but require an explicit "stronger hardware required" acknowledgement against the locked 32 GB baseline.</li>
     <li><strong>Onboarding persistence + first-boot seeding.</strong> The adaptive onboarding interview now persists each answer and transitions <code>onboarding_status</code>; first boot automatically seeds 175 state exemption rules, 5 compliance templates, and 12 notification templates (idempotent skip-if-exists so admin edits survive re-seeds).</li>
   </ul>
@@ -172,7 +172,7 @@ pre code { background: none; padding: 0; color: inherit; }
 
 <!-- ==================== TOP NAV ==================== -->
 <nav class="topnav" id="topnav">
-  <span class="brand">CivicRecords AI Manual</span>
+  <span class="brand">CivicSunshine Manual</span>
   <a href="#toc">Contents</a>
   <a href="#part1">Part I: User Guide</a>
   <a href="#part2">Part II: IT Admin</a>
@@ -243,19 +243,19 @@ pre code { background: none; padding: 0; color: inherit; }
 <!-- SECTION 1 -->
 <h2 class="section-title" id="sec-1">1. Welcome</h2>
 
-<h3>What CivicRecords AI Does</h3>
-<p>CivicRecords AI is a tool that helps your city respond to public records requests faster, more consistently, and with greater confidence. When a resident submits a records request, the system searches across your city's record sources &mdash; meeting minutes, resolutions, ordinances, permits, and more &mdash; and presents the most relevant results in seconds. It also suggests which exemptions might apply, drafts response letters, and tracks every request from receipt to fulfillment.</p>
+<h3>What CivicSunshine Does</h3>
+<p>CivicSunshine is a tool that helps your city respond to public records requests faster, more consistently, and with greater confidence. When a resident submits a records request, the system searches across your city's record sources &mdash; meeting minutes, resolutions, ordinances, permits, and more &mdash; and presents the most relevant results in seconds. It also suggests which exemptions might apply, drafts response letters, and tracks every request from receipt to fulfillment.</p>
 
-<h3>What CivicRecords AI Is Not</h3>
-<p>CivicRecords AI is an assistant, not a decision-maker. Everything it does is a recommendation for you to review. The system suggests and drafts; you review and approve. Every exemption flag, every response letter, and every release decision requires a human sign-off.</p>
-<p>It is not a public portal. Residents do not interact with CivicRecords AI directly. You use it internally to process their requests.</p>
+<h3>What CivicSunshine Is Not</h3>
+<p>CivicSunshine is an assistant, not a decision-maker. Everything it does is a recommendation for you to review. The system suggests and drafts; you review and approve. Every exemption flag, every response letter, and every release decision requires a human sign-off.</p>
+<p>It is not a public portal. Residents do not interact with CivicSunshine directly. You use it internally to process their requests.</p>
 
 <h3>Privacy by Design</h3>
-<p>CivicRecords AI runs entirely on your city's local network or on-premises servers. No records or request data leave your infrastructure. The AI models run locally &mdash; no cloud AI services are used.</p>
+<p>CivicSunshine runs entirely on your city's local network or on-premises servers. No records or request data leave your infrastructure. The AI models run locally &mdash; no cloud AI services are used.</p>
 
 <div class="callout note">
   <div class="callout-title">Note</div>
-  This manual is written for city staff members who use CivicRecords AI day to day: city clerks who process records requests, records officers who manage compliance, department liaisons who search for and provide departmental records, and city managers who oversee the process. You do not need any technical background to use the system.
+  This manual is written for city staff members who use CivicSunshine day to day: city clerks who process records requests, records officers who manage compliance, department liaisons who search for and provide departmental records, and city managers who oversee the process. You do not need any technical background to use the system.
 </div>
 
 <h3>Who This Manual Is For</h3>
@@ -270,10 +270,10 @@ pre code { background: none; padding: 0; color: inherit; }
 <!-- SECTION 2 -->
 <h2 class="section-title" id="sec-2">2. Signing In</h2>
 
-<h3>How to Access CivicRecords AI</h3>
+<h3>How to Access CivicSunshine</h3>
 <p>Open your web browser (Chrome, Edge, or Firefox are recommended) and navigate to the address provided by your IT department. In most installations, this is:</p>
 <pre><code>http://localhost:8080</code></pre>
-<p>If your city has deployed CivicRecords AI on a shared network server, your IT administrator will provide the correct address (for example, <code>http://records.yourcity.local:8080</code>).</p>
+<p>If your city has deployed CivicSunshine on a shared network server, your IT administrator will provide the correct address (for example, <code>http://records.yourcity.local:8080</code>).</p>
 
 <h3>Logging In</h3>
 <ol>
@@ -285,7 +285,7 @@ pre code { background: none; padding: 0; color: inherit; }
 
 <div class="callout tip">
   <div class="callout-title">Tip</div>
-  If you see a "connection refused" or "page cannot be displayed" error, the CivicRecords AI server may not be running. Contact your IT administrator.
+  If you see a "connection refused" or "page cannot be displayed" error, the CivicSunshine server may not be running. Contact your IT administrator.
 </div>
 
 <h3>Logging Out</h3>
@@ -329,7 +329,7 @@ pre code { background: none; padding: 0; color: inherit; }
 <h2 class="section-title" id="sec-4">4. Searching for Records</h2>
 
 <h3>How Search Works</h3>
-<p>CivicRecords AI uses hybrid search that combines two techniques: <strong>keyword search</strong> (traditional full-text matching) and <strong>semantic search</strong> (AI-powered meaning-based retrieval). This means you can search using natural language questions, not just exact keywords.</p>
+<p>CivicSunshine uses hybrid search that combines two techniques: <strong>keyword search</strong> (traditional full-text matching) and <strong>semantic search</strong> (AI-powered meaning-based retrieval). This means you can search using natural language questions, not just exact keywords.</p>
 
 <h3>Performing a Search</h3>
 <ol>
@@ -434,7 +434,7 @@ pre code { background: none; padding: 0; color: inherit; }
 <h2 class="section-title" id="sec-6">6. Reviewing Exemption Flags</h2>
 
 <h3>What Exemption Flags Are</h3>
-<p>When documents are attached to a request, CivicRecords AI automatically scans them for content that may be exempt from disclosure under your state's open records law. These are presented as <strong>exemption flags</strong> &mdash; recommendations for your review, not automatic decisions.</p>
+<p>When documents are attached to a request, CivicSunshine automatically scans them for content that may be exempt from disclosure under your state's open records law. These are presented as <strong>exemption flags</strong> &mdash; recommendations for your review, not automatic decisions.</p>
 
 <h3>Viewing Exemption Flags</h3>
 <p>Open a request and select the <strong>Exemptions</strong> tab. For each flag, you will see:</p>
@@ -519,7 +519,7 @@ pre code { background: none; padding: 0; color: inherit; }
 
 <div class="callout note">
   <div class="callout-title">Note</div>
-  CivicRecords AI does not send response letters directly to requesters. You use your city's existing communication channels. The system tracks that the response was sent and records the date and method.
+  CivicSunshine does not send response letters directly to requesters. You use your city's existing communication channels. The system tracks that the response was sent and records the date and method.
 </div>
 
 <!-- SECTION 8 -->
@@ -556,7 +556,7 @@ pre code { background: none; padding: 0; color: inherit; }
 
 <div class="callout note">
   <div class="callout-title">Note</div>
-  Messages sent through CivicRecords AI are recorded for compliance purposes. Use them for official communications related to the request. The system stores the message content, timestamp, and sender for the audit trail.
+  Messages sent through CivicSunshine are recorded for compliance purposes. Use them for official communications related to the request. The system stores the message content, timestamp, and sender for the audit trail.
 </div>
 
 <!-- SECTION 9 -->
@@ -589,7 +589,7 @@ pre code { background: none; padding: 0; color: inherit; }
 <h2 class="section-title" id="sec-10">10. Department Access</h2>
 
 <h3>How Department Scoping Works</h3>
-<p>CivicRecords AI uses department-based access control to ensure staff members see only the records relevant to their work:</p>
+<p>CivicSunshine uses department-based access control to ensure staff members see only the records relevant to their work:</p>
 <ul>
   <li><strong>Staff</strong> and <strong>Read-Only</strong> users can only search documents and view requests within their assigned department.</li>
   <li><strong>Reviewer</strong> and <strong>Admin</strong> users have cross-department visibility and can view all documents and requests.</li>
@@ -617,7 +617,7 @@ pre code { background: none; padding: 0; color: inherit; }
   <tr><td>Statutory Deadline</td><td>The legal timeframe within which your city must respond to a records request.</td></tr>
   <tr><td>Hybrid Search</td><td>A search method that combines keyword matching with AI-powered semantic understanding.</td></tr>
   <tr><td>RAG (Retrieval-Augmented Generation)</td><td>The AI technique used to find relevant documents and generate contextual responses.</td></tr>
-  <tr><td>Ingestion</td><td>The process of importing documents into CivicRecords AI for indexing and search.</td></tr>
+  <tr><td>Ingestion</td><td>The process of importing documents into CivicSunshine for indexing and search.</td></tr>
   <tr><td>Confidence Score</td><td>A percentage indicating how certain the AI is about an exemption flag or search result relevance.</td></tr>
   <tr><td>Audit Trail</td><td>A tamper-proof log of every action taken in the system, used for compliance verification.</td></tr>
 </table>
@@ -659,7 +659,7 @@ pre code { background: none; padding: 0; color: inherit; }
 <!-- SECTION 12 -->
 <h2 class="section-title" id="sec-12">12. System Architecture</h2>
 
-<p>CivicRecords AI is a self-contained, Docker-based application stack designed to run entirely on-premises. The architecture follows a three-tier design: a browser-based client layer, a Python application layer, and a data and AI layer. All components communicate over internal Docker networking with no external cloud dependencies.</p>
+<p>CivicSunshine is a self-contained, Docker-based application stack designed to run entirely on-premises. The architecture follows a three-tier design: a browser-based client layer, a Python application layer, and a data and AI layer. All components communicate over internal Docker networking with no external cloud dependencies.</p>
 
 <h3>12.1 Architecture Overview</h3>
 <p>The system comprises seven Docker services orchestrated by Docker Compose. The following diagram shows all components, their ports, internal modules, and data flow paths.</p>
@@ -871,7 +871,7 @@ pre code { background: none; padding: 0; color: inherit; }
   <!-- FastAPI <-> Celery connection indicator -->
   <line x1="615" y1="300" x2="658" y2="260" stroke="#4a5568" stroke-width="1.5" marker-end="url(#arrowhead)"/>
 </svg>
-<div class="diagram-caption">Figure 12-1. CivicRecords AI System Architecture &mdash; Docker Compose Stack</div>
+<div class="diagram-caption">Figure 12-1. CivicSunshine System Architecture &mdash; Docker Compose Stack</div>
 </div>
 
 <h3>12.2 Component Details</h3>
@@ -898,7 +898,7 @@ pre code { background: none; padding: 0; color: inherit; }
   <tr><td>Department Scoping</td><td>Row-level access control tying users, data sources, documents, and requests to departments. Enforces department boundaries for Staff and Read-Only roles.</td></tr>
   <tr><td>Compliance Module</td><td>Middleware-based audit logger recording every API call. Hash-chained, append-only audit trail. Exportable as CSV/JSON for external review.</td></tr>
   <tr><td>LLM Abstraction</td><td>Model-agnostic interface wrapping Ollama. Supports chat completion and embedding endpoints. Swap models without application code changes.</td></tr>
-  <tr><td>Federation API</td><td>REST endpoints for inter-instance communication. Allows one CivicRecords AI installation to query another with scoped, authenticated access via service account API keys.</td></tr>
+  <tr><td>Federation API</td><td>REST endpoints for inter-instance communication. Allows one CivicSunshine installation to query another with scoped, authenticated access via service account API keys.</td></tr>
 </table>
 
 <h3>12.4 Ingestion Pipeline</h3>
@@ -1447,7 +1447,7 @@ curl http://localhost:8000/datasources/{source_id}/status \
   -H "Authorization: Bearer &lt;admin-jwt-token&gt;"</code></pre>
 
 <h3>Incremental Ingestion</h3>
-<p>CivicRecords AI tracks file modification timestamps. Subsequent ingestion runs only process new or modified files. Deleted files are marked as inactive but remain in the database for audit purposes.</p>
+<p>CivicSunshine tracks file modification timestamps. Subsequent ingestion runs only process new or modified files. Deleted files are marked as inactive but remain in the database for audit purposes.</p>
 
 <h3>Supported File Formats</h3>
 <table>
@@ -1497,7 +1497,7 @@ docker compose restart api worker</code></pre>
 <h2 class="section-title" id="sec-19">19. Exemption Rules Administration</h2>
 
 <h3>Rules Overview</h3>
-<p>CivicRecords AI ships with approximately 180 pre-loaded exemption rules covering common exemption categories from all 50 state open records statutes. Each rule uses one of two detection methods:</p>
+<p>CivicSunshine ships with approximately 180 pre-loaded exemption rules covering common exemption categories from all 50 state open records statutes. Each rule uses one of two detection methods:</p>
 <ul>
   <li><strong>Regex:</strong> Regular expression pattern matching (e.g., Social Security number format <code>\d{3}-\d{2}-\d{4}</code>)</li>
   <li><strong>Keyword:</strong> Keyword and phrase matching (e.g., "attorney-client privilege," "trade secret")</li>
@@ -1545,7 +1545,7 @@ curl -X PATCH http://localhost:8000/exemptions/rules/{rule_id} \
 <h2 class="section-title" id="sec-20">20. Compliance &amp; Audit</h2>
 
 <h3>Audit Trail Architecture</h3>
-<p>CivicRecords AI maintains a hash-chained, append-only audit log. Every API call is logged with:</p>
+<p>CivicSunshine maintains a hash-chained, append-only audit log. Every API call is logged with:</p>
 <ul>
   <li>Timestamp (UTC)</li>
   <li>User identity (email, role)</li>
@@ -1620,7 +1620,7 @@ curl "http://localhost:8000/admin/audit-logs?format=csv&amp;start_date=2026-01-0
 
 <div class="callout security">
   <div class="callout-title">Security</div>
-  CivicRecords AI processes potentially sensitive government records. Ensure that the server is physically secured, network access is restricted to authorized personnel, and all security patches for the host operating system are applied promptly.
+  CivicSunshine processes potentially sensitive government records. Ensure that the server is physically secured, network access is restricted to authorized personnel, and all security patches for the host operating system are applied promptly.
 </div>
 
 
@@ -1755,7 +1755,7 @@ docker compose exec postgres psql -U civicrecords -c "SELECT pg_size_pretty(pg_t
 </div>
 
 <h3>Database Migrations</h3>
-<p>CivicRecords AI uses Alembic for database schema migrations. Migration files are stored in <code>backend/alembic/versions/</code>. Key commands:</p>
+<p>CivicSunshine uses Alembic for database schema migrations. Migration files are stored in <code>backend/alembic/versions/</code>. Key commands:</p>
 <pre><code># Apply all pending migrations
 docker compose exec api alembic upgrade head
 
@@ -1861,7 +1861,7 @@ docker compose exec -T postgres pg_restore -U civicrecords -d civicrecords --cle
 <!-- APPENDIX B -->
 <h2 class="section-title" id="appendix-b">B. Database Schema Overview</h2>
 
-<p>CivicRecords AI uses PostgreSQL 17 with the pgvector extension for vector storage. The schema consists of 29 tables organized into the following functional groups:</p>
+<p>CivicSunshine uses PostgreSQL 17 with the pgvector extension for vector storage. The schema consists of 29 tables organized into the following functional groups:</p>
 
 <h3>Authentication &amp; Administration</h3>
 <table>
@@ -1946,7 +1946,7 @@ docker compose exec -T postgres pg_restore -U civicrecords -d civicrecords --cle
 
 <!-- FOOTER -->
 <div style="margin-top: 4rem; padding-top: 2rem; border-top: 2px solid #dde3ea; text-align: center; color: #5a6a7a; font-size: 0.85rem;">
-  <p>&copy; 2026 CivicRecords AI Project &mdash; Unified Operations Manual v1.4.1</p>
+  <p>&copy; 2026 CivicSunshine Project &mdash; Unified Operations Manual v1.4.1</p>
   <p>AI-Powered Open Records Support for American Cities</p>
   <p style="margin-top: 0.5rem;">This document is confidential and intended for authorized municipal staff and IT personnel only.</p>
 </div>
