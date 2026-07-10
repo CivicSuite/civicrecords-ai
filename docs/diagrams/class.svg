@@ -11,7 +11,7 @@
 	<g id="group" transform="scale(1,-1) translate(0,-720)" style="clip-path: url(#clip)">
 		<g transform="">
 			<rect x="0" y="0" width="920" height="720" style="stroke: none; stroke-linecap: butt; stroke-width: 1; fill: rgb(100%,100%,100%); fill-rule: evenodd;"/>
-			<text x="319.181" y="696" style="font-family: Helvetica-Bold; font-size: 14px;fill: rgb(10%,22%,36%); stroke:none;" transform="translate(0,1392) scale(1,-1)">CivicSunshine — Domain Class Diagram</text>
+			<text x="324.627" y="696" style="font-family: Helvetica-Bold; font-size: 14px;fill: rgb(10%,22%,36%); stroke:none;" transform="translate(0,1392) scale(1,-1)">CivicSunshine — Domain Class Diagram</text>
 			<g transform="">
 				<rect x="30" y="468" width="270" height="192" rx="4" ry="4" style="stroke: rgb(81%,83%,85%); stroke-linecap: butt; stroke-width: 1.2; fill: rgb(100%,100%,100%); fill-rule: evenodd;"/>
 				<rect x="30" y="638" width="270" height="22" style="stroke: none; stroke-linecap: butt; stroke-width: 1; fill: rgb(14%,38%,92%); fill-rule: evenodd;"/>

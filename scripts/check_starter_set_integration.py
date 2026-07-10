@@ -95,7 +95,7 @@ def build_checks(*, umbrella_root: Path, require_archives: bool) -> list[Check]:
         checks = [
             _pass(
                 "clerk-core profile order",
-                "clerk-core installs CivicCore first, then CivicSunshine, then CivicClerk.",
+                "clerk-core installs CivicCore first, then CivicSunshine, then CivicMeetings.",
             )
         ]
     else:
@@ -133,15 +133,15 @@ def build_checks(*, umbrella_root: Path, require_archives: bool) -> list[Check]:
     if isinstance(clerk, dict) and clerk.get("current_version") == EXPECTED_CLERK_VERSION:
         checks.append(
             _pass(
-                "CivicClerk pairing",
-                f"starter set pairs CivicSunshine with CivicClerk {EXPECTED_CLERK_VERSION}.",
+                "CivicMeetings pairing",
+                f"starter set pairs CivicSunshine with CivicMeetings {EXPECTED_CLERK_VERSION}.",
             )
         )
     else:
         checks.append(
             _fail(
-                "CivicClerk pairing",
-                "starter set does not record the expected CivicClerk pairing.",
+                "CivicMeetings pairing",
+                "starter set does not record the expected CivicMeetings pairing.",
                 "Update the umbrella manifest or this checker before changing the starter-set pair.",
             )
         )
@@ -151,11 +151,11 @@ def build_checks(*, umbrella_root: Path, require_archives: bool) -> list[Check]:
         text = contract_path.read_text(encoding="utf-8")
         required_phrases = (
             "CivicSunshine reports v1.7.3",
-            "CivicClerk reports v1.0.1 with CivicCore v1.2.0",
+            "CivicMeetings reports v1.0.1 with CivicCore v1.2.0",
             "--staff-mode bearer --workflow-proof",
             "Package Cleanroom Contract",
             "workflow_proof_requested=true",
-            "not yet a claim that CivicSunshine and CivicClerk exchange workflow records",
+            "not yet a claim that CivicSunshine and CivicMeetings exchange workflow records",
         )
         missing = [phrase for phrase in required_phrases if phrase not in text]
         if missing:
@@ -244,9 +244,9 @@ def _print_report(checks: list[Check], umbrella_root: Path) -> None:
 def _print_plan() -> None:
     print("CivicSunshine starter-set integration")
     print("Release evidence checks:")
-    print("  1. Umbrella clerk-core profile installs CivicCore, CivicSunshine, then CivicClerk.")
+    print("  1. Umbrella clerk-core profile installs CivicCore, CivicSunshine, then CivicMeetings.")
     print(f"  2. CivicSunshine is selectable and records its CivicCore {EXPECTED_CIVICCORE_RUNTIME} runtime dependency.")
-    print("  3. CivicClerk is paired at v1.0.1.")
+    print("  3. CivicMeetings is paired at v1.0.1.")
     print("  4. Umbrella release contract requires package workflow proof.")
     print("  5. Linux and Windows starter-set archives exist when --require-archives is used.")
     print("STARTER-SET-INTEGRATION: PLAN")

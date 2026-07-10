@@ -1070,7 +1070,7 @@ Packer.toBuffer(doc).then(buffer => {
   // The spec is currently at v3.1 (see §1 of UNIFIED-SPEC.md); when the
   // spec bumps to v3.2 or higher, add a new pinned name here and keep the
   // old ones as archival.
-  const pinnedV31 = path.join(__dirname, "CivicSunshine-UnifiedSpec-v3.1.docx");
+  const pinnedV31 = path.join(__dirname, "CivicRecordsAI-UnifiedSpec-v3.1.docx");
   fs.writeFileSync(pinnedV31, buffer);
   console.log(`Written to ${pinnedV31} (${(buffer.length / 1024).toFixed(0)} KB)`);
 });

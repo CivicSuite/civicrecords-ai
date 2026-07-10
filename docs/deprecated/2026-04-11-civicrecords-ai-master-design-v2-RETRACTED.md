@@ -11,7 +11,7 @@
 >
 > This file is preserved for audit trail purposes only.
 
-# CivicSunshine — Master Design Specification (RETRACTED)
+# CivicRecords AI — Master Design Specification (RETRACTED)
 
 **Version:** 2.0
 **Date:** 2026-04-13
@@ -36,7 +36,7 @@
 
 ## 1. Product Summary
 
-CivicSunshine is a fully open-source, locally-hosted AI system that helps municipal staff respond to open records requests (FOIA/CORA and state equivalents). It runs entirely on commodity hardware — a single Ryzen-based desktop with 32-64 GB of RAM — inside a city's existing network perimeter. No cloud subscriptions. No vendor lock-in. No resident data leaving the building.
+CivicRecords AI is a fully open-source, locally-hosted AI system that helps municipal staff respond to open records requests (FOIA/CORA and state equivalents). It runs entirely on commodity hardware — a single Ryzen-based desktop with 32-64 GB of RAM — inside a city's existing network perimeter. No cloud subscriptions. No vendor lock-in. No resident data leaving the building.
 
 The system ingests a city's documents into a searchable knowledge base, then helps staff locate responsive records, flag exemptions, draft response language, and track request status.
 
@@ -126,7 +126,7 @@ The API server contains these modules:
 - **LLM Abstraction** — Model-agnostic interface wrapping Ollama. Swap models without touching application code. Supports both chat completion and embedding endpoints.
 - **Exemption Engine** — Rules engine (regex, keyword, statutory phrases) + LLM suggestion layer. **[SHIPPED v1.1.0]** 180 rules across 50 states + DC. Auditability dashboard with acceptance/rejection rates and CSV/JSON export.
 - **Compliance Module** — **[SHIPPED v1.1.0]** 5 compliance template documents with variable substitution from city profile. Template render endpoint. Model registry CRUD for compliance metadata (name, license, version, capabilities).
-- **Federation API** — REST endpoints accessible via service account API keys. Another CivicSunshine instance can query this one with scoped access.
+- **Federation API** — REST endpoints accessible via service account API keys. Another CivicRecords AI instance can query this one with scoped access.
 
 ### Ingestion Pipeline (Two-Track)
 
@@ -473,7 +473,7 @@ Phase 2: Departments, 50-State Rules, Compliance Templates [SHIPPED v1.1.0]
 
 ## 11. Federation (Phase 3+)
 
-The API is designed from day one to support federation between CivicSunshine instances across jurisdictions.
+The API is designed from day one to support federation between CivicRecords AI instances across jurisdictions.
 
 ### Federation Model
 
@@ -584,7 +584,7 @@ Gemma 4 (released April 2, 2026) is the recommended default model. Key findings 
 
 ## Appendix A: Regulatory Summary
 
-CivicSunshine is deployable in all 50 states. The system sits in the "staff productivity tool" category, not the "automated decision-making" category. Maintaining that classification requires:
+CivicRecords AI is deployable in all 50 states. The system sits in the "staff productivity tool" category, not the "automated decision-making" category. Maintaining that classification requires:
 
 1. No auto-redaction.
 2. No auto-denial.
