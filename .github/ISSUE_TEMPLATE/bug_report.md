@@ -1,6 +1,6 @@
 ---
 name: Bug report
-about: Report a defect in CivicRecords AI
+about: Report a defect in CivicSunshine
 title: "[bug] "
 labels: ["bug"]
 ---
@@ -20,7 +20,7 @@ labels: ["bug"]
 <!-- What actually happened. Include error messages, stack traces, console output. -->
 
 **Environment**
-- CivicRecords AI version (`docker compose run --rm api python -c "import app; print(app.__version__)"` or check the admin UI footer):
+- CivicSunshine version (`docker compose run --rm api python -c "import app; print(app.__version__)"` or check the admin UI footer):
 - Deployment: Docker Compose / installer / dev clone
 - OS: Windows / macOS / Linux (specify version)
 - Browser (if frontend issue):

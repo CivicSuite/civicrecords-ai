@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Build and install CivicRecords AI in a fresh virtualenv, then prove app import."""
+"""Build and install CivicSunshine in a fresh virtualenv, then prove app import."""
 
 from __future__ import annotations
 

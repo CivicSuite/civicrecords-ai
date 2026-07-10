@@ -1,4 +1,4 @@
-; CivicRecords AI — Windows Installer (Tier 5 Blocker E)
+; CivicSunshine — Windows Installer (Tier 5 Blocker E)
 ; Built with Inno Setup 6.x
 ; https://jrsoftware.org/ishelp/
 ;
@@ -11,17 +11,17 @@
 ; operators can use to verify the binary independently.
 ;
 ; Adapted from the PatentForgeLocal skeleton at
-; patentforgelocal/installer/windows/patentforgelocal.iss. CivicRecords-
+; patentforgelocal/installer/windows/patentforgelocal.iss. CivicSunshine-
 ; specific adaptations:
-;   - Does NOT bundle portable Python or portable Ollama (CivicRecords
+;   - Does NOT bundle portable Python or portable Ollama (CivicSunshine
 ;     runs on Docker / Compose, not native processes).
-;   - DOES bundle the CivicRecords repo snapshot so a fresh machine can
+;   - DOES bundle the CivicSunshine repo snapshot so a fresh machine can
 ;     reach a working install from a single double-click.
 ;   - Post-install runs installer/windows/launch-install.ps1, which
 ;     invokes the existing install.ps1 (T5C 4-model picker + T5B
 ;     auto-seed) after a prereq-check for Docker Desktop + WSL 2.
 ;   - Daily starts go through a separate installer/windows/launch-start.ps1
-;     (wired to the "Start CivicRecords AI" Start Menu / Desktop shortcut)
+;     (wired to the "Start CivicSunshine" Start Menu / Desktop shortcut)
 ;     which only runs "docker compose up -d" and opens the admin panel —
 ;     no prereq check, no install.ps1, no model re-pull, no re-seed.
 ;   - Version is supplied at build time via /DMyAppVersion=<semver>; no
@@ -30,7 +30,7 @@
 ;     builds. See installer/windows/build-installer.sh and
 ;     .github/workflows/release.yml.
 
-#define MyAppName "CivicRecords AI"
+#define MyAppName "CivicSunshine"
 
 ; MyAppVersion is supplied by the build driver via the Inno Setup CLI flag
 ;   /DMyAppVersion=<semver>
@@ -43,7 +43,7 @@
   #error "MyAppVersion must be supplied via /DMyAppVersion=<semver>. Use installer/windows/build-installer.sh or the Release workflow."
 #endif
 
-#define MyAppPublisher "CivicRecords AI contributors"
+#define MyAppPublisher "CivicSunshine contributors"
 #define MyAppURL "https://scottconverse.github.io/civicrecords-ai/"
 
 [Setup]
@@ -57,7 +57,7 @@ AppUpdatesURL={#MyAppURL}
 DefaultDirName={autopf}\{#MyAppName}
 DefaultGroupName={#MyAppName}
 OutputDir=..\..\build
-OutputBaseFilename=CivicRecordsAI-{#MyAppVersion}-Setup
+OutputBaseFilename=CivicSunshine-{#MyAppVersion}-Setup
 Compression=lzma2/max
 SolidCompression=yes
 WizardStyle=modern
@@ -85,7 +85,7 @@ Source: "launch-start.ps1"; DestDir: "{app}\installer\windows"; Flags: ignorever
 Source: "prereq-check.ps1"; DestDir: "{app}\installer\windows"; Flags: ignoreversion
 Source: "README.md"; DestDir: "{app}\installer\windows"; Flags: ignoreversion
 
-; ── CivicRecords runtime (top of repo) ────────────────────────────────────
+; ── CivicSunshine runtime (top of repo) ────────────────────────────────────
 Source: "..\..\install.ps1"; DestDir: "{app}"; Flags: ignoreversion
 Source: "..\..\install.sh"; DestDir: "{app}"; Flags: ignoreversion
 Source: "..\..\docker-compose.yml"; DestDir: "{app}"; Flags: ignoreversion
@@ -121,26 +121,26 @@ Name: "{app}\config"; Flags: uninsneveruninstall
 [Icons]
 ; Daily-start shortcut: brings up the Docker Compose stack and opens the
 ; admin panel. No install, no model pull, no data seed.
-Name: "{group}\Start CivicRecords AI"; Filename: "powershell.exe"; Parameters: "-ExecutionPolicy Bypass -NoProfile -File ""{app}\installer\windows\launch-start.ps1"""; WorkingDir: "{app}"; Comment: "Bring up the Docker Compose stack and open the admin panel. No install/repair."
+Name: "{group}\Start CivicSunshine"; Filename: "powershell.exe"; Parameters: "-ExecutionPolicy Bypass -NoProfile -File ""{app}\installer\windows\launch-start.ps1"""; WorkingDir: "{app}"; Comment: "Bring up the Docker Compose stack and open the admin panel. No install/repair."
 
 ; Install-or-repair shortcut: runs the full bootstrap flow (prereq check +
 ; install.ps1 + Gemma 4 picker + model pull + baseline seeding). Use this
 ; for first runs, LLM changes, or stack repair.
-Name: "{group}\Install or Repair CivicRecords AI"; Filename: "powershell.exe"; Parameters: "-ExecutionPolicy Bypass -NoProfile -File ""{app}\installer\windows\launch-install.ps1"""; WorkingDir: "{app}"; Comment: "Run the full install/repair flow: prereq check, Docker bring-up, Gemma 4 picker + model pull, baseline seed."
+Name: "{group}\Install or Repair CivicSunshine"; Filename: "powershell.exe"; Parameters: "-ExecutionPolicy Bypass -NoProfile -File ""{app}\installer\windows\launch-install.ps1"""; WorkingDir: "{app}"; Comment: "Run the full install/repair flow: prereq check, Docker bring-up, Gemma 4 picker + model pull, baseline seed."
 
-Name: "{group}\Stop CivicRecords AI"; Filename: "powershell.exe"; Parameters: "-ExecutionPolicy Bypass -NoProfile -Command ""cd '{app}'; docker compose down"""; WorkingDir: "{app}"; Comment: "Stop the Docker Compose stack (containers only; volumes preserved)."
+Name: "{group}\Stop CivicSunshine"; Filename: "powershell.exe"; Parameters: "-ExecutionPolicy Bypass -NoProfile -Command ""cd '{app}'; docker compose down"""; WorkingDir: "{app}"; Comment: "Stop the Docker Compose stack (containers only; volumes preserved)."
 Name: "{group}\Open Admin Panel"; Filename: "http://localhost:8080/"
 Name: "{group}\Installer Readme"; Filename: "{app}\installer\windows\README.md"
-Name: "{group}\Uninstall CivicRecords AI"; Filename: "{uninstallexe}"
+Name: "{group}\Uninstall CivicSunshine"; Filename: "{uninstallexe}"
 
 ; Desktop shortcut mirrors the daily-start behavior, not install/repair.
-Name: "{autodesktop}\Start CivicRecords AI"; Filename: "powershell.exe"; Parameters: "-ExecutionPolicy Bypass -NoProfile -File ""{app}\installer\windows\launch-start.ps1"""; WorkingDir: "{app}"; Tasks: desktopicon; Comment: "Bring up the Docker Compose stack and open the admin panel. No install/repair."
+Name: "{autodesktop}\Start CivicSunshine"; Filename: "powershell.exe"; Parameters: "-ExecutionPolicy Bypass -NoProfile -File ""{app}\installer\windows\launch-start.ps1"""; WorkingDir: "{app}"; Tasks: desktopicon; Comment: "Bring up the Docker Compose stack and open the admin panel. No install/repair."
 
 [Run]
 ; Post-install flow: complete first-run bootstrap. This runs the full
 ; install/repair path (prereq check, install.ps1, Gemma 4 picker + model
 ; pull, baseline seeding). It is NOT the same as the 'Start' shortcut —
-; daily starts from then on should use 'Start CivicRecords AI'.
+; daily starts from then on should use 'Start CivicSunshine'.
 Filename: "powershell.exe"; Parameters: "-ExecutionPolicy Bypass -NoProfile -File ""{app}\installer\windows\launch-install.ps1"""; Description: "Complete first-run install (prereq check, LLM picker + model pull, baseline seed)"; Flags: nowait postinstall skipifsilent
 
 [UninstallDelete]
@@ -158,7 +158,7 @@ begin
     // Step 1 prompt: stop the Compose stack (containers only). Volumes are
     // NOT removed by "docker compose down" (that requires the -v flag), so
     // saying Yes here only stops containers and releases ports.
-    if MsgBox('Stop the CivicRecords AI Docker Compose stack now?' + #13#10 +
+    if MsgBox('Stop the CivicSunshine Docker Compose stack now?' + #13#10 +
               '' + #13#10 +
               'REMOVES (on Yes):' + #13#10 +
               '  - Running containers (api, worker, beat, frontend,' + #13#10 +

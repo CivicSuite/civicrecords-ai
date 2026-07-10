@@ -3,12 +3,12 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="description" content="CivicRecords AI — Open-source, locally-hosted AI for municipal open records request processing. No cloud. No vendor lock-in. Your data stays yours.">
+  <meta name="description" content="CivicSunshine — Open-source, locally-hosted AI for municipal open records request processing. No cloud. No vendor lock-in. Your data stays yours.">
   <meta name="keywords" content="FOIA, open records, municipal software, AI, local government, open source">
-  <meta property="og:title" content="CivicRecords AI">
+  <meta property="og:title" content="CivicSunshine">
   <meta property="og:description" content="Open-source AI for municipal open records. Runs locally. No cloud. No vendor lock-in.">
   <meta property="og:type" content="website">
-  <title>CivicRecords AI — Open-Source AI for Municipal Open Records</title>
+  <title>CivicSunshine — Open-Source AI for Municipal Open Records</title>
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -437,7 +437,7 @@
   <p class="hero-value">
     Every city in America processes public records requests — and most staff still search file shares
     manually, review hundreds of pages by hand, and track deadlines in spreadsheets.
-    <strong>CivicRecords AI changes that.</strong> It runs entirely inside your city's network,
+    <strong>CivicSunshine changes that.</strong> It runs entirely inside your city's network,
     ingesting your documents and making them searchable with natural language AI queries, flagging
     potential exemptions, and managing the full request lifecycle from intake to response.
     No cloud subscription. No vendor lock-in. <strong>Your data never leaves the building.</strong>
@@ -468,7 +468,7 @@
   <div style="display:flex;gap:.75rem;flex-wrap:wrap;justify-content:center;margin-top:1.5rem;">
     <a href="https://github.com/CivicSuite/civicrecords-ai" class="btn btn-primary">&#128008; GitHub Repository</a>
     <a href="https://raw.githubusercontent.com/CivicSuite/civicrecords-ai/v1.7.3/install.sh" class="btn btn-primary" download>&#11015; Download Installer (Linux / macOS)</a>
-    <a href="https://github.com/CivicSuite/civicrecords-ai/releases/download/v1.7.3/CivicRecordsAI-1.7.3-Setup.exe" class="btn btn-primary" download>&#11015; Download Installer (Windows)</a>
+    <a href="https://github.com/CivicSuite/civicrecords-ai/releases/download/v1.7.3/CivicSunshine-1.7.3-Setup.exe" class="btn btn-primary" download>&#11015; Download Installer (Windows)</a>
     <a href="https://github.com/CivicSuite/civicrecords-ai/blob/master/USER-MANUAL.md" class="btn btn-outline">&#128462; User Manual</a>
     <a href="https://github.com/CivicSuite/civicrecords-ai/blob/master/README.md" class="btn btn-outline">&#128196; README</a>
   </div>
@@ -479,7 +479,7 @@
   <h2>Architecture</h2>
 
   <figure style="margin: 2em auto; max-width: 1000px;">
-    <img src="diagrams/deployment-stack.svg" alt="CivicRecords AI deployment stack: browser to nginx frontend to FastAPI API plus Celery worker, backed by Postgres+pgvector, Redis, and Ollama, all running inside Docker Compose on the city's own network with no cloud dependency." style="max-width: 100%; height: auto; display: block; margin: 0 auto;">
+    <img src="diagrams/deployment-stack.svg" alt="CivicSunshine deployment stack: browser to nginx frontend to FastAPI API plus Celery worker, backed by Postgres+pgvector, Redis, and Ollama, all running inside Docker Compose on the city's own network with no cloud dependency." style="max-width: 100%; height: auto; display: block; margin: 0 auto;">
     <figcaption style="text-align: center; color: #cbd5e1; font-size: 0.9em; margin-top: 0.5em;">Deployment stack — entire system runs inside Docker Compose on the city's network. No cloud, no outbound by default.</figcaption>
   </figure>
 
@@ -700,7 +700,7 @@
       <div class="card">
         <div class="card-icon">&#128279;</div>
         <h3>Federation-Ready</h3>
-        <p>Service account API keys (hashed before storage) enable authenticated REST access between CivicRecords AI instances. The foundation for cross-jurisdiction record discovery — a single staff member can query cooperating cities without leaving their own system.</p>
+        <p>Service account API keys (hashed before storage) enable authenticated REST access between CivicSunshine instances. The foundation for cross-jurisdiction record discovery — a single staff member can query cooperating cities without leaving their own system.</p>
       </div>
 
       <div class="card">
@@ -718,7 +718,7 @@
       <div class="card">
         <div class="card-icon">&#128268;</div>
         <h3>Connector Framework</h3>
-        <p>Pluggable adapter architecture lets administrators connect CivicRecords AI directly to live record sources. Ships with four implemented connector types: <strong>file_system</strong> (local/mounted directories), <strong>manual_drop</strong> (watched drop folders), <strong>rest_api</strong> (generic REST API — API key / Bearer / OAuth2 / Basic; JSON/XML/CSV; page/offset/cursor pagination), and <strong>odbc</strong> (SQL databases via pyodbc, row-as-document with SQL-injection guards). Per-source cron scheduling uses CivicCore's shared UTC schedule validation with configurable presets. Idempotent sync via content-hash dedup for binary sources and source-path dedup for structured sources. Roadmap: IMAP email, SMB/NFS, SharePoint.</p>
+        <p>Pluggable adapter architecture lets administrators connect CivicSunshine directly to live record sources. Ships with four implemented connector types: <strong>file_system</strong> (local/mounted directories), <strong>manual_drop</strong> (watched drop folders), <strong>rest_api</strong> (generic REST API — API key / Bearer / OAuth2 / Basic; JSON/XML/CSV; page/offset/cursor pagination), and <strong>odbc</strong> (SQL databases via pyodbc, row-as-document with SQL-injection guards). Per-source cron scheduling uses CivicCore's shared UTC schedule validation with configurable presets. Idempotent sync via content-hash dedup for binary sources and source-path dedup for structured sources. Roadmap: IMAP email, SMB/NFS, SharePoint.</p>
       </div>
 
       <div class="card">
@@ -852,7 +852,7 @@
 <section class="links" id="links">
   <div class="container">
     <h2 class="section-title">Get started</h2>
-    <p class="section-sub">Download, read the documentation, and evaluate CivicRecords AI for your city.</p>
+    <p class="section-sub">Download, read the documentation, and evaluate CivicSunshine for your city.</p>
 
     <!-- PRIMARY ACTION BUTTONS -->
     <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:1rem;margin-bottom:2.5rem;">
@@ -871,8 +871,8 @@
         <span style="font-size:1rem;">Download Installer</span>
         <span style="font-size:.78rem;font-weight:400;color:#bbf7d0;">Linux &amp; macOS · install.sh</span>
       </a>
-      <a href="https://github.com/CivicSuite/civicrecords-ai/releases/download/v1.7.3/CivicRecordsAI-1.7.3-Setup.exe"
-         download="CivicRecordsAI-1.7.3-Setup.exe"
+      <a href="https://github.com/CivicSuite/civicrecords-ai/releases/download/v1.7.3/CivicSunshine-1.7.3-Setup.exe"
+         download="CivicSunshine-1.7.3-Setup.exe"
          style="display:flex;flex-direction:column;align-items:center;gap:.5rem;padding:1.5rem 1rem;background:#1d4ed8;color:#fff;border-radius:10px;text-decoration:none;text-align:center;font-weight:700;transition:opacity .15s;"
          onmouseover="this.style.opacity='.85'" onmouseout="this.style.opacity='1'">
         <span style="font-size:1.75rem;">&#11015;</span>
@@ -936,7 +936,7 @@
   <p class="sub">
     <a href="https://github.com/CivicSuite/civicrecords-ai">github.com/CivicSuite/civicrecords-ai</a>
   </p>
-  <p class="copy">Copyright &copy; 2026 CivicRecords AI Contributors &nbsp;&middot;&nbsp; Apache License 2.0</p>
+  <p class="copy">Copyright &copy; 2026 CivicSunshine Contributors &nbsp;&middot;&nbsp; Apache License 2.0</p>
 </footer>
 
 </body>

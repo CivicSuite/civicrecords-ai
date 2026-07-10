@@ -1,5 +1,5 @@
 """
-CivicRecords AI — PDF Generator
+CivicSunshine — PDF Generator
 Produces README-FULL.pdf and README.pdf at the repository root.
 Run: python docs/generate_pdfs.py
 """
@@ -227,7 +227,7 @@ def make_page_callback(doc_title, show_header=True):
         canvas.setFont("Helvetica", 8)
         canvas.setFillColor(colors.HexColor("#6b7280"))
         canvas.drawString(margin, 0.38 * inch, "Apache License 2.0 — github.com/CivicSuite/civicrecords-ai")
-        canvas.drawRightString(w - margin, 0.38 * inch, "© 2026 CivicRecords AI")
+        canvas.drawRightString(w - margin, 0.38 * inch, "© 2026 CivicSunshine")
 
         canvas.restoreState()
     return on_page
@@ -638,7 +638,7 @@ FEATURES = [
      "WCAG 2.2 AA targeted (44px touch targets, skip navigation, icon+color status badges)."),
     ("Federation-Ready",
      "REST API with service accounts enables future cross-jurisdiction record discovery "
-     "between CivicRecords AI instances."),
+     "between CivicSunshine instances."),
     ("50-State Exemption Rules",
      "180 exemption rules across 51 jurisdictions (all 50 states + DC) with per-state "
      "statutory keyword matching and rule testing with ReDoS protection."),
@@ -717,7 +717,7 @@ def build_readme_full(out_path):
         topMargin=0.85 * inch,
         bottomMargin=0.75 * inch,
     )
-    cb = make_page_callback("CivicRecords AI — Technical Reference")
+    cb = make_page_callback("CivicSunshine — Technical Reference")
     frame = Frame(inch, 0.75 * inch, 6.5 * inch, 9.4 * inch, id="main")
     doc.addPageTemplates([PageTemplate(id="main", frames=frame, onPage=cb)])
 
@@ -725,7 +725,7 @@ def build_readme_full(out_path):
 
     # --- Title page ---
     story.append(sp(80))
-    story.append(P("CivicRecords AI", styles["title"]))
+    story.append(P("CivicSunshine", styles["title"]))
     story.append(sp(8))
     story.append(P("Technical Reference — v1.4.8", styles["subtitle"]))
     story.append(sp(4))
@@ -774,7 +774,7 @@ def build_readme_full(out_path):
     # --- 1. Executive Summary ---
     story += section_header("1. Executive Summary", styles, 1)
     story.append(P(
-        "CivicRecords AI is an open-source, locally-hosted AI system purpose-built for "
+        "CivicSunshine is an open-source, locally-hosted AI system purpose-built for "
         "municipal open records request processing. Every city in America handles FOIA, CORA, "
         "and equivalent state open-records laws. Staff manually search file shares, email "
         "archives, and databases — then review every document for exemptions before release. "
@@ -783,7 +783,7 @@ def build_readme_full(out_path):
     ))
     story.append(P(
         "No open-source tool existed for the <b>responder side</b> of open records at the "
-        "municipal level. CivicRecords AI fills that gap.",
+        "municipal level. CivicSunshine fills that gap.",
         styles["body"]
     ))
     story += section_header("Who It Is For", styles, 2)
@@ -815,7 +815,7 @@ def build_readme_full(out_path):
     # --- 2. System Architecture ---
     story += section_header("2. System Architecture", styles, 1)
     story.append(P(
-        "CivicRecords AI deploys as a 7-service Docker Compose stack. All services run on "
+        "CivicSunshine deploys as a 7-service Docker Compose stack. All services run on "
         "Linux containers regardless of host operating system (Windows, macOS, or Linux). "
         "No internet connection is required after initial setup.",
         styles["body"]
@@ -827,7 +827,7 @@ def build_readme_full(out_path):
     ))
     story.append(sp(4))
     story.append(SystemArchDiagram())
-    story.append(P("Figure 1 — CivicRecords AI 7-service Docker Compose architecture.", styles["caption"]))
+    story.append(P("Figure 1 — CivicSunshine 7-service Docker Compose architecture.", styles["caption"]))
     story.append(sp(6))
 
     svc_data = [
@@ -867,7 +867,7 @@ def build_readme_full(out_path):
     # --- 3. Core Features ---
     story += section_header("3. Core Features", styles, 1)
     story.append(P(
-        f"CivicRecords AI ships with {len(FEATURES)} documented features across ingestion, "
+        f"CivicSunshine ships with {len(FEATURES)} documented features across ingestion, "
         "request management, search, exemption detection, analytics, and compliance.",
         styles["body"]
     ))
@@ -955,7 +955,7 @@ def build_readme_full(out_path):
     # --- 6. Database Schema ---
     story += section_header("6. Database Schema", styles, 1)
     story.append(P(
-        f"CivicRecords AI uses {len(DB_TABLES)} PostgreSQL tables managed by 16 Alembic "
+        f"CivicSunshine uses {len(DB_TABLES)} PostgreSQL tables managed by 16 Alembic "
         "migration scripts. pgvector extension provides the embeddings column used for "
         "semantic search.",
         styles["body"]
@@ -1038,7 +1038,7 @@ def build_readme_full(out_path):
     # --- 9. Sync Failure & Circuit Breaker ---
     story += section_header("9. Sync Failure & Circuit Breaker", styles, 1)
     story.append(P(
-        "CivicRecords AI implements a two-layer retry model designed to distinguish transient "
+        "CivicSunshine implements a two-layer retry model designed to distinguish transient "
         "infrastructure failures from persistent data problems, and to protect the system from "
         "cascading failures on unreliable municipal APIs.",
         styles["body"]
@@ -1108,7 +1108,7 @@ def build_readme_full(out_path):
     # --- 12. Test Suite ---
     story += section_header("12. Test Suite", styles, 1)
     story.append(P(
-        "CivicRecords AI ships 627 backend tests across 45+ pytest modules and 36 frontend "
+        "CivicSunshine ships 627 backend tests across 45+ pytest modules and 36 frontend "
         "component tests. Tests are a first-class artifact — every key engineering decision "
         "is enforced by a named test function.",
         styles["body"]
@@ -1149,7 +1149,7 @@ def build_readme_full(out_path):
     # --- 13. License ---
     story += section_header("13. License", styles, 1)
     story.append(P(
-        "CivicRecords AI is released under the <b>Apache License 2.0</b>.",
+        "CivicSunshine is released under the <b>Apache License 2.0</b>.",
         styles["body"]
     ))
     story.append(P(
@@ -1185,7 +1185,7 @@ def build_readme_short(out_path):
         topMargin=0.85 * inch,
         bottomMargin=0.75 * inch,
     )
-    cb = make_page_callback("CivicRecords AI — Overview")
+    cb = make_page_callback("CivicSunshine — Overview")
     frame = Frame(inch, 0.75 * inch, 6.5 * inch, 9.4 * inch, id="main")
     doc.addPageTemplates([PageTemplate(id="main", frames=frame, onPage=cb)])
 
@@ -1193,7 +1193,7 @@ def build_readme_short(out_path):
 
     # Title page
     story.append(sp(80))
-    story.append(P("CivicRecords AI", styles["title"]))
+    story.append(P("CivicSunshine", styles["title"]))
     story.append(sp(8))
     story.append(P("Open-Source Municipal Records Request AI", styles["subtitle"]))
     story.append(sp(4))
@@ -1209,7 +1209,7 @@ def build_readme_short(out_path):
     story.append(PageBreak())
 
     # What it is
-    story += section_header("What Is CivicRecords AI?", styles, 1)
+    story += section_header("What Is CivicSunshine?", styles, 1)
     story.append(P(
         "Every city in America processes open records requests. Staff manually search file "
         "shares, email archives, and databases — then review every document for exemptions "
@@ -1217,7 +1217,7 @@ def build_readme_short(out_path):
         styles["body"]
     ))
     story.append(P(
-        "CivicRecords AI is the first open-source tool for the <b>responder side</b> of "
+        "CivicSunshine is the first open-source tool for the <b>responder side</b> of "
         "open records at the municipal level. It runs entirely inside your city's network — "
         "no cloud subscriptions, no vendor lock-in, no resident data leaving the building.",
         styles["body"]
@@ -1289,7 +1289,7 @@ def build_readme_short(out_path):
     ))
     story.append(sp(8))
     story.append(SystemArchDiagram(width=6.5*inch, height=3.2*inch))
-    story.append(P("Figure 1 — CivicRecords AI runtime service topology.", styles["caption"]))
+    story.append(P("Figure 1 — CivicSunshine runtime service topology.", styles["caption"]))
     story.append(sp(10))
     story.append(P(
         "<b>Tech stack:</b> Python 3.12, FastAPI, SQLAlchemy 2.0, React 18, shadcn/ui, "
@@ -1329,7 +1329,7 @@ def build_readme_short(out_path):
     story.append(sp(16))
     story.append(HR())
     story.append(P(
-        "CivicRecords AI is open-source software released under Apache 2.0.",
+        "CivicSunshine is open-source software released under Apache 2.0.",
         styles["center_body"]
     ))
 
@@ -1341,7 +1341,7 @@ def build_readme_short(out_path):
 # Main
 # ---------------------------------------------------------------------------
 def main():
-    print("CivicRecords AI PDF Generator")
+    print("CivicSunshine PDF Generator")
     print("=" * 40)
 
     full_pdf  = REPO_ROOT / "README-FULL.pdf"

@@ -281,7 +281,7 @@ export default function Onboarding({ token }: { token: string }) {
   return (
     <div className="space-y-6 max-w-3xl">
       <PageHeader
-        title="Welcome to CivicRecords AI"
+        title="Welcome to CivicSunshine"
         description="Let's set up your city profile. Choose guided interview or manual form."
       />
 

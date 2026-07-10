@@ -1,7 +1,7 @@
 {
   "openapi": "3.1.0",
   "info": {
-    "title": "CivicRecords AI",
+    "title": "CivicSunshine",
     "description": "AI-powered open records support for American cities",
     "version": "1.7.3"
   },

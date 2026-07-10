@@ -1,4 +1,4 @@
-# CivicRecords AI — Product Description
+# CivicSunshine — Product Description
 
 **Local AI-Powered Open Records Support for American Cities**
 
@@ -8,7 +8,7 @@
 
 ## Executive Summary
 
-CivicRecords AI is a fully open-source, locally-hosted AI system that helps municipal staff respond to open records requests (FOIA/CORA and state equivalents). It runs entirely on commodity hardware — a single $1,000 Ryzen-based desktop with 32–64 GB of RAM — inside a city's existing network perimeter. No cloud subscriptions. No vendor lock-in. No resident data leaving the building.
+CivicSunshine is a fully open-source, locally-hosted AI system that helps municipal staff respond to open records requests (FOIA/CORA and state equivalents). It runs entirely on commodity hardware — a single $1,000 Ryzen-based desktop with 32–64 GB of RAM — inside a city's existing network perimeter. No cloud subscriptions. No vendor lock-in. No resident data leaving the building.
 
 The system ingests a city's documents, databases, images, and digital records into a searchable knowledge base, then helps staff locate responsive records, flag exemptions, draft response language, and track request status — cutting response times from weeks to days while reducing legal exposure from missed or mishandled requests.
 
@@ -32,7 +32,7 @@ Cities need AI that works *for* them, runs *inside* their walls, and costs less 
 
 ### What It Is
 
-CivicRecords AI is a self-contained software system that a city's IT staff can install on a single desktop-class machine, connect to the city's document stores and databases, and hand to records staff as a browser-based tool. It combines:
+CivicSunshine is a self-contained software system that a city's IT staff can install on a single desktop-class machine, connect to the city's document stores and databases, and hand to records staff as a browser-based tool. It combines:
 
 1. **A local large language model** (running via Ollama or compatible runtime) that never sends data off the machine.
 2. **A document ingestion pipeline** that can consume PDFs, images (via OCR), Word documents, spreadsheets, emails, structured database exports, API feeds, and plain text — normalizing everything into a searchable knowledge base.
@@ -168,7 +168,7 @@ For requests that require checking external public records or legal references:
 │                    City Network Perimeter                    │
 │                                                             │
 │  ┌─────────────┐    ┌──────────────────────────────────┐   │
-│  │  Staff       │    │  CivicRecords AI Server          │   │
+│  │  Staff       │    │  CivicSunshine Server          │   │
 │  │  Workstation │◄──►│                                  │   │
 │  │  (Browser)   │    │  ┌────────────┐  ┌───────────┐  │   │
 │  └─────────────┘    │  │ Web UI     │  │ Admin UI  │  │   │
@@ -227,7 +227,7 @@ For requests that require checking external public records or legal references:
 | Containerization | Docker + Docker Compose | Apache 2.0 | Deployment and isolation |
 | Auth | Keycloak or Authelia | Apache 2.0 (Keycloak) / Apache 2.0 (Authelia) | User authentication and RBAC |
 
-**License note on PyMuPDF:** PyMuPDF's AGPL license requires that if the software is distributed or made available over a network, the complete source code of the application must also be made available. Since CivicRecords AI is fully open source, this is compatible. However, the product team should evaluate pdfplumber (MIT) as the default to simplify licensing for cities that may want to make local modifications without open-sourcing them. Both should be supported as swappable backends.
+**License note on PyMuPDF:** PyMuPDF's AGPL license requires that if the software is distributed or made available over a network, the complete source code of the application must also be made available. Since CivicSunshine is fully open source, this is compatible. However, the product team should evaluate pdfplumber (MIT) as the default to simplify licensing for cities that may want to make local modifications without open-sourcing them. Both should be supported as swappable backends.
 
 **License note on Squid (GPL):** Squid is used as an isolated network proxy, not linked into the application code. Under standard GPL interpretation, this constitutes "mere aggregation" and does not require the rest of the system to be GPL. If the product team prefers a more permissive option, mitmproxy (MIT) is the alternative, though Squid is the more battle-tested choice for municipal network environments.
 
@@ -298,7 +298,7 @@ The system ships as a Docker Compose stack with an automated install script:
 
 ### Project License
 
-The CivicRecords AI application code is released under the **Apache License 2.0**, providing:
+The CivicSunshine application code is released under the **Apache License 2.0**, providing:
 
 - Freedom for any city to use, modify, and deploy without restriction.
 - Patent protection for contributors and users.
@@ -326,7 +326,7 @@ All dependencies must carry one of the following license types:
 - GPL v2 or v3 — only for standalone tools (e.g., Squid proxy) that are not linked into the application code.
 
 **Not Acceptable:**
-- AGPL — unless the entire CivicRecords AI codebase is itself open source (which it is, so AGPL dependencies are technically compatible, but should be avoided or flagged for review to keep the licensing story simple for municipal legal departments).
+- AGPL — unless the entire CivicSunshine codebase is itself open source (which it is, so AGPL dependencies are technically compatible, but should be avoided or flagged for review to keep the licensing story simple for municipal legal departments).
 - SSPL, BSL, or any "source available" license that restricts commercial or government use.
 - Any license requiring attribution beyond what is standard (e.g., "you must display our logo").
 
@@ -411,7 +411,7 @@ All dependencies must carry one of the following license types:
 
 ## Competitive Positioning
 
-| Dimension | CivicRecords AI | Cloud-Based FOIA Tools | Manual Process |
+| Dimension | CivicSunshine | Cloud-Based FOIA Tools | Manual Process |
 |---|---|---|---|
 | Data residency | 100% local | Vendor servers | Local but unsearchable |
 | Recurring cost | $0 software | $500–$5,000/mo | Staff time |
@@ -439,7 +439,7 @@ All dependencies must carry one of the following license types:
 
 7. **State statute library:** Building exemption rules for all 50 states is a massive undertaking. Should Phase 2 ship with a configurable framework + 5 pilot states, or attempt full coverage? Recommendation: framework + pilot states, with community contributions for the rest.
 
-8. **Name:** "CivicRecords AI" is a working title. The product team should validate naming with municipal stakeholders. Considerations: should it sound governmental, approachable, or technical?
+8. **Name:** "CivicSunshine" is a working title. The product team should validate naming with municipal stakeholders. Considerations: should it sound governmental, approachable, or technical?
 
 ---
 

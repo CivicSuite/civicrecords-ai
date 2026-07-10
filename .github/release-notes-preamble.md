@@ -1,6 +1,6 @@
 ## About this release
 
-CivicRecords AI is an open-source, locally-hosted AI system for municipal open-records request processing. Every deployment is a sovereign instance owned by the city — no cloud, no telemetry, no outbound data transfer.
+CivicSunshine is an open-source, locally-hosted AI system for municipal open-records request processing. Every deployment is a sovereign instance owned by the city — no cloud, no telemetry, no outbound data transfer.
 
 **Windows installer is UNSIGNED by design.** On first run, Windows SmartScreen will show "Windows protected your PC — Unknown publisher." To proceed: click **More info** → **Run anyway**, then confirm UAC. See [installer/windows/README.md](../blob/master/installer/windows/README.md) for the full remediation walkthrough.
 
@@ -14,7 +14,7 @@ notes and then verify the installer checksum sidecar plus package checksums.
 
 ## Downloads
 
-- **Windows double-click installer:** `CivicRecordsAI-<version>-Setup.exe` (bundled with `.sha256` checksum sidecar for `Get-FileHash` verification).
+- **Windows double-click installer:** `CivicSunshine-<version>-Setup.exe` (bundled with `.sha256` checksum sidecar for `Get-FileHash` verification).
 - **Python package assets:** `civicrecords_ai-<version>-py3-none-any.whl`, `civicrecords_ai-<version>.tar.gz`, and `SHA256SUMS.txt` for direct-pip release URL consumers.
 - **Linux / macOS guided-script install:** clone the repo at this tag and run `./install.sh` — see [README.md](../blob/master/README.md) and [USER-MANUAL.md](../blob/master/USER-MANUAL.md) for prerequisites and a step-by-step walkthrough.
 

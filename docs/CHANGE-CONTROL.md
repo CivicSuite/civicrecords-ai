@@ -1,4 +1,4 @@
-# CivicRecords AI — Change Control Register
+# CivicSunshine — Change Control Register
 
 **Canonical Spec:** `docs/UNIFIED-SPEC.md` (Unified Design Specification v2.0, April 12, 2026)
 

@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>CivicRecords AI &mdash; Staff User Manual v1.4.1</title>
+<title>CivicSunshine &mdash; Staff User Manual v1.4.1</title>
 <style>
   :root {
     --blue-900: #1e3a5f;
@@ -480,7 +480,7 @@
      ════════════════════════════════════════════════════════ -->
 <nav class="sidebar" aria-label="Manual navigation">
   <div class="sidebar-header">
-    <h1>CivicRecords AI</h1>
+    <h1>CivicSunshine</h1>
     <div class="subtitle">Staff User Manual</div>
     <span class="version-badge">v1.4.1</span>
   </div>
@@ -503,7 +503,7 @@
     <a href="#getting-help">12. Getting Help</a>
   </div>
   <div class="sidebar-footer">
-    &copy; 2026 CivicRecords AI Project
+    &copy; 2026 CivicSunshine Project
   </div>
 </nav>
 
@@ -515,7 +515,7 @@
 
 <!-- ── Cover ──────────────────────────────────────────────── -->
 <div class="cover">
-  <h1>CivicRecords AI</h1>
+  <h1>CivicSunshine</h1>
   <div class="cover-sub">Staff User Manual</div>
   <div class="cover-meta">
     <span><strong>Version:</strong>&nbsp; 1.4.1</span>
@@ -538,7 +538,7 @@
   <ul>
     <li><strong>If your city enables the public portal (optional, off by default).</strong> Residents can now create their own account and submit a records request through a public surface (<code>/public/*</code>). Those submissions land in your normal request list and look like any other request &mdash; same statuses, same timeline, same workflow. You handle them exactly the way you handle staff-created requests today. Anonymous walk-up submission is not supported &mdash; every public submission has a logged-in resident as <code>created_by</code>.</li>
     <li><strong>Connector credentials are now encrypted at rest (ENG-001 closed).</strong> This is entirely transparent to you. Nothing in the staff UI changes. What changed: if your IT admin ever exports the database or restores a backup, connector credentials appear as ciphertext rather than plaintext. Your admin has a new <code>ENCRYPTION_KEY</code> to manage &mdash; see the Administrator Manual for the operator detail; no staff action required.</li>
-    <li><strong>Windows double-click installer is available.</strong> If your organization deploys new workstations from Windows, there is now a <code>CivicRecordsAI-1.2.0-Setup.exe</code> on the <a href="https://github.com/CivicSuite/civicrecords-ai/releases/tag/v1.2.0">v1.2.0 release page</a>. It is <strong>unsigned by design</strong>, so Windows SmartScreen will show &quot;Windows protected your PC &mdash; Unknown publisher&quot; on first run. Remediation: <strong>More info &rarr; Run anyway</strong>. This is expected and safe when the installer came from the official release page with a matching SHA-256 checksum.</li>
+    <li><strong>Windows double-click installer is available.</strong> If your organization deploys new workstations from Windows, there is now a <code>CivicSunshine-1.2.0-Setup.exe</code> on the <a href="https://github.com/CivicSuite/civicrecords-ai/releases/tag/v1.2.0">v1.2.0 release page</a>. It is <strong>unsigned by design</strong>, so Windows SmartScreen will show &quot;Windows protected your PC &mdash; Unknown publisher&quot; on first run. Remediation: <strong>More info &rarr; Run anyway</strong>. This is expected and safe when the installer came from the official release page with a matching SHA-256 checksum.</li>
   </ul>
   <p style="margin-bottom:0;">
     Full release narrative lives in <a href="https://github.com/CivicSuite/civicrecords-ai/releases/tag/v1.2.0">the v1.2.0 release notes</a> and <a href="https://github.com/CivicSuite/civicrecords-ai/blob/master/CHANGELOG.md#120---2026-04-23">CHANGELOG.md &sect;[1.2.0]</a>. Nothing else in this manual changed.
@@ -552,21 +552,21 @@
 <div class="section" id="welcome">
   <h2><span class="section-number">1</span> Welcome</h2>
 
-  <h3>What CivicRecords AI Does</h3>
+  <h3>What CivicSunshine Does</h3>
   <p>
-    CivicRecords AI is a tool that helps your city respond to public records requests faster and more accurately. When a resident asks for a document, CivicRecords AI searches across your city's record sources&mdash;meeting minutes, resolutions, ordinances, permits, and more&mdash;and presents the most relevant results in seconds. It also suggests which exemptions might apply, drafts response letters, and tracks every request from receipt to fulfillment. Everything runs on your city's own servers, and every decision is made by you, not by the system.
+    CivicSunshine is a tool that helps your city respond to public records requests faster and more accurately. When a resident asks for a document, CivicSunshine searches across your city's record sources&mdash;meeting minutes, resolutions, ordinances, permits, and more&mdash;and presents the most relevant results in seconds. It also suggests which exemptions might apply, drafts response letters, and tracks every request from receipt to fulfillment. Everything runs on your city's own servers, and every decision is made by you, not by the system.
   </p>
 
-  <h3>What CivicRecords AI Does NOT Do</h3>
+  <h3>What CivicSunshine Does NOT Do</h3>
   <ul>
     <li><strong>It does not make decisions for you.</strong> The system suggests and drafts; you review and approve. Every exemption flag, every response letter, and every release decision requires a human sign-off.</li>
-    <li><strong>It is not a public portal.</strong> Residents do not interact with CivicRecords AI directly. You use it internally to process their requests.</li>
-    <li><strong>It does not send data to the cloud.</strong> CivicRecords AI runs entirely on your city's local network or on-premises servers. No records or request data leave your infrastructure.</li>
+    <li><strong>It is not a public portal.</strong> Residents do not interact with CivicSunshine directly. You use it internally to process their requests.</li>
+    <li><strong>It does not send data to the cloud.</strong> CivicSunshine runs entirely on your city's local network or on-premises servers. No records or request data leave your infrastructure.</li>
   </ul>
 
   <h3>Who This Manual Is For</h3>
   <p>
-    This manual is written for city staff members who use CivicRecords AI day to day: city clerks who process records requests, records officers who manage compliance, department liaisons who search for and provide departmental records, and city managers who oversee the process. You do not need any technical background to use this system or to follow this guide.
+    This manual is written for city staff members who use CivicSunshine day to day: city clerks who process records requests, records officers who manage compliance, department liaisons who search for and provide departmental records, and city managers who oversee the process. You do not need any technical background to use this system or to follow this guide.
   </p>
 </div>
 
@@ -577,7 +577,7 @@
 <div class="section" id="signing-in">
   <h2><span class="section-number">2</span> Signing In</h2>
 
-  <h3>How to Access CivicRecords AI</h3>
+  <h3>How to Access CivicSunshine</h3>
   <p>
     Open your web browser (Chrome, Edge, or Firefox are recommended) and navigate to the address provided by your IT department. In most installations, this is:
   </p>
@@ -585,7 +585,7 @@
     <code style="font-size:1.1rem; padding: 8px 20px;">http://localhost:8080</code>
   </p>
   <p>
-    If your city has deployed CivicRecords AI on a shared network server, your IT administrator will provide the correct URL (for example, <code>http://records.yourcity.gov</code>).
+    If your city has deployed CivicSunshine on a shared network server, your IT administrator will provide the correct URL (for example, <code>http://records.yourcity.gov</code>).
   </p>
 
   <h3>The Login Screen</h3>
@@ -648,7 +648,7 @@
 
   <h3>Your Role Determines What You Can See and Do</h3>
   <p>
-    CivicRecords AI has four user roles. Each role has access to a specific set of features:
+    CivicSunshine has four user roles. Each role has access to a specific set of features:
   </p>
 
   <div class="table-wrap">
@@ -936,7 +936,7 @@
 
   <h3>Statutory Deadlines and Alerts</h3>
   <p>
-    CivicRecords AI automatically calculates statutory response deadlines based on your state's public records law. You will see:
+    CivicSunshine automatically calculates statutory response deadlines based on your state's public records law. You will see:
   </p>
   <ul>
     <li>A <strong>deadline date</strong> displayed prominently on each request.</li>
@@ -962,7 +962,7 @@
 
   <h3>What Exemption Flags Are</h3>
   <p>
-    When CivicRecords AI analyzes records attached to a request, it may detect information that could be exempt from public disclosure under your state's laws. When this happens, it creates an <strong>exemption flag</strong>&mdash;a suggestion that a specific piece of content might need to be redacted or withheld. The system suggests; you decide.
+    When CivicSunshine analyzes records attached to a request, it may detect information that could be exempt from public disclosure under your state's laws. When this happens, it creates an <strong>exemption flag</strong>&mdash;a suggestion that a specific piece of content might need to be redacted or withheld. The system suggests; you decide.
   </p>
 
   <h3>Reviewing a Flag: Accept or Reject</h3>
@@ -1052,7 +1052,7 @@
     <div class="callout-icon">i</div>
     <div class="callout-body">
       <strong>AI Draft Notice</strong>
-      This letter was drafted by CivicRecords AI and has not been reviewed by staff. It may contain errors, omit relevant information, or cite incorrect statutes. A staff member must review and approve this letter before it is sent.
+      This letter was drafted by CivicSunshine and has not been reviewed by staff. It may contain errors, omit relevant information, or cite incorrect statutes. A staff member must review and approve this letter before it is sent.
     </div>
   </div>
   <p>
@@ -1261,7 +1261,7 @@
 
   <h3>What Departments Mean for Your View</h3>
   <p>
-    In CivicRecords AI, every user is assigned to one or more departments (such as Finance, Public Works, or the City Clerk's office). Your department assignment controls which requests you can see and work on.
+    In CivicSunshine, every user is assigned to one or more departments (such as Finance, Public Works, or the City Clerk's office). Your department assignment controls which requests you can see and work on.
   </p>
 
   <h3>You Only See Your Department's Requests</h3>
@@ -1283,7 +1283,7 @@
     <div class="callout-icon">i</div>
     <div class="callout-body">
       <strong>Note</strong>
-      Department-level access controls are part of Phase 2 of CivicRecords AI. If your installation has not yet enabled department filtering, all staff members may see all requests. Contact your administrator for your city's current configuration.
+      Department-level access controls are part of Phase 2 of CivicSunshine. If your installation has not yet enabled department filtering, all staff members may see all requests. Contact your administrator for your city's current configuration.
     </div>
   </div>
 </div>
@@ -1354,7 +1354,7 @@
 
   <h3>Glossary of Terms</h3>
   <ul class="glossary-list">
-    <li><span class="term">AI Draft</span> &mdash; A label indicating that text (such as a summary or response letter) was generated by the CivicRecords AI engine and has not yet been reviewed by a staff member.</li>
+    <li><span class="term">AI Draft</span> &mdash; A label indicating that text (such as a summary or response letter) was generated by the CivicSunshine engine and has not yet been reviewed by a staff member.</li>
     <li><span class="term">Confidence Score</span> &mdash; A percentage (0&ndash;100%) indicating how certain the AI is about a search result's relevance or an exemption flag's accuracy. Higher is more certain.</li>
     <li><span class="term">Department</span> &mdash; An organizational unit within your city (such as Finance, Public Works, or City Clerk). Departments control which requests and records are visible to which staff members.</li>
     <li><span class="term">Exemption</span> &mdash; A legal basis under state law for withholding or redacting part of a public record. Common examples include personal privacy, attorney-client privilege, and law enforcement investigation records.</li>
@@ -1364,7 +1364,7 @@
     <li><span class="term">Redaction</span> &mdash; The process of permanently removing or obscuring exempt information from a document before releasing it to the public.</li>
     <li><span class="term">Requester</span> &mdash; The person or organization that submitted the public records request.</li>
     <li><span class="term">RRF (Records Request Form)</span> &mdash; A standardized form used to submit a public records request. Some jurisdictions require specific forms; others accept requests in any written format.</li>
-    <li><span class="term">Source Collection</span> &mdash; A set of related documents that have been indexed by CivicRecords AI for searching, such as "Council Minutes 2020&ndash;2025" or "Building Permits."</li>
+    <li><span class="term">Source Collection</span> &mdash; A set of related documents that have been indexed by CivicSunshine for searching, such as "Council Minutes 2020&ndash;2025" or "Building Permits."</li>
     <li><span class="term">Statutory Deadline</span> &mdash; The maximum number of business days your jurisdiction allows for responding to a public records request, as defined by state law. This varies by state.</li>
     <li><span class="term">Timeline</span> &mdash; A chronological, tamper-proof log of all actions taken on a records request, including status changes, messages, notes, and document attachments.</li>
   </ul>
@@ -1379,12 +1379,12 @@
 
   <h3>Contact Your IT Administrator</h3>
   <p>
-    For issues related to your account (password resets, role changes, department assignments) or to the system itself (the application is down, pages are not loading, search is not returning results), contact your city's IT administrator. They manage the CivicRecords AI installation and can resolve most issues.
+    For issues related to your account (password resets, role changes, department assignments) or to the system itself (the application is down, pages are not loading, search is not returning results), contact your city's IT administrator. They manage the CivicSunshine installation and can resolve most issues.
   </p>
 
   <h3>Community Discussions</h3>
   <p>
-    CivicRecords AI is an open-source project with an active community. If you have questions about how to use a feature, want to suggest an improvement, or want to see how other cities are using the tool, visit the project's GitHub Discussions page:
+    CivicSunshine is an open-source project with an active community. If you have questions about how to use a feature, want to suggest an improvement, or want to see how other cities are using the tool, visit the project's GitHub Discussions page:
   </p>
   <p style="margin: 16px 0;">
     <a href="https://github.com/CivicSuite/civicrecords-ai/discussions" style="color: var(--blue-700); font-weight: 600;">
@@ -1415,7 +1415,7 @@
 
 <!-- ── Footer ────────────────────────────────────────────── -->
 <div style="margin-top: 64px; padding-top: 24px; border-top: 2px solid var(--gray-200); text-align: center; color: var(--gray-500); font-size: 0.82rem;">
-  <p>CivicRecords AI &mdash; Staff User Manual &mdash; Version 1.4.1 &mdash; April 2026</p>
+  <p>CivicSunshine &mdash; Staff User Manual &mdash; Version 1.4.1 &mdash; April 2026</p>
   <p>An open-source project for transparent, efficient public records management.</p>
 </div>
 

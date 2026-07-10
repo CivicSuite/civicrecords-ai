@@ -1,16 +1,18 @@
-# CivicRecords AI
+# CivicSunshine
+
+> Formerly published as "CivicRecords AI"; renamed 2026-07. Package and service identifiers are unchanged.
 
 **Open-source, locally-hosted AI that helps American cities respond to open records requests.**
 
-> **Release train notice (2026-05-24).** CivicRecords AI v1.7.3 adds wheel and sdist release assets for direct-pip consumers. No functional behavior changes; the city-core installer continues to vendor source, and the runtime remains pinned to the published CivicCore v1.2.0 shared-ingestion release wheel. The older `v1.4.10` tag remains available as historical source only and must not be promoted as an attested baseline.
+> **Release train notice (2026-05-24).** CivicSunshine v1.7.3 adds wheel and sdist release assets for direct-pip consumers. No functional behavior changes; the city-core installer continues to vendor source, and the runtime remains pinned to the published CivicCore v1.2.0 shared-ingestion release wheel. The older `v1.4.10` tag remains available as historical source only and must not be promoted as an attested baseline.
 
-CivicRecords AI runs entirely on a single machine inside your city's network — no cloud subscriptions, no vendor lock-in, no resident data leaving the building. It ingests your city's documents, makes them searchable with AI-powered natural language queries, detects potential exemptions, and manages the full request lifecycle from intake to response.
+CivicSunshine runs entirely on a single machine inside your city's network — no cloud subscriptions, no vendor lock-in, no resident data leaving the building. It ingests your city's documents, makes them searchable with AI-powered natural language queries, detects potential exemptions, and manages the full request lifecycle from intake to response.
 
 ## Why This Exists
 
 Every city in America processes open records requests (FOIA, CORA, and state equivalents). Staff manually search file shares, email archives, and databases — then review every document for exemptions before release. It's slow, error-prone, and a growing burden as request volumes increase.
 
-No open-source tool exists for the **responder side** of open records at the municipal level. CivicRecords AI fills that gap.
+No open-source tool exists for the **responder side** of open records at the municipal level. CivicSunshine fills that gap.
 
 ## Key Features
 
@@ -27,7 +29,7 @@ No open-source tool exists for the **responder side** of open records at the mun
 - **Notification Service** — Template-based notification system with SMTP email delivery via Celery beat (60s interval). Configure SMTP_HOST, SMTP_PORT, SMTP_USERNAME, SMTP_PASSWORD in .env to enable. Notification dispatch into status transitions pending
 - **Compliance by Design** — Hash-chained audit logs, human-in-the-loop enforcement, AI content labeling, data sovereignty verification. Designed for Colorado CAIA and 50-state regulatory compliance. CJIS compliance gate for public safety connectors
 - **Civic Design System** — Professional UI built with shadcn/ui and civic blue design tokens. Responsive shell: fixed 240px sidebar at ≥768px, hamburger-driven slide-in drawer below that (with focus trap, ESC close, overlay dim, auto-close on route change). WCAG 2.2 AA targeted (44px touch targets, skip-to-content link, icon+color status badges, programmatic label→input associations on admin forms, `role="alert"` validation errors with actionable copy — full third-party accessibility audit still pending)
-- **Federation-Ready** — REST API with service accounts enables future cross-jurisdiction record discovery between CivicRecords AI instances
+- **Federation-Ready** — REST API with service accounts enables future cross-jurisdiction record discovery between CivicSunshine instances
 
 ## Quick Start
 
@@ -59,18 +61,18 @@ Any computer with a modern web browser. Clerks open the server's URL — **`http
 
 > **Install paths.** Two options ship today:
 >
-> 1. **Windows double-click installer (T5E, UNSIGNED).** A signed build is a future release — this one is not. The unsigned installer is published on every release tag at `releases/download/<tag>/CivicRecordsAI-<version>-Setup.exe` along with a SHA-256 checksum for independent verification. On first run Windows SmartScreen shows **"Windows protected your PC — Unknown publisher."** This is expected. Click **More info → Run anyway** to proceed. See [installer/windows/README.md](installer/windows/README.md) for the full SmartScreen walkthrough and checksum-verify steps. The installer bundles the repo snapshot, runs a prereq check (Docker Desktop, WSL 2 + Virtual Machine Platform, 32 GB RAM floor, optional host Ollama), then runs `install.ps1` (via `installer\windows\launch-install.ps1`). `install.ps1` **auto-pulls `nomic-embed-text` and auto-pulls the Gemma 4 tag you select in the picker** (default `gemma4:e4b`) — expect several minutes on first run — and seeds the T5B baseline datasets.
+> 1. **Windows double-click installer (T5E, UNSIGNED).** A signed build is a future release — this one is not. The unsigned installer is published on every release tag at `releases/download/<tag>/CivicSunshine-<version>-Setup.exe` along with a SHA-256 checksum for independent verification. On first run Windows SmartScreen shows **"Windows protected your PC — Unknown publisher."** This is expected. Click **More info → Run anyway** to proceed. See [installer/windows/README.md](installer/windows/README.md) for the full SmartScreen walkthrough and checksum-verify steps. The installer bundles the repo snapshot, runs a prereq check (Docker Desktop, WSL 2 + Virtual Machine Platform, 32 GB RAM floor, optional host Ollama), then runs `install.ps1` (via `installer\windows\launch-install.ps1`). `install.ps1` **auto-pulls `nomic-embed-text` and auto-pulls the Gemma 4 tag you select in the picker** (default `gemma4:e4b`) — expect several minutes on first run — and seeds the T5B baseline datasets.
 >
 > 2. **Script-based install (Linux / macOS — not lifecycle-certified — and Windows if you prefer CLI).** Windows-only currently; macOS support pending lifecycle certification. The scripts below configure and start the Docker Compose stack on macOS and Linux as a non-certified path, and on Windows as a CLI alternative. They do **not** install Docker, WSL, or any other system prerequisites — those must already be present. `install.ps1` / `install.sh` both ship the 4-model Gemma 4 picker, auto-pull the selected LLM plus `nomic-embed-text`, and auto-seed the baseline datasets on first boot.
 >
 > **Two shortcuts, two flows.** The Windows installer creates **separate** Start Menu entries for the two operations — don't confuse them:
 >
-> - **Start CivicRecords AI** → daily start. Runs `docker compose up -d` and opens `http://localhost:8080/`. Does **not** run the prereq check, does **not** invoke `install.ps1`, does **not** pull any model, does **not** re-seed data. The Desktop shortcut (if you opted in) mirrors this daily-start behavior.
-> - **Install or Repair CivicRecords AI** → full bootstrap/repair. Runs the prereq check, then `install.ps1` (which may show the picker and pull models). Use this for first-run setup (the installer fires it automatically for you the first time), when you want to switch LLMs, or to repair a broken stack.
+> - **Start CivicSunshine** → daily start. Runs `docker compose up -d` and opens `http://localhost:8080/`. Does **not** run the prereq check, does **not** invoke `install.ps1`, does **not** pull any model, does **not** re-seed data. The Desktop shortcut (if you opted in) mirrors this daily-start behavior.
+> - **Install or Repair CivicSunshine** → full bootstrap/repair. Runs the prereq check, then `install.ps1` (which may show the picker and pull models). Use this for first-run setup (the installer fires it automatically for you the first time), when you want to switch LLMs, or to repair a broken stack.
 >
 > **Docker Desktop and WSL 2** must be installed and running before either path; the installer detects their absence and prints concrete remediation, but does not install them for you.
 
-For the CivicSuite starter-set package, run `python scripts/check_starter_set_integration.py --umbrella-root ..\civicsuite --require-archives` from this repo to verify that CivicCore installs first, CivicRecords AI and CivicClerk are selectable, package workflow proof is required, and Linux/Windows starter-set archives exist.
+For the CivicSuite starter-set package, run `python scripts/check_starter_set_integration.py --umbrella-root ..\civicsuite --require-archives` from this repo to verify that CivicCore installs first, CivicSunshine and CivicClerk are selectable, package workflow proof is required, and Linux/Windows starter-set archives exist.
 
 **Windows:**
 ```powershell
@@ -96,13 +98,13 @@ bash install.sh
 
 ### Phase 1 migration layer
 
-CivicRecords AI backend installs `civiccore` (the shared CivicSuite schema + migration runtime) as a dependency. The current release line is pinned to the published CivicCore v1.2.0 wheel so Records-AI consumes the shared document-ingestion pipeline from a release artifact. Records-specific Celery tasks, scheduler wiring, connector sync, and datasource routes remain local; parsing, chunking, local Ollama embeddings, and pgvector document/chunk writes come from `civiccore.ingest`. Earlier interim branches used a commit archive while CivicCore v1.2.0 was unreleased; v1.7.2 returned to the versioned release-asset dependency pattern, and v1.7.3 adds direct-pip wheel and sdist assets without changing runtime behavior.
+CivicSunshine backend installs `civiccore` (the shared CivicSuite schema + migration runtime) as a dependency. The current release line is pinned to the published CivicCore v1.2.0 wheel so Records-AI consumes the shared document-ingestion pipeline from a release artifact. Records-specific Celery tasks, scheduler wiring, connector sync, and datasource routes remain local; parsing, chunking, local Ollama embeddings, and pgvector document/chunk writes come from `civiccore.ingest`. Earlier interim branches used a commit archive while CivicCore v1.2.0 was unreleased; v1.7.2 returned to the versioned release-asset dependency pattern, and v1.7.3 adds direct-pip wheel and sdist assets without changing runtime behavior.
 
 Migrations run in two layers: `civiccore` first (creates/updates the 16 shared tables), then this repo's Alembic chain on top. See [ADR-0003](https://github.com/CivicSuite/civicsuite/blob/main/docs/architecture/ADR-0003-civiccore-alembic-baseline-strategy.md) for the full gate contract.
 
 ### Release provenance
 
-CivicRecords AI now wires release preflight to CivicCore's canonical
+CivicSunshine now wires release preflight to CivicCore's canonical
 `civiccore.release_provenance` helper. This matters because GitHub release pages
 can show the target commit as "Verified" even when the release tag is
 lightweight or unsigned. Treat that badge as a commit signal only; the actual
@@ -210,7 +212,7 @@ All platforms use identical Docker containers — the application runs in Linux 
 
 ## Data Sovereignty
 
-CivicRecords AI is designed for environments where resident data must never leave the network:
+CivicSunshine is designed for environments where resident data must never leave the network:
 
 - Runs entirely on local hardware — no cloud dependencies
 - No telemetry, analytics, or crash reporting

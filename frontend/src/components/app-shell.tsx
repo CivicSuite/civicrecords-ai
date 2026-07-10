@@ -47,7 +47,7 @@ function SidebarContents({
           <span className="text-sm font-bold text-primary-foreground">CS</span>
         </div>
         <div>
-          <p className="text-sm font-semibold text-foreground leading-tight">CivicRecords</p>
+          <p className="text-sm font-semibold text-foreground leading-tight">CivicSunshine</p>
           <p className="text-xs text-muted-foreground leading-tight">AI</p>
         </div>
       </div>
@@ -166,7 +166,7 @@ export function AppShell({ children, onSignOut, userEmail, userRole }: AppShellP
             <div className="h-7 w-7 rounded-md bg-primary flex items-center justify-center">
               <span className="text-xs font-bold text-primary-foreground">CS</span>
             </div>
-            <span className="text-sm font-semibold text-foreground">CivicRecords AI</span>
+            <span className="text-sm font-semibold text-foreground">CivicSunshine</span>
           </div>
 
           <div className="ml-auto flex items-center gap-1">

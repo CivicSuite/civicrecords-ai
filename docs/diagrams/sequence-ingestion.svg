@@ -11,7 +11,7 @@
 	<g id="group" transform="scale(1,-1) translate(0,-680)" style="clip-path: url(#clip)">
 		<g transform="">
 			<rect x="0" y="0" width="920" height="680" style="stroke: none; stroke-linecap: butt; stroke-width: 1; fill: rgb(100%,100%,100%); fill-rule: evenodd;"/>
-			<text x="300.505" y="656" style="font-family: Helvetica-Bold; font-size: 14px;fill: rgb(10%,22%,36%); stroke:none;" transform="translate(0,1312) scale(1,-1)">CivicRecords AI — Ingestion Pipeline Sequence</text>
+			<text x="305.951" y="656" style="font-family: Helvetica-Bold; font-size: 14px;fill: rgb(10%,22%,36%); stroke:none;" transform="translate(0,1312) scale(1,-1)">CivicSunshine — Ingestion Pipeline Sequence</text>
 			<rect x="37.42857142857143" y="589" width="108.00000000000001" height="36" rx="4" ry="4" style="stroke: rgb(57%,25%,5%); stroke-linecap: butt; stroke-width: 1.5; fill: rgb(99%,95%,78%); fill-rule: evenodd;"/>
 			<text x="69.42057142857144" y="601" style="font-family: Helvetica-Bold; font-size: 8px;fill: rgb(57%,25%,5%); stroke:none;" transform="translate(0,1202) scale(1,-1)">Celery Beat</text>
 			<rect x="160.28571428571428" y="589" width="108.0" height="36" rx="4" ry="4" style="stroke: rgb(8%,39%,20%); stroke-linecap: butt; stroke-width: 1.5; fill: rgb(86%,98%,90%); fill-rule: evenodd;"/>

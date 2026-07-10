@@ -3,7 +3,7 @@ set -euo pipefail
 
 echo "================================================================================"
 echo "  CivicSuite SERVER installation — clerks access via browser at http://<server>:8080"
-echo "  CivicRecords AI — Installation Script"
+echo "  CivicSunshine — Installation Script"
 echo "  Supports: Linux (Ubuntu/Debian), macOS"
 echo "================================================================================"
 echo ""
@@ -345,7 +345,7 @@ else
     echo ""
     echo "===== Gemma 4 model picker ====="
     echo ""
-    echo "CivicRecords AI supports four Gemma 4 models. The target profile is"
+    echo "CivicSunshine supports four Gemma 4 models. The target profile is"
     echo "Windows 11 Pro 23H2+ / 32 GB RAM minimum (64 GB recommended) /"
     echo "GPU optional / CPU-only supported. Models 26b and 31b require stronger"
     echo "hardware than the baseline and must be selected explicitly."

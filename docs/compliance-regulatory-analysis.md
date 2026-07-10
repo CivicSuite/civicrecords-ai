@@ -1,4 +1,4 @@
-# CivicRecords AI — Compliance & Regulatory Analysis
+# CivicSunshine — Compliance & Regulatory Analysis
 
 **50-State AI Regulatory Viability Assessment**
 
@@ -8,7 +8,7 @@
 
 ## Executive Finding
 
-CivicRecords AI is deployable in all 50 states. No state has enacted a law that prohibits government agencies from using AI as an internal search, retrieval, and workflow assistance tool for open records processing. The product sits in the "staff productivity tool" category, not the "automated decision-making" category. Maintaining that classification requires specific architectural decisions documented in this analysis.
+CivicSunshine is deployable in all 50 states. No state has enacted a law that prohibits government agencies from using AI as an internal search, retrieval, and workflow assistance tool for open records processing. The product sits in the "staff productivity tool" category, not the "automated decision-making" category. Maintaining that classification requires specific architectural decisions documented in this analysis.
 
 ---
 
@@ -20,11 +20,11 @@ Colorado has the most aggressive comprehensive AI law in the United States. The 
 
 The CAIA defines a high-risk AI system as one that "when deployed, makes, or is a substantial factor in making, a consequential decision" with material effect on the provision or denial of: education, employment, essential government services, healthcare, housing, insurance, or legal services.
 
-**"Government services" is explicitly in scope.** This is the provision that requires the most careful analysis for CivicRecords AI.
+**"Government services" is explicitly in scope.** This is the provision that requires the most careful analysis for CivicSunshine.
 
-### Why CivicRecords AI Is Not a High-Risk System Under CAIA
+### Why CivicSunshine Is Not a High-Risk System Under CAIA
 
-The CAIA regulates systems that *make or substantially factor into consequential decisions about consumers.* CivicRecords AI does not make decisions about consumers. It:
+The CAIA regulates systems that *make or substantially factor into consequential decisions about consumers.* CivicSunshine does not make decisions about consumers. It:
 
 - Searches for documents responsive to a records request.
 - Flags content that *may* be exempt from disclosure.
@@ -44,7 +44,7 @@ If any of these constraints are relaxed — for instance, if a future feature al
 
 ### CAIA Compliance Features to Build Regardless
 
-Even though CivicRecords AI is likely outside CAIA's high-risk scope, building the following features positions the product for compliance if scope expands or if deploying cities choose to treat the system as high-risk as a precaution:
+Even though CivicSunshine is likely outside CAIA's high-risk scope, building the following features positions the product for compliance if scope expands or if deploying cities choose to treat the system as high-risk as a precaution:
 
 - **Impact assessment template:** Pre-built document that a city can complete to satisfy CAIA's impact assessment requirements if they elect to treat the system as high-risk.
 - **Public disclosure template:** A statement cities can publish describing their use of AI in records processing, satisfying CAIA's deployer transparency requirements.
@@ -53,16 +53,16 @@ Even though CivicRecords AI is likely outside CAIA's high-risk scope, building t
 
 ### Colorado Open Records Act (CORA) Considerations
 
-CORA itself does not address AI use. It requires government bodies to produce responsive public records within three working days, with certain exemptions. Key CORA implications for CivicRecords AI:
+CORA itself does not address AI use. It requires government bodies to produce responsive public records within three working days, with certain exemptions. Key CORA implications for CivicSunshine:
 
 - **AI interactions are likely public records under CORA.** Search queries, AI-generated results, draft responses, and exemption flags created within the system may themselves be subject to CORA requests. The system's audit log must be designed with this in mind — it must be exportable and producible.
 - **CORA does not require agencies to create new records.** The system should not be presented as creating new analytical documents in response to requests. It searches existing records and assists staff in organizing responses.
 - **CORA exemptions must be applied by humans.** The system's exemption detection engine must be clearly positioned as a flagging tool, not an adjudicator. Staff must independently evaluate each flag against the applicable CORA exemption.
-- **Colorado Department of Public Safety has acknowledged the AI/CORA intersection.** CDPS notes that requests asking agencies to use AI tools to facilitate searches "frequently are not pertinent or even possible," framing AI search capability as a gap, not a prohibition. CivicRecords AI fills exactly this gap.
+- **Colorado Department of Public Safety has acknowledged the AI/CORA intersection.** CDPS notes that requests asking agencies to use AI tools to facilitate searches "frequently are not pertinent or even possible," framing AI search capability as a gap, not a prohibition. CivicSunshine fills exactly this gap.
 
 ### Colorado Municipal AI Adoption Precedent
 
-Colorado municipalities are already adopting AI governance policies. Garfield County approved a comprehensive AI policy in late 2025 that classifies AI use into risk tiers, requires human review of all AI outputs, and prohibits entering sensitive data into public AI systems. CivicRecords AI's fully local architecture directly addresses the sensitive-data prohibition that constrains cloud AI adoption in Colorado municipalities.
+Colorado municipalities are already adopting AI governance policies. Garfield County approved a comprehensive AI policy in late 2025 that classifies AI use into risk tiers, requires human review of all AI outputs, and prohibits entering sensitive data into public AI systems. CivicSunshine's fully local architecture directly addresses the sensitive-data prohibition that constrains cloud AI adoption in Colorado municipalities.
 
 ---
 
@@ -74,11 +74,11 @@ These states have enacted broad AI governance frameworks. None prohibit AI use f
 
 **Colorado** — See detailed analysis above.
 
-**Texas (Responsible AI Governance Act, effective January 1, 2026):** Focused primarily on government applications. Prohibits AI for "restricted purposes" (encouraging self-harm, violence, CSAM, unlawful deepfakes). Does not restrict AI-assisted document search. Requires disclosure when consumers interact with AI systems. Since CivicRecords AI is an internal staff tool (not consumer-facing in v1), disclosure requirements do not apply to the search interface. If the system generates response letters sent to requesters, those letters should disclose AI assistance.
+**Texas (Responsible AI Governance Act, effective January 1, 2026):** Focused primarily on government applications. Prohibits AI for "restricted purposes" (encouraging self-harm, violence, CSAM, unlawful deepfakes). Does not restrict AI-assisted document search. Requires disclosure when consumers interact with AI systems. Since CivicSunshine is an internal staff tool (not consumer-facing in v1), disclosure requirements do not apply to the search interface. If the system generates response letters sent to requesters, those letters should disclose AI assistance.
 
-**California (multiple laws, various effective dates in 2026):** California's AI Transparency Act (SB 942) requires large AI platforms to provide detection tools and watermarks for AI-generated content. This applies to platforms with over 1 million monthly users — CivicRecords AI, as a single-city deployment, would not meet this threshold. California's employment-focused AI regulations (Civil Rights Department, effective October 2025) apply to hiring and employment decisions, not records management. No California law prohibits AI-assisted records search.
+**California (multiple laws, various effective dates in 2026):** California's AI Transparency Act (SB 942) requires large AI platforms to provide detection tools and watermarks for AI-generated content. This applies to platforms with over 1 million monthly users — CivicSunshine, as a single-city deployment, would not meet this threshold. California's employment-focused AI regulations (Civil Rights Department, effective October 2025) apply to hiring and employment decisions, not records management. No California law prohibits AI-assisted records search.
 
-**New York (RAISE Act, effective January 1, 2027):** Targets frontier AI model developers with annual revenue over $500 million. Requires transparency reports and risk management frameworks. Does not apply to deployers of open-source models on local hardware. CivicRecords AI is fully outside scope.
+**New York (RAISE Act, effective January 1, 2027):** Targets frontier AI model developers with annual revenue over $500 million. Requires transparency reports and risk management frameworks. Does not apply to deployers of open-source models on local hardware. CivicSunshine is fully outside scope.
 
 **Illinois (HB 3773, effective January 1, 2026):** Amends the state Human Rights Act to cover AI-driven discrimination in employment decisions (hiring, firing, discipline, tenure, training). Narrowly scoped to employment. Does not apply to records management tools.
 
@@ -106,7 +106,7 @@ The majority of states — approximately 35 — have not enacted comprehensive A
 
 President Trump's executive order "Ensuring a National Policy Framework for Artificial Intelligence" signals intent to preempt state AI laws deemed inconsistent with federal deregulatory policy. The order directed the Secretary of Commerce to identify "burdensome" state AI laws by mid-March 2026 and established an AI Litigation Task Force to challenge state laws.
 
-**Impact on CivicRecords AI:** Minimal. The executive order targets state laws regulating AI development and commercial deployment. It does not create any prohibition on government agencies using AI internally. If federal preemption reduces the compliance burden of state AI laws like CAIA, that is a net positive for CivicRecords AI adoption. However, governors in Colorado, California, and New York have publicly stated the order will not stop enforcement of their state laws. The prudent approach is to continue designing for full state-law compliance.
+**Impact on CivicSunshine:** Minimal. The executive order targets state laws regulating AI development and commercial deployment. It does not create any prohibition on government agencies using AI internally. If federal preemption reduces the compliance burden of state AI laws like CAIA, that is a net positive for CivicSunshine adoption. However, governors in Colorado, California, and New York have publicly stated the order will not stop enforcement of their state laws. The prudent approach is to continue designing for full state-law compliance.
 
 ### No Federal Law Prohibits Government AI Use for Records
 
@@ -143,7 +143,7 @@ AI interactions in government systems are public records in most jurisdictions. 
 
 Cities need ready-to-use compliance documents. The product should ship with:
 
-- **Public AI Use Disclosure:** A one-page statement cities can publish on their website describing their use of CivicRecords AI, what it does, what it does not do, and how human oversight is maintained.
+- **Public AI Use Disclosure:** A one-page statement cities can publish on their website describing their use of CivicSunshine, what it does, what it does not do, and how human oversight is maintained.
 - **Response Letter Disclosure Language:** A paragraph cities can include in records response letters: "This office used an AI-assisted search tool to locate potentially responsive documents. All results were reviewed by [staff member name/title] before inclusion in this response. The AI tool did not make any decisions regarding the release, redaction, or withholding of records."
 - **CAIA Impact Assessment Template:** Pre-filled where possible, with blanks for city-specific information, enabling Colorado cities to document their risk assessment even if they determine the system is not "high-risk."
 - **AI Governance Policy Template:** A model policy document cities can adapt, based on the GovAI Coalition templates and existing municipal AI policies (Boston, San Jose, Bellevue, Garfield County CO). Covers acceptable use, data classification, risk tiers, training requirements, and oversight responsibilities.
@@ -199,7 +199,7 @@ Cities and their attorneys will want to know what model is running and what it w
 
 The product team should track the following regulatory developments:
 
-1. **Colorado CAIA repeal-and-replace bill** — Expected to be introduced during the 2026 legislative session. May narrow or expand the definition of "high-risk" and "consequential decision." The working group's March 2026 draft replaces audit requirements with a transparency framework, which would be favorable for CivicRecords AI.
+1. **Colorado CAIA repeal-and-replace bill** — Expected to be introduced during the 2026 legislative session. May narrow or expand the definition of "high-risk" and "consequential decision." The working group's March 2026 draft replaces audit requirements with a transparency framework, which would be favorable for CivicSunshine.
 
 2. **Federal AI preemption** — The Commerce Department's evaluation of "burdensome" state AI laws was due by mid-March 2026. The DOJ AI Litigation Task Force may challenge state laws. If successful, this reduces compliance complexity but does not change the product's compliance posture (design for the strictest standard).
 

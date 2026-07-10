@@ -8,7 +8,7 @@
 
 Include the following paragraph in any records request response letter where AI-assisted processing was used:
 
-> **AI Disclosure:** {{CITY_NAME}} used CivicRecords AI, a locally hosted open-source tool, to assist staff in searching for, reviewing, and preparing the responsive documents included with this response. All exemption determinations, redactions, and response content were reviewed and approved by authorized {{CITY_NAME}} personnel before release. CivicRecords AI does not make independent decisions regarding records requests. If you have questions about the use of AI in processing your request, or if you would like your request reprocessed without AI assistance, please contact {{CONTACT_NAME}} at {{CONTACT_EMAIL}}.
+> **AI Disclosure:** {{CITY_NAME}} used CivicSunshine, a locally hosted open-source tool, to assist staff in searching for, reviewing, and preparing the responsive documents included with this response. All exemption determinations, redactions, and response content were reviewed and approved by authorized {{CITY_NAME}} personnel before release. CivicSunshine does not make independent decisions regarding records requests. If you have questions about the use of AI in processing your request, or if you would like your request reprocessed without AI assistance, please contact {{CONTACT_NAME}} at {{CONTACT_EMAIL}}.
 
 ## When to Include This Disclosure
 
@@ -26,7 +26,7 @@ This disclosure paragraph **must** be included in a response letter when any of 
 ### Edge Cases
 
 - **Partial AI use:** If AI was used for any substantive step (search, exemption, redaction, or drafting), include the disclosure even if other steps were performed manually.
-- **AI suggestions rejected:** If staff reviewed AI suggestions but rejected all of them and proceeded manually, disclosure is still recommended for transparency but may be noted as: "CivicRecords AI was consulted during processing; however, all responsive documents, exemptions, and redactions were determined independently by staff."
+- **AI suggestions rejected:** If staff reviewed AI suggestions but rejected all of them and proceeded manually, disclosure is still recommended for transparency but may be noted as: "CivicSunshine was consulted during processing; however, all responsive documents, exemptions, and redactions were determined independently by staff."
 - **Batch processing:** When responding to multiple requests in a batch where AI was used, include the disclosure in each individual response letter.
 
 ## Placement Guidance
@@ -44,7 +44,7 @@ Dear [Requester Name],
 
 [Fee information, if applicable]
 
-AI Disclosure: {{CITY_NAME}} used CivicRecords AI, a locally hosted
+AI Disclosure: {{CITY_NAME}} used CivicSunshine, a locally hosted
 open-source tool, to assist staff in searching for, reviewing, and
 preparing the responsive documents included with this response. [...]
 
@@ -63,4 +63,4 @@ Sincerely,
 
 > **Disclaimer:** Consult your city attorney before adoption. This template is a starting point and should be reviewed for compliance with your jurisdiction's open records laws and disclosure requirements.
 
-Template provided by CivicRecords AI (Apache 2.0).
+Template provided by CivicSunshine (Apache 2.0).

@@ -1,8 +1,8 @@
-# CivicRecords AI Ã¢â‚¬â€ Windows Installation Script
+# CivicSunshine Ã¢â‚¬â€ Windows Installation Script
 # Requires: Windows 10/11 with Docker Desktop
 
 Write-Host "============================================" -ForegroundColor Cyan
-Write-Host "  CivicRecords AI - Installation Script"
+Write-Host "  CivicSunshine - Installation Script"
 Write-Host "  Target: Windows 10/11 with Docker Desktop"
 Write-Host "============================================"
 Write-Host ""
@@ -345,7 +345,7 @@ if ($existingModel -and -not $selectedModel) {
     Write-Host ""
     Write-Host "===== Gemma 4 model picker =====" -ForegroundColor Cyan
     Write-Host ""
-    Write-Host "CivicRecords AI supports four Gemma 4 models. The target profile is"
+    Write-Host "CivicSunshine supports four Gemma 4 models. The target profile is"
     Write-Host "Windows 11 Pro 23H2+ / 32 GB RAM minimum (64 GB recommended) /"
     Write-Host "GPU optional / CPU-only supported. Models 26b and 31b require stronger"
     Write-Host "hardware than the baseline and must be selected explicitly."

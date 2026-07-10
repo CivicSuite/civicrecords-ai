@@ -1,4 +1,4 @@
-# CivicRecords AI — Development Standards
+# CivicSunshine — Development Standards
 
 ## Current Governance Override - Agent Pipeline For Codex
 
@@ -9,7 +9,7 @@ gates when a run is active.
 
 Before any push, release, or tag, run the relevant repository gates directly
 and record the evidence in the active pipeline run when one exists. For
-CivicRecords AI, that normally includes recovery gates, release gates,
+CivicSunshine, that normally includes recovery gates, release gates,
 secret-scan/provenance checks, backend tests, frontend tests, Docker/runtime
 proofs for install surfaces, and docs truth checks that match the changed
 surface.
@@ -21,7 +21,7 @@ the pipeline stop controls.
 
 ## Historical Retired Rule 0 — CODER-UI-QA-TEST SKILL (superseded)
 
-This retained historical section is superseded by Agent Pipeline for Codex above. Do not load or require the retired `coder-ui-qa-test` skill for current CivicRecords AI work.
+This retained historical section is superseded by Agent Pipeline for Codex above. Do not load or require the retired `coder-ui-qa-test` skill for current CivicSunshine work.
 
 ## Hard Rule 1 — AUDITOR PROTOCOL (non-negotiable, no exceptions)
 

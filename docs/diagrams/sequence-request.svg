@@ -11,13 +11,13 @@
 	<g id="group" transform="scale(1,-1) translate(0,-700)" style="clip-path: url(#clip)">
 		<g transform="">
 			<rect x="0" y="0" width="920" height="700" style="stroke: none; stroke-linecap: butt; stroke-width: 1; fill: rgb(100%,100%,100%); fill-rule: evenodd;"/>
-			<text x="305.951" y="676" style="font-family: Helvetica-Bold; font-size: 14px;fill: rgb(10%,22%,36%); stroke:none;" transform="translate(0,1352) scale(1,-1)">CivicRecords AI — Records Request Lifecycle</text>
+			<text x="311.397" y="676" style="font-family: Helvetica-Bold; font-size: 14px;fill: rgb(10%,22%,36%); stroke:none;" transform="translate(0,1352) scale(1,-1)">CivicSunshine — Records Request Lifecycle</text>
 			<rect x="42.66666666666667" y="609" width="118.00000000000001" height="36" rx="4" ry="4" style="stroke: rgb(1%,41%,63%); stroke-linecap: butt; stroke-width: 1.5; fill: rgb(87%,94%,99%); fill-rule: evenodd;"/>
 			<text x="80.88416666666667" y="621" style="font-family: Helvetica-Bold; font-size: 8.5px;fill: rgb(1%,41%,63%); stroke:none;" transform="translate(0,1242) scale(1,-1)">Requester</text>
 			<rect x="186.0" y="609" width="118.0" height="36" rx="4" ry="4" style="stroke: rgb(8%,39%,20%); stroke-linecap: butt; stroke-width: 1.5; fill: rgb(86%,98%,90%); fill-rule: evenodd;"/>
 			<text x="234.37075" y="621" style="font-family: Helvetica-Bold; font-size: 8.5px;fill: rgb(8%,39%,20%); stroke:none;" transform="translate(0,1242) scale(1,-1)">Clerk</text>
 			<rect x="329.33333333333337" y="609" width="118.0" height="36" rx="4" ry="4" style="stroke: rgb(14%,38%,92%); stroke-linecap: butt; stroke-width: 1.5; fill: rgb(93%,96%,100%); fill-rule: evenodd;"/>
-			<text x="355.74008333333336" y="621" style="font-family: Helvetica-Bold; font-size: 8.5px;fill: rgb(14%,38%,92%); stroke:none;" transform="translate(0,1242) scale(1,-1)">CivicRecords AI</text>
+			<text x="359.0465833333334" y="621" style="font-family: Helvetica-Bold; font-size: 8.5px;fill: rgb(14%,38%,92%); stroke:none;" transform="translate(0,1242) scale(1,-1)">CivicSunshine</text>
 			<rect x="472.66666666666663" y="609" width="118.0" height="36" rx="4" ry="4" style="stroke: rgb(7%,30%,29%); stroke-linecap: butt; stroke-width: 1.5; fill: rgb(80%,98%,94%); fill-rule: evenodd;"/>
 			<text x="510.6504166666666" y="621" style="font-family: Helvetica-Bold; font-size: 8.5px;fill: rgb(7%,30%,29%); stroke:none;" transform="translate(0,1242) scale(1,-1)">Local LLM</text>
 			<rect x="616.0" y="609" width="118.0" height="36" rx="4" ry="4" style="stroke: rgb(34%,10%,52%); stroke-linecap: butt; stroke-width: 1.5; fill: rgb(95%,90%,100%); fill-rule: evenodd;"/>

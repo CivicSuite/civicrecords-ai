@@ -1,5 +1,5 @@
 """
-CivicRecords AI — DOCX Generator
+CivicSunshine — DOCX Generator
 Produces README.docx and USER-MANUAL.docx at the repository root.
 Run: python docs/generate_docx.py
 """
@@ -472,13 +472,13 @@ def build_readme_docx(out_path):
 
     add_header_footer(
         doc.sections[0],
-        "CivicRecords AI  |  v1.4.8  |  Open-Source Municipal Records AI"
+        "CivicSunshine  |  v1.4.8  |  Open-Source Municipal Records AI"
     )
 
     # Title block
     title_para = doc.add_paragraph()
     title_para.alignment = WD_ALIGN_PARAGRAPH.CENTER
-    title_run = title_para.add_run("CivicRecords AI")
+    title_run = title_para.add_run("CivicSunshine")
     title_run.font.name  = "Calibri"
     title_run.font.size  = Pt(36)
     title_run.font.bold  = True
@@ -509,13 +509,13 @@ def build_readme_docx(out_path):
         "Staff manually search file shares, email archives, and databases — then review every document "
         "for exemptions before release. It is slow, error-prone, and a growing burden as request "
         "volumes increase. No open-source tool existed for the responder side of open records at the "
-        "municipal level. CivicRecords AI fills that gap."
+        "municipal level. CivicSunshine fills that gap."
     )
 
     # --- Key Features ---
     h = doc.add_heading("Key Features", level=1)
     apply_h1_style(h)
-    body_para(doc, f"CivicRecords AI ships with {len(FEATURES)} documented features:")
+    body_para(doc, f"CivicSunshine ships with {len(FEATURES)} documented features:")
     doc.add_paragraph()
 
     feat_rows = [[f["name"], f["desc"]] for f in [{"name": n, "desc": d} for n, d in FEATURES]]
@@ -573,7 +573,7 @@ def build_readme_docx(out_path):
     h = doc.add_heading("Architecture", level=1)
     apply_h1_style(h)
     body_para(doc,
-        "CivicRecords AI deploys as a 7-service Docker Compose stack. All services run in "
+        "CivicSunshine deploys as a 7-service Docker Compose stack. All services run in "
         "Linux containers regardless of host operating system."
     )
     doc.add_paragraph()
@@ -665,7 +665,7 @@ def build_readme_docx(out_path):
     h = doc.add_heading("Status", level=1)
     apply_h1_style(h)
     body_para(doc,
-        "v1.4.8 — Patch release aligning CivicRecords AI with civiccore 0.21.0 while "
+        "v1.4.8 — Patch release aligning CivicSunshine with civiccore 0.21.0 while "
         "preserving the records-ai runtime surface and moving reusable schedule validation into CivicCore."
     )
     body_para(doc,
@@ -788,7 +788,7 @@ def build_user_manual_docx(out_path):
 
     add_header_footer(
         doc.sections[0],
-        "CivicRecords AI User Manual  |  v1.4.8"
+        "CivicSunshine User Manual  |  v1.4.8"
     )
 
     lines = USER_MANUAL.read_text(encoding="utf-8").splitlines()
@@ -805,7 +805,7 @@ def build_user_manual_docx(out_path):
     # Inject title page before parsing markdown
     title_para = doc.add_paragraph()
     title_para.alignment = WD_ALIGN_PARAGRAPH.CENTER
-    title_run = title_para.add_run("CivicRecords AI")
+    title_run = title_para.add_run("CivicSunshine")
     title_run.font.name  = "Calibri"
     title_run.font.size  = Pt(36)
     title_run.font.bold  = True
@@ -929,7 +929,7 @@ def build_user_manual_docx(out_path):
         # --- Headings ---
         if line.startswith("# "):
             text = line[2:].strip()
-            # Skip the original "# CivicRecords AI — User Manual" (title already added)
+            # Skip the original "# CivicSunshine — User Manual" (title already added)
             if not first_h1_seen:
                 first_h1_seen = True
                 # Still add as H1 for TOC
@@ -1037,7 +1037,7 @@ def build_user_manual_docx(out_path):
 # Main
 # ---------------------------------------------------------------------------
 def main():
-    print("CivicRecords AI DOCX Generator")
+    print("CivicSunshine DOCX Generator")
     print("=" * 40)
 
     readme_docx     = REPO_ROOT / "README.docx"

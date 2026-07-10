@@ -53,7 +53,7 @@ async def _queue_individual_circuit_open(session, source):
         await queue_notification(
             session=session,
             recipient_source_id=source.id,
-            subject=f"CivicRecords: Data source '{source.name}' paused",
+            subject=f"CivicSunshine: Data source '{source.name}' paused",
             body=(
                 f"Source '{source.name}' has been automatically paused after "
                 f"{source.consecutive_failure_count} consecutive sync failures.\n"
@@ -76,7 +76,7 @@ async def _queue_digest_notification(session, source_ids: list[str], window_star
         await queue_notification(
             session=session,
             recipient_source_id=None,
-            subject=f"CivicRecords: {len(source_ids)} data sources paused",
+            subject=f"CivicSunshine: {len(source_ids)} data sources paused",
             body=(
                 f"{len(source_ids)} data sources were paused after consecutive sync failures.\n"
                 f"Window: {window_start.strftime('%Y-%m-%d %H:%M UTC')}\n"
@@ -95,7 +95,7 @@ async def _queue_recovery_notification(session, source):
         await queue_notification(
             session=session,
             recipient_source_id=source.id,
-            subject=f"CivicRecords: Data source '{source.name}' recovered",
+            subject=f"CivicSunshine: Data source '{source.name}' recovered",
             body=(
                 f"Source '{source.name}' successfully synced after being unpaused.\n"
                 f"Log in to view sync details."

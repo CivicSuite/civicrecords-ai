@@ -188,8 +188,8 @@ def build_pdf():
         rightMargin=inch,
         topMargin=0.9 * inch,
         bottomMargin=0.9 * inch,
-        title="CivicRecords AI — README",
-        author="CivicRecords AI Project",
+        title="CivicSunshine — README",
+        author="CivicSunshine Project",
     )
 
     story = md_to_story(md_text)

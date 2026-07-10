@@ -1,4 +1,4 @@
-# CivicRecords AI — Development Standards
+# CivicSunshine — Development Standards
 
 ## Hard Rule 0 — CODER-UI-QA-TEST SKILL (load on every coding session, no exceptions)
 

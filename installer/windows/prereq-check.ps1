@@ -1,7 +1,7 @@
-# CivicRecords AI — T5E Windows Prereq Check
+# CivicSunshine — T5E Windows Prereq Check
 #
 # Runs after the Inno Setup wizard copies files and BEFORE `launch.ps1`
-# invokes `install.ps1`. Reports on the 4 prerequisites CivicRecords
+# invokes `install.ps1`. Reports on the 4 prerequisites CivicSunshine
 # needs on a fresh Windows 11 Pro 23H2+ machine:
 #
 #   1. Docker Desktop (or Docker Engine on WSL) — required.
@@ -36,7 +36,7 @@ function Warn([string]$label, [string]$note) {
 
 Line ""
 Line "======================================================"
-Line "  CivicRecords AI — prereq check (Windows target)"
+Line "  CivicSunshine — prereq check (Windows target)"
 Line "======================================================"
 Line ""
 
@@ -149,7 +149,7 @@ try {
         Ok "RAM: $ramGB GB (meets 32 GB baseline)"
     } else {
         Fail "RAM: $ramGB GB — below 32 GB target-profile floor" @(
-            "CivicRecords AI's 4-model Gemma 4 picker requires a machine",
+            "CivicSunshine's 4-model Gemma 4 picker requires a machine",
             "with at least 32 GB RAM for the edge models (gemma4:e2b /",
             "gemma4:e4b) to run comfortably. Below this floor, no supported",
             "Gemma 4 model runs reliably."
@@ -171,10 +171,10 @@ if ($hostOllama) {
         Ok "Host Ollama service is responding on :11434"
         Write-Host "          install.ps1 will prefer host Ollama over the in-container service." -ForegroundColor Cyan
     } catch {
-        Warn "Host Ollama is installed but not currently running" "start it with 'ollama serve' before launching CivicRecords AI"
+        Warn "Host Ollama is installed but not currently running" "start it with 'ollama serve' before launching CivicSunshine"
     }
 } else {
-    Warn "Host Ollama not installed" "CivicRecords AI will fall back to the in-container Ollama service (CPU inference)"
+    Warn "Host Ollama not installed" "CivicSunshine will fall back to the in-container Ollama service (CPU inference)"
     Line "          To enable host-Ollama (GPU-friendlier) path, install from:"
     Line "            https://ollama.ai/download/windows"
     Line "          Then re-run the installer."
@@ -191,7 +191,7 @@ if ($allOk) {
 } else {
     Line "  Prereq check: BLOCKED"
     Line "  Address the items flagged [MISS] above, then re-run"
-    Line "  the CivicRecords AI installer from the Start Menu."
+    Line "  the CivicSunshine installer from the Start Menu."
     Line "======================================================"
     exit 1
 }

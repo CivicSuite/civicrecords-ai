@@ -1,4 +1,4 @@
-# CivicRecords AI — Auditor Session Handoff
+# CivicSunshine — Auditor Session Handoff
 
 **Date:** 2026-04-17
 **Status:** Previous auditor session failed. New session starting with a reorientation prompt. Prior auditor did not apply the `coder-ui-qa-test` skill despite it being available from session start.

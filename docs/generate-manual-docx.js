@@ -205,7 +205,7 @@ const pageProps = {
 const defaultHeader = new Header({
   children: [new Paragraph({
     border: { bottom: { style: BorderStyle.SINGLE, size: 1, color: colors.border, space: 4 } },
-    children: [new TextRun({ text: "CivicRecords AI \u2014 Complete System Manual v1.4.1", size: 9 * 2, font: "Arial", color: colors.muted })],
+    children: [new TextRun({ text: "CivicSunshine \u2014 Complete System Manual v1.4.1", size: 9 * 2, font: "Arial", color: colors.muted })],
   })],
 });
 
@@ -270,7 +270,7 @@ const doc = new Document({
         new Paragraph({
           alignment: AlignmentType.CENTER,
           spacing: { after: 200 },
-          children: [new TextRun({ text: "CivicRecords AI", size: 48 * 2, bold: true, font: "Arial", color: colors.primaryDark })],
+          children: [new TextRun({ text: "CivicSunshine", size: 48 * 2, bold: true, font: "Arial", color: colors.primaryDark })],
         }),
         new Paragraph({
           alignment: AlignmentType.CENTER,
@@ -326,7 +326,7 @@ const doc = new Document({
 
         // --- 1. Welcome ---
         h2("1. Welcome"),
-        p("CivicRecords AI helps municipal staff respond to open records requests using AI-powered document search. It is designed to augment human decision-making, not replace it."),
+        p("CivicSunshine helps municipal staff respond to open records requests using AI-powered document search. It is designed to augment human decision-making, not replace it."),
         h3("What It Does"),
         bullet("Search across municipal documents using natural language queries"),
         bullet("Detect potential exemptions (PII, statutory) and flag them for human review"),
@@ -344,7 +344,7 @@ const doc = new Document({
 
         // --- 2. Signing In ---
         h2("2. Signing In"),
-        bullet("Access CivicRecords AI via http://localhost:8080 or your city\u2019s network URL"),
+        bullet("Access CivicSunshine via http://localhost:8080 or your city\u2019s network URL"),
         bullet("Enter the email and password provided by your administrator"),
         bullet("If locked out after 5 failed login attempts, wait 1 minute or contact your administrator"),
         bullet("There is no self-registration \u2014 all accounts are created by an administrator"),
@@ -472,7 +472,7 @@ const doc = new Document({
 
         // --- 12. System Architecture ---
         h2("12. System Architecture"),
-        p("CivicRecords AI runs as 7 Docker containers orchestrated via Docker Compose:"),
+        p("CivicSunshine runs as 7 Docker containers orchestrated via Docker Compose:"),
         makeTable(
           ["Service", "Image", "Port", "Purpose"],
           [
@@ -673,7 +673,7 @@ const doc = new Document({
 
         // --- 24. Upgrading ---
         h2("24. Upgrading"),
-        p("To upgrade CivicRecords AI to the latest version:"),
+        p("To upgrade CivicSunshine to the latest version:"),
         codeBlock("git pull"),
         codeBlock("docker compose build"),
         codeBlock("docker compose run --rm api alembic upgrade head"),

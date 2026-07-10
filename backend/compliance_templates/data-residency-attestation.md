@@ -5,15 +5,15 @@
 
 ---
 
-## Attestation of Local Data Residency for CivicRecords AI
+## Attestation of Local Data Residency for CivicSunshine
 
-I, {{CONTACT_NAME}}, {{CONTACT_TITLE}} of {{CITY_NAME}}, {{STATE}}, hereby attest to the following facts regarding the deployment and operation of CivicRecords AI within {{CITY_NAME}}'s infrastructure.
+I, {{CONTACT_NAME}}, {{CONTACT_TITLE}} of {{CITY_NAME}}, {{STATE}}, hereby attest to the following facts regarding the deployment and operation of CivicSunshine within {{CITY_NAME}}'s infrastructure.
 
 ## 1. Attestation Statements
 
 ### 1.1 Local Deployment
 
-CivicRecords AI is installed and operates exclusively on server hardware owned by {{CITY_NAME}} and physically located at:
+CivicSunshine is installed and operates exclusively on server hardware owned by {{CITY_NAME}} and physically located at:
 
 **{{FACILITY_ADDRESS}}**
 
@@ -21,7 +21,7 @@ The system is administered by {{CITY_NAME}} IT staff. No third party has physica
 
 ### 1.2 No Cloud Services
 
-CivicRecords AI does not use, connect to, or depend on any cloud computing services, including but not limited to:
+CivicSunshine does not use, connect to, or depend on any cloud computing services, including but not limited to:
 
 - Cloud-hosted databases or storage (e.g., AWS S3, Azure Blob, Google Cloud Storage)
 - Cloud-hosted AI/ML inference APIs (e.g., OpenAI API, Azure AI, Google Vertex AI, AWS Bedrock)
@@ -32,17 +32,17 @@ All application components — the web server, database, AI models, document sto
 
 ### 1.3 No Telemetry or External Data Transmission
 
-CivicRecords AI does not transmit any data to external servers, services, or endpoints. Specifically:
+CivicSunshine does not transmit any data to external servers, services, or endpoints. Specifically:
 
 - No usage analytics or telemetry data is collected or transmitted.
 - No crash reports or error logs are sent to external services.
 - No document content, metadata, or user information is transmitted outside {{CITY_NAME}}'s network.
 - No DNS, NTP, or other protocol-level communications are made to vendor-operated servers beyond standard OS-level services controlled by {{CITY_NAME}} IT.
-- The application does not phone home, check for updates externally, or communicate with any CivicRecords AI project infrastructure.
+- The application does not phone home, check for updates externally, or communicate with any CivicSunshine project infrastructure.
 
 ### 1.4 Local AI Models
 
-All artificial intelligence and machine learning models used by CivicRecords AI operate locally:
+All artificial intelligence and machine learning models used by CivicSunshine operate locally:
 
 - Model weights are stored on {{CITY_NAME}}'s servers.
 - All inference (AI processing) occurs on {{CITY_NAME}}'s hardware.
@@ -54,8 +54,8 @@ All artificial intelligence and machine learning models used by CivicRecords AI 
 
 {{CITY_NAME}} has verified the above attestation statements through the following methods:
 
-- **Network audit:** Reviewed firewall logs and network traffic to confirm no external data transmission from the CivicRecords AI server. Date of last audit: {{LAST_AUDIT_DATE}}
-- **Source code review:** Confirmed that the deployed version of CivicRecords AI contains no external API calls, telemetry code, or cloud service integrations.
+- **Network audit:** Reviewed firewall logs and network traffic to confirm no external data transmission from the CivicSunshine server. Date of last audit: {{LAST_AUDIT_DATE}}
+- **Source code review:** Confirmed that the deployed version of CivicSunshine contains no external API calls, telemetry code, or cloud service integrations.
 - **Configuration review:** Verified that application configuration files contain no external URLs, API keys, or cloud service credentials.
 - **Physical inspection:** Confirmed server hardware is located at the attested facility address and is physically secured.
 
@@ -73,7 +73,7 @@ All artificial intelligence and machine learning models used by CivicRecords AI 
 
 ## 3. Hardware Specifications
 
-The following hardware is used to host CivicRecords AI:
+The following hardware is used to host CivicSunshine:
 
 | Component | Specification |
 |---|---|
@@ -128,4 +128,4 @@ Signature: ___________________________
 
 > **Disclaimer:** Consult your city attorney before adoption. This attestation template is a starting point. Your jurisdiction may have additional data residency, security, or compliance requirements that should be incorporated.
 
-Template provided by CivicRecords AI (Apache 2.0).
+Template provided by CivicSunshine (Apache 2.0).

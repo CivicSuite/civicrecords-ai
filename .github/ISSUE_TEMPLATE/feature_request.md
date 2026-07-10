@@ -1,6 +1,6 @@
 ---
 name: Feature request
-about: Suggest an enhancement to CivicRecords AI
+about: Suggest an enhancement to CivicSunshine
 title: "[feat] "
 labels: ["enhancement"]
 ---

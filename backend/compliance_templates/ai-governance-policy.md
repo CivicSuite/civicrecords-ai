@@ -164,4 +164,4 @@ This policy draws on frameworks and best practices from:
 
 > **Disclaimer:** Consult your city attorney before adoption. This governance policy template is a starting point and should be adapted to your jurisdiction's specific legal requirements, organizational structure, and operational context.
 
-Template provided by CivicRecords AI (Apache 2.0).
+Template provided by CivicSunshine (Apache 2.0).

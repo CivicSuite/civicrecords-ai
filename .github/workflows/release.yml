@@ -1,4 +1,4 @@
-# CivicRecords AI — release-on-tag workflow (T5E).
+# CivicSunshine — release-on-tag workflow (T5E).
 #
 # UNSIGNED BY DESIGN. Scott locked T5E signing posture = α (unsigned)
 # on 2026-04-22. This workflow contains no code-signing steps and
@@ -6,8 +6,8 @@
 # without changing the structure.
 #
 # Adapted from patentforgelocal/.github/workflows/release.yml (Inno Setup
-# + choco + bash build driver shape). CivicRecords-specific deltas:
-#   - No Go/Node/Python build steps (CivicRecords runs in Docker; the
+# + choco + bash build driver shape). CivicSunshine-specific deltas:
+#   - No Go/Node/Python build steps (CivicSunshine runs in Docker; the
 #     installer bundles source, not compiled binaries).
 #   - Windows-only for now; mac/Linux stay on the existing guided-script
 #     install path. Cross-platform parity is documented as follow-on.
@@ -89,7 +89,7 @@ jobs:
           expected = "${VERSION}"
           print(f"app.config.APP_VERSION={APP_VERSION}")
           if APP_VERSION != expected:
-              raise SystemExit(f"Expected CivicRecords AI {expected}, got {APP_VERSION}")
+              raise SystemExit(f"Expected CivicSunshine {expected}, got {APP_VERSION}")
           print(f"civiccore dependency import ok: {ingest_file.__name__}, {OllamaProvider.__name__}")
           PY
 
@@ -241,7 +241,7 @@ jobs:
           # the build driver used. If this file is missing, the build
           # driver did not produce what the .iss OutputBaseFilename claims,
           # and that is the defect — not a workflow config issue.
-          ART="build/CivicRecordsAI-${CIVICRECORDS_VERSION}-Setup.exe"
+          ART="build/CivicSunshine-${CIVICRECORDS_VERSION}-Setup.exe"
           if [ ! -f "$ART" ]; then
             echo "ERROR: expected installer artifact not found: $ART"
             echo "Contents of build/:"
@@ -377,12 +377,12 @@ jobs:
           gh release create "${{ github.ref_name }}" \
             --draft \
             --generate-notes \
-            --title "CivicRecords AI ${{ github.ref_name }}" \
+            --title "CivicSunshine ${{ github.ref_name }}" \
             --notes-file release-notes.md || \
           gh release create "${{ github.ref_name }}" \
             --draft \
             --generate-notes \
-            --title "CivicRecords AI ${{ github.ref_name }}" \
+            --title "CivicSunshine ${{ github.ref_name }}" \
             --notes-file release-notes.md
 
       - name: Upload release assets
@@ -395,8 +395,8 @@ jobs:
           # actions/download-artifact@v8, not at the top of the artifact
           # directory. Locate via `find` so this step is robust to either
           # layout and produces an actionable error if nothing matches.
-          EXE=$(find artifacts -name 'CivicRecordsAI-*-Setup.exe' -type f | head -1)
-          SHA=$(find artifacts -name 'CivicRecordsAI-*-Setup.exe.sha256' -type f | head -1)
+          EXE=$(find artifacts -name 'CivicSunshine-*-Setup.exe' -type f | head -1)
+          SHA=$(find artifacts -name 'CivicSunshine-*-Setup.exe.sha256' -type f | head -1)
           WHEEL=$(find artifacts -name 'civicrecords_ai-*-py3-none-any.whl' -type f | head -1)
           SDIST=$(find artifacts -name 'civicrecords_ai-*.tar.gz' -type f | head -1)
           SUMS=$(find artifacts -name 'SHA256SUMS.txt' -type f | head -1)
@@ -480,7 +480,7 @@ jobs:
           VERSION="${GITHUB_REF_NAME#v}"
           WHEEL="$(find .cleanroom-assets -name 'civicrecords_ai-*-py3-none-any.whl' -type f | head -1)"
           if [ -z "$WHEEL" ]; then
-            echo "::error::No CivicRecords AI wheel downloaded from draft release."
+            echo "::error::No CivicSunshine wheel downloaded from draft release."
             exit 1
           fi
           echo "Cleanroom wheel asset: ${WHEEL}"
@@ -499,7 +499,7 @@ jobs:
           expected = "${VERSION}"
           print(f"app.config.APP_VERSION={APP_VERSION}")
           if APP_VERSION != expected:
-              raise SystemExit(f"Expected CivicRecords AI {expected}, got {APP_VERSION}")
+              raise SystemExit(f"Expected CivicSunshine {expected}, got {APP_VERSION}")
           print(f"civiccore dependency import ok: {ingest_file.__name__}, {OllamaProvider.__name__}")
           PY
 

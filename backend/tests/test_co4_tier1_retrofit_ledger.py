@@ -13,7 +13,7 @@ def find_repo_root() -> Path:
             and (candidate / "scripts" / "check-tier1-ledger.py").exists()
         ):
             return candidate
-    raise AssertionError("Could not locate CivicRecords AI repository root.")
+    raise AssertionError("Could not locate CivicSunshine repository root.")
 
 
 REPO_ROOT = find_repo_root()

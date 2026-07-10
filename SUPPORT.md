@@ -1,6 +1,6 @@
 # Support
 
-CivicRecords AI is an open-source, locally-hosted FOIA / public-records management system. Support is community-driven via GitHub.
+CivicSunshine is an open-source, locally-hosted FOIA / public-records management system. Support is community-driven via GitHub.
 
 ## Where to ask
 

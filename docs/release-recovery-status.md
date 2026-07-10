@@ -1,10 +1,10 @@
-# CivicRecords AI Release Recovery Status
+# CivicSunshine Release Recovery Status
 
 Date: 2026-05-07
 
 ## Public Claim Freeze
 
-CivicRecords AI `v1.6.0` is the recovery release that moves JWT/admin bootstrap secrets into Docker-mounted secret files and closes QA-002, building on the v1.5.0 CivicCore v1.0.1 alignment. The older `v1.4.10` tag remains historical, provisional, and do-not-promote.
+CivicSunshine `v1.6.0` is the recovery release that moves JWT/admin bootstrap secrets into Docker-mounted secret files and closes QA-002, building on the v1.5.0 CivicCore v1.0.1 alignment. The older `v1.4.10` tag remains historical, provisional, and do-not-promote.
 
 Existing tags remain part of the public record. Do not republish or promote `v1.4.10`; use `v1.6.0` or later for the Docker secret-file line.
 

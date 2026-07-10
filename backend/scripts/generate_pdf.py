@@ -1,5 +1,5 @@
 """
-generate_pdf.py — CivicRecords AI Technical Documentation PDF Generator
+generate_pdf.py — CivicSunshine Technical Documentation PDF Generator
 Generates README-FULL.pdf in the project root using ReportLab Platypus.
 """
 
@@ -359,7 +359,7 @@ def on_page(canvas, doc):
     canvas.setFillColor(GRAY)
     canvas.setFont("Helvetica", 8)
     canvas.drawString(inch, 0.5 * inch,
-        "CivicRecords AI — Technical Documentation v1.0.0")
+        "CivicSunshine — Technical Documentation v1.0.0")
     canvas.drawRightString(doc.pagesize[0] - inch, 0.5 * inch,
         f"Page {doc.page}")
     canvas.setStrokeColor(colors.HexColor("#cbd5e1"))
@@ -406,7 +406,7 @@ def build_title_page(s, W):
 
     # Title block on navy background
     title_data = [[
-        Paragraph("CivicRecords AI", s["DocTitle"]),
+        Paragraph("CivicSunshine", s["DocTitle"]),
     ], [
         Paragraph("Technical Documentation", s["DocSubtitle"]),
     ], [
@@ -523,7 +523,7 @@ def build_overview(s):
 
     story.append(Paragraph("What It Is", s["H2"]))
     story.append(Paragraph(
-        "CivicRecords AI is a fully open-source, locally-hosted AI system that helps municipal staff "
+        "CivicSunshine is a fully open-source, locally-hosted AI system that helps municipal staff "
         "respond to open records requests (FOIA, CORA, and state equivalents). It runs entirely on "
         "commodity hardware — a single Ryzen-based desktop with 32–64 GB RAM — inside a city's existing "
         "network perimeter. No cloud subscriptions, no vendor lock-in, no resident data leaving the building.",
@@ -565,7 +565,7 @@ def build_overview(s):
         ("Exemption Detection", "Rules-based PII detection (SSN, phone, email, credit card) plus per-state statutory keyword matching. Optional LLM secondary review. All flags require human confirmation."),
         ("Request Management", "Full lifecycle tracking: intake → search → document attachment → review → approval → response. Deadline alerts for approaching and overdue requests."),
         ("Compliance by Design", "Hash-chained audit logs, human-in-the-loop enforcement, AI content labeling, data sovereignty verification. Designed for Colorado CAIA and 50-state regulatory compliance."),
-        ("Federation-Ready", "REST API with service accounts enables future cross-jurisdiction record discovery between CivicRecords AI instances."),
+        ("Federation-Ready", "REST API with service accounts enables future cross-jurisdiction record discovery between CivicSunshine instances."),
     ]
     cap_data = [["Capability", "Description"]] + [[b, t] for b, t in caps]
     story.append(make_table(cap_data, [1.8*inch, 4.9*inch]))
@@ -580,7 +580,7 @@ def build_architecture(s):
     story.append(HRFlowable(width="100%", thickness=1, color=BLUE, spaceAfter=8))
 
     story.append(Paragraph(
-        "CivicRecords AI is deployed as a Docker Compose stack of seven services. All services run "
+        "CivicSunshine is deployed as a Docker Compose stack of seven services. All services run "
         "in Linux containers on the host machine — no cloud infrastructure required. The services "
         "communicate over an internal Docker bridge network; only nginx is exposed to the city LAN.",
         s["Body"]))
@@ -651,7 +651,7 @@ def build_arch_diagram(s, W):
     ]))
     story.append(wrapper)
     story.append(Paragraph(
-        "Figure 1 — CivicRecords AI Docker service topology", s["Caption"]))
+        "Figure 1 — CivicSunshine Docker service topology", s["Caption"]))
 
     story.append(Spacer(1, 10))
     story.append(Paragraph("Network Isolation", s["H2"]))
@@ -751,7 +751,7 @@ def build_db_schema(s):
     story.append(Paragraph("6. Database Schema", s["H1"]))
     story.append(HRFlowable(width="100%", thickness=1, color=BLUE, spaceAfter=8))
     story.append(Paragraph(
-        "CivicRecords AI uses a single PostgreSQL 17 database with the pgvector extension. "
+        "CivicSunshine uses a single PostgreSQL 17 database with the pgvector extension. "
         "All tables are managed by Alembic migrations. The schema supports the full request "
         "lifecycle, audit logging, and vector-based document retrieval.",
         s["Body"]))
@@ -929,7 +929,7 @@ def build_security(s):
 
     story.append(Paragraph("Human-in-the-Loop Enforcement", s["H2"]))
     story.append(Paragraph(
-        "CivicRecords AI is designed with mandatory human review at every decision point. "
+        "CivicSunshine is designed with mandatory human review at every decision point. "
         "The system never auto-redacts, auto-denies, or auto-releases records. All AI-generated "
         "content is clearly labeled as a draft requiring human confirmation.", s["Body"]))
     hitl = [
@@ -962,7 +962,7 @@ def build_security(s):
 
     story.append(Paragraph("Data Sovereignty", s["H2"]))
     story.append(Paragraph(
-        "CivicRecords AI is designed for environments where resident data must never leave the "
+        "CivicSunshine is designed for environments where resident data must never leave the "
         "network perimeter. The verification script <b>scripts/verify-sovereignty.sh</b> "
         "confirms no outbound connections are made during normal operation.", s["Body"]))
     sov = [
@@ -994,7 +994,7 @@ def build_security(s):
 
     story.append(Paragraph("Regulatory Compliance Design", s["H2"]))
     story.append(Paragraph(
-        "CivicRecords AI is designed to support compliance with Colorado CAIA (Colorado Artificial "
+        "CivicSunshine is designed to support compliance with Colorado CAIA (Colorado Artificial "
         "Intelligence Act) and similar state AI governance frameworks, as well as all 50 state "
         "open records statutes.", s["Body"]))
     comp = [
@@ -1081,7 +1081,7 @@ def build_deployment(s):
     story.append(Spacer(1, 12))
     story.append(HRFlowable(width="100%", thickness=1, color=BLUE, spaceAfter=8))
     story.append(Paragraph(
-        "CivicRecords AI v1.0.0  ·  Apache License 2.0  ·  "
+        "CivicSunshine v1.0.0  ·  Apache License 2.0  ·  "
         "https://github.com/CivicSuite/civicrecords-ai",
         ParagraphStyle("FootNote", parent=s["Body"], fontSize=9,
                        textColor=GRAY, alignment=TA_CENTER)))
@@ -1101,8 +1101,8 @@ def main():
         rightMargin=inch,
         topMargin=inch,
         bottomMargin=0.75 * inch,
-        title="CivicRecords AI — Technical Documentation v1.0.0",
-        author="CivicRecords AI Project",
+        title="CivicSunshine — Technical Documentation v1.0.0",
+        author="CivicSunshine Project",
         subject="Technical Reference",
     )
 
