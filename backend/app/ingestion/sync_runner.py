@@ -90,6 +90,8 @@ async def run_connector_sync_with_retry(
                         filename=fetched.filename,
                         file_type=fetched.file_type,
                         source_id=source.id,
+                        source_path=fetched.source_path,
+                        metadata=fetched.metadata,
                     )
 
                 failure.status = "resolved"
@@ -142,6 +144,8 @@ async def run_connector_sync_with_retry(
                         filename=fetched.filename,
                         file_type=fetched.file_type,
                         source_id=source.id,
+                        source_path=fetched.source_path,
+                        metadata=fetched.metadata,
                     )
 
                 succeeded += 1

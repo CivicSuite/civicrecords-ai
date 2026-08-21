@@ -1,0 +1,21 @@
+TOWNLIGHT SYNTHETIC TEST DATA — NOT A REAL MUNICIPAL RECORD
+Fixture municipality: Redstone Valley (fictional)
+Scenario: OCR transcript of a deliberately noisy mock scan
+Record ID: RV-INVOICE-2042-0081
+
+[OCR PAGE 1 OF 1]
+EXAMP1E FLEET SERV1CE
+Invoice: RV-2042-0081
+Date: 2042-03-05
+Bill to: Redstone Valley Fictional Public Works
+
+Brake inspection ............... $180.00
+Replacement signal lamp ......... $42.50
+Shop supplies ................... $17.25
+TOTAL .......................... $239.75
+
+OCR confidence notes: the vendor name contains numeral-one substitutions in
+the source image. A human must compare extracted text with the mock source scan
+before relying on it.
+
+End of synthetic OCR transcript.

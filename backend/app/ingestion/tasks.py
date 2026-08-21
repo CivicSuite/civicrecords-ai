@@ -175,6 +175,8 @@ async def _ingest_manual_drop_source(session, source, user_id: str | None) -> di
                     filename=fetched.filename,
                     file_type=fetched.file_type,
                     source_id=source.id,
+                    source_path=fetched.source_path,
+                    metadata=fetched.metadata,
                 )
                 if doc:
                     ingested += 1
@@ -223,6 +225,8 @@ async def ingest_file_from_bytes(
     filename: str,
     file_type: str,
     source_id: uuid.UUID,
+    source_path: str | None = None,
+    metadata: dict | None = None,
 ) -> object | None:
     """Ingest a document from raw bytes through the CivicCore pipeline."""
     import logging
@@ -235,7 +239,8 @@ async def ingest_file_from_bytes(
             content=content,
             filename=filename,
             source_id=source_id,
-            source_path=filename,
+            source_path=source_path or filename,
+            metadata=metadata,
         )
     except Exception as exc:
         logger.error("Failed to ingest %s: %s", filename, exc)

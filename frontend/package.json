@@ -7,7 +7,7 @@
     "dev": "vite",
     "build": "tsc && vite build",
     "preview": "vite preview",
-    "test": "vitest run src tests && playwright test e2e/skip-link-no-occlude.spec.ts",
+    "test": "node scripts/run-test-gates.mjs",
     "generate:types": "openapi-typescript ../docs/openapi.json -o src/generated/api.ts",
     "test:e2e": "playwright test",
     "a11y:ci": "node scripts/a11y-ci.mjs"

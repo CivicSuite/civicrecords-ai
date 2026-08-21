@@ -1,0 +1,15 @@
+TOWNLIGHT SYNTHETIC TEST DATA — NOT A REAL MUNICIPAL RECORD
+Fixture municipality: Redstone Valley (fictional)
+Record ID: RV-MEMO-2042-12
+
+DRAFT — FICTIONAL INTERNAL MEMO
+
+Subject: Options for relocating the seasonal shuttle stop
+
+This draft lists three location options, summarizes preliminary accessibility
+observations, and includes a recommendation that has not been adopted. Some
+sentences describe factual site measurements; others reflect staff deliberation.
+
+Expected handling: do not classify the entire document as exempt. Flag the
+mixed factual and deliberative passages for a human reviewer and require an
+explicit, cited decision at the passage level.

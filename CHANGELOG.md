@@ -8,6 +8,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Changed
+- Repaired the cross-platform frontend test entry point so both `npm test` and
+  the repository's historical `npm test -- --run` audit command execute the
+  complete Vitest and Playwright gates instead of forwarding an invalid
+  `--run` option to Playwright. Unknown extra arguments still fail closed.
+- Replaced three unprovenanced faux-Longmont files with the independently
+  authored, CC0-licensed Redstone Valley v1 Records fixture. Eleven
+  deterministic scenarios now cover ordinary, scanned, tabular, email,
+  malformed, prompt-injection, PII-review, ambiguous-exemption, duplicate,
+  notification-failure, and recovery behavior. Every artifact is visibly
+  watermarked and pinned by byte size and SHA-256 in a validated manifest.
+- Preserved connector provenance through both manual-drop and retry/new-record
+  byte-ingestion paths by forwarding the fetched `source_path` and `metadata`
+  to CivicCore's ingestion pipeline.
 - Renamed the module's public name from CivicRecords AI to **CivicSunshine**
   (sunshine laws being exactly this module's domain), avoiding confusion with
   an unrelated commercial records-request product marketed as

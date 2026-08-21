@@ -1,0 +1,6 @@
+# TOWNLIGHT SYNTHETIC TEST DATA — NOT A REAL MUNICIPAL RECORD
+# Fixture municipality: Redstone Valley (fictional)
+meter_id,read_date,usage_units,quality_flag
+RV-MTR-0001,2042-03-01,118,verified
+RV-MTR-0002,2042-03-01,0,estimated
+RV-MTR-0003,2042-03-01,947,review_required
