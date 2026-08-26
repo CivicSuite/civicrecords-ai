@@ -1,0 +1,12 @@
+{
+  "watermark": "TOWNLIGHT SYNTHETIC TEST DATA — NOT A REAL MUNICIPAL RECORD",
+  "fixture_municipality": "Redstone Valley",
+  "event_id": "RV-NOTICE-FAIL-2042-01",
+  "channel": "email",
+  "recipient": "requester@example.invalid",
+  "attempt": 1,
+  "status": "failed",
+  "failure_class": "synthetic_transport_timeout",
+  "retry_allowed": true,
+  "publication_allowed": false
+}

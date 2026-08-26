@@ -1,0 +1,24 @@
+TOWNLIGHT SYNTHETIC TEST DATA — NOT A REAL MUNICIPAL RECORD
+Fixture municipality: Redstone Valley (fictional)
+Record ID: RV-COUNCIL-2042-04-17
+
+REDSTONE VALLEY TOWN COUNCIL
+REGULAR MEETING PACKET
+April 17, 2042 — 6:30 PM
+Fictional Municipal Hall, 10 Example Plaza
+
+Agenda item 4: Community garden irrigation agreement
+
+Staff recommends approval of a one-year agreement with Example Garden
+Cooperative for seasonal access to the north-yard irrigation connection. The
+agreement has a not-to-exceed value of $8,400 and ends December 31, 2042.
+
+Proposed motion: approve Resolution RV-2042-17 and authorize the fictional town
+manager to execute the agreement after staff verifies insurance documentation.
+
+Attachment list:
+1. Draft Resolution RV-2042-17
+2. Irrigation use estimate
+3. Public comment summary
+
+End of synthetic record.

@@ -1,0 +1,11 @@
+{
+  "watermark": "TOWNLIGHT SYNTHETIC TEST DATA — NOT A REAL MUNICIPAL RECORD",
+  "fixture_municipality": "Redstone Valley",
+  "checkpoint_id": "RV-RECOVERY-2042-01",
+  "request_id": "RV-REQ-2042-0042",
+  "stage_before_failure": "human_review",
+  "last_durable_audit_sequence": 17,
+  "pending_document_ids": ["RV-DOC-0042-B"],
+  "resume_requires_human_confirmation": true,
+  "expected_resume_stage": "human_review"
+}

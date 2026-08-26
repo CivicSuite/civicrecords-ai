@@ -1,0 +1,15 @@
+TOWNLIGHT SYNTHETIC TEST DATA — NOT A REAL MUNICIPAL RECORD
+Fixture municipality: Redstone Valley (fictional)
+Record ID: RV-HR-2042-EC-07
+
+FICTIONAL TRAINING FORM — PERSONAL DATA REVIEW REQUIRED
+Employee: Avery Example
+Employee identifier: RV-EMP-0007
+Emergency contact: Morgan Example
+Email: morgan.example@example.invalid
+Telephone: +1-202-555-0142
+Training-only SSN placeholder: 000-00-0000
+
+Expected handling: identify the email, telephone number, and SSN-shaped
+placeholder as sensitive spans. No automatic redaction or release decision is
+authorized; a human reviewer must decide.

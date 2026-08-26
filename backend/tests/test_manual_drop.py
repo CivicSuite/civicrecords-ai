@@ -2,6 +2,7 @@
 
 import pytest
 import tempfile
+import uuid
 from pathlib import Path
 
 from app.connectors.manual_drop import (
@@ -283,11 +284,13 @@ async def test_ingest_manual_drop_dispatch(drop_dir):
             source_path=str(drop_dir / "budget.pdf"),
             filename="budget.pdf", file_type="pdf",
             content=b"%PDF content", file_size=12,
+            metadata={"sha256": "budget-sha256"},
         ),
         FetchedDocument(
             source_path=str(drop_dir / "notes.txt"),
             filename="notes.txt", file_type="txt",
             content=b"Meeting notes", file_size=13,
+            metadata={"sha256": "notes-sha256"},
         ),
     ])
     # archive_file is sync
@@ -310,6 +313,51 @@ async def test_ingest_manual_drop_dispatch(drop_dir):
     mock_connector.discover.assert_called_once()
     assert mock_connector.fetch.call_count == 2
     assert mock_connector.archive_file.call_count == 2
+    first_ingest = mock_ingest.await_args_list[0].kwargs
+    assert first_ingest["source_path"] == str(drop_dir / "budget.pdf")
+    assert first_ingest["metadata"] == {"sha256": "budget-sha256"}
+    second_ingest = mock_ingest.await_args_list[1].kwargs
+    assert second_ingest["source_path"] == str(drop_dir / "notes.txt")
+    assert second_ingest["metadata"] == {"sha256": "notes-sha256"}
+
+
+@pytest.mark.asyncio
+async def test_ingest_file_from_bytes_forwards_provenance_to_civiccore():
+    """Byte ingestion preserves the connector's source path and metadata."""
+    from unittest.mock import AsyncMock, MagicMock, patch
+    from app.ingestion.tasks import ingest_file_from_bytes
+
+    source_id = uuid.uuid4()
+    session = MagicMock()
+    document = MagicMock()
+    metadata = {
+        "sha256": "a" * 64,
+        "relative_path": "clerk/inbox/request.eml",
+    }
+
+    with patch(
+        "app.ingestion.tasks.ingest_bytes",
+        new=AsyncMock(return_value=document),
+    ) as mock_ingest:
+        result = await ingest_file_from_bytes(
+            session=session,
+            content=b"From: resident@example.test\nSubject: Records request",
+            filename="request.eml",
+            file_type="eml",
+            source_id=source_id,
+            source_path="manual-drop://clerk/inbox/request.eml",
+            metadata=metadata,
+        )
+
+    assert result is document
+    mock_ingest.assert_awaited_once_with(
+        session=session,
+        content=b"From: resident@example.test\nSubject: Records request",
+        filename="request.eml",
+        source_id=source_id,
+        source_path="manual-drop://clerk/inbox/request.eml",
+        metadata=metadata,
+    )
 
 
 @pytest.mark.asyncio

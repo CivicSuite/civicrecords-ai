@@ -1,0 +1,286 @@
+{
+  "schema_version": 1,
+  "fixture_id": "townlight.redstone-valley.records.v1",
+  "fixture_version": "1.0.0",
+  "generated_at": "2042-01-01T00:00:00Z",
+  "watermark": "TOWNLIGHT SYNTHETIC TEST DATA — NOT A REAL MUNICIPAL RECORD",
+  "municipality": {
+    "name": "Redstone Valley",
+    "jurisdiction": "Example State",
+    "fictional": true,
+    "real_world_basis": "none"
+  },
+  "authorship": {
+    "method": "Independently authored for the Townlight deterministic test fixture",
+    "external_sources": [],
+    "contains_scraped_material": false,
+    "contains_real_personal_data": false
+  },
+  "license": "CC0-1.0",
+  "reproducibility": {
+    "encoding": "UTF-8",
+    "line_endings": "LF",
+    "digest_algorithm": "SHA-256",
+    "timestamps_are_fixed": true,
+    "network_required": false
+  },
+  "replaces_unsafe_paths": [
+    "test-data/city-council-minutes-feb2025.txt",
+    "test-data/police-incident-summary-jan2025.txt",
+    "test-data/water-quality-report-2025.txt"
+  ],
+  "required_scenarios": [
+    "ordinary",
+    "scanned",
+    "tabular",
+    "email",
+    "malformed",
+    "prompt_injection",
+    "pii",
+    "ambiguous_exemption",
+    "duplicate",
+    "notification_failure",
+    "recovery"
+  ],
+  "cases": [
+    {
+      "id": "rv-ordinary-001",
+      "scenario": "ordinary",
+      "path": "ordinary-council-packet.txt",
+      "media_type": "text/plain",
+      "byte_size": 832,
+      "sha256": "09ececaa2bbfbee6d5a166b83f2376ca633fa6ca9d10ad7fed8ff362c1f1a882",
+      "provenance": {
+        "source_path": "synthetic://redstone-valley/records/v1/ordinary-council-packet.txt",
+        "connector_type": "fixture",
+        "connector_id": "townlight-redstone-valley-v1",
+        "authorship": "independent",
+        "license": "CC0-1.0"
+      },
+      "ground_truth": {
+        "expected_parse_outcome": "success",
+        "expected_record_id": "RV-COUNCIL-2042-04-17",
+        "expected_search_terms": ["community garden", "RV-2042-17", "$8,400"],
+        "human_review_required": false
+      }
+    },
+    {
+      "id": "rv-scanned-001",
+      "scenario": "scanned",
+      "path": "scanned-maintenance-invoice-ocr.txt",
+      "media_type": "text/vnd.townlight.synthetic-ocr",
+      "byte_size": 709,
+      "sha256": "381c07e03cb80ebf1e3212cace2c4b609328bb11de3daa7deff1fbfe6eec1769",
+      "provenance": {
+        "source_path": "synthetic://redstone-valley/records/v1/scanned-maintenance-invoice-ocr.txt",
+        "connector_type": "fixture",
+        "connector_id": "townlight-redstone-valley-v1",
+        "authorship": "independent",
+        "license": "CC0-1.0"
+      },
+      "ground_truth": {
+        "expected_parse_outcome": "ocr_review",
+        "expected_record_id": "RV-INVOICE-2042-0081",
+        "expected_search_terms": ["brake inspection", "$239.75"],
+        "known_ocr_substitutions": ["EXAMP1E", "SERV1CE"],
+        "human_review_required": true
+      }
+    },
+    {
+      "id": "rv-tabular-001",
+      "scenario": "tabular",
+      "path": "utility-meter-readings.csv",
+      "media_type": "text/csv",
+      "byte_size": 274,
+      "sha256": "60eb66ddcdbce790c2e25b079e6931451cd77d46f910d8fe70679bae4e17b686",
+      "provenance": {
+        "source_path": "synthetic://redstone-valley/records/v1/utility-meter-readings.csv",
+        "connector_type": "fixture",
+        "connector_id": "townlight-redstone-valley-v1",
+        "authorship": "independent",
+        "license": "CC0-1.0"
+      },
+      "ground_truth": {
+        "expected_parse_outcome": "success",
+        "expected_rows": 3,
+        "expected_columns": ["meter_id", "read_date", "usage_units", "quality_flag"],
+        "review_required_row": "RV-MTR-0003",
+        "human_review_required": true
+      }
+    },
+    {
+      "id": "rv-email-001",
+      "scenario": "email",
+      "path": "vendor-followup.eml",
+      "media_type": "message/rfc822",
+      "byte_size": 687,
+      "sha256": "b1ca731bacf3e8d60130522ff51bcab2c84187cb1740881b81aaae78094315ee",
+      "provenance": {
+        "source_path": "synthetic://redstone-valley/records/v1/vendor-followup.eml",
+        "connector_type": "fixture",
+        "connector_id": "townlight-redstone-valley-v1",
+        "authorship": "independent",
+        "license": "CC0-1.0"
+      },
+      "ground_truth": {
+        "expected_parse_outcome": "success",
+        "expected_subject": "Fictional follow-up for quote RV-Q-2042-19",
+        "expected_search_terms": ["playground inspection", "May 31, 2042"],
+        "human_review_required": false
+      }
+    },
+    {
+      "id": "rv-malformed-001",
+      "scenario": "malformed",
+      "path": "malformed-inspection-export.json",
+      "media_type": "application/json",
+      "byte_size": 155,
+      "sha256": "b1d45195d8f0d57bd421f5a2ff5eacc9d070e0b662eae45bc31c742f1a859dd3",
+      "provenance": {
+        "source_path": "synthetic://redstone-valley/records/v1/malformed-inspection-export.json",
+        "connector_type": "fixture",
+        "connector_id": "townlight-redstone-valley-v1",
+        "authorship": "independent",
+        "license": "CC0-1.0"
+      },
+      "ground_truth": {
+        "expected_parse_outcome": "parse_error",
+        "expected_error_class": "invalid_json",
+        "must_not_create_document": true,
+        "human_review_required": true
+      }
+    },
+    {
+      "id": "rv-prompt-injection-001",
+      "scenario": "prompt_injection",
+      "path": "prompt-injection-request-attachment.txt",
+      "media_type": "text/plain",
+      "byte_size": 583,
+      "sha256": "7caecc7451c680a7291fb714232ed83fe54a9cc534b7b5bd920a3701aff08de9",
+      "provenance": {
+        "source_path": "synthetic://redstone-valley/records/v1/prompt-injection-request-attachment.txt",
+        "connector_type": "fixture",
+        "connector_id": "townlight-redstone-valley-v1",
+        "authorship": "independent",
+        "license": "CC0-1.0"
+      },
+      "ground_truth": {
+        "expected_parse_outcome": "success_untrusted",
+        "security_classification": "untrusted_record_content",
+        "must_not_execute_embedded_instructions": true,
+        "human_review_required": true
+      }
+    },
+    {
+      "id": "rv-pii-001",
+      "scenario": "pii",
+      "path": "pii-employee-emergency-contact.txt",
+      "media_type": "text/plain",
+      "byte_size": 591,
+      "sha256": "fe4980fe6ecbeaa5d14f24f449a8394b6041dca53c20420e7a3310101b596a74",
+      "provenance": {
+        "source_path": "synthetic://redstone-valley/records/v1/pii-employee-emergency-contact.txt",
+        "connector_type": "fixture",
+        "connector_id": "townlight-redstone-valley-v1",
+        "authorship": "independent",
+        "license": "CC0-1.0"
+      },
+      "ground_truth": {
+        "expected_parse_outcome": "success_sensitive",
+        "expected_sensitive_spans": [
+          {"type": "email", "value": "morgan.example@example.invalid"},
+          {"type": "telephone", "value": "+1-202-555-0142"},
+          {"type": "ssn_shaped_placeholder", "value": "000-00-0000"}
+        ],
+        "automatic_redaction_allowed": false,
+        "human_review_required": true
+      }
+    },
+    {
+      "id": "rv-ambiguous-exemption-001",
+      "scenario": "ambiguous_exemption",
+      "path": "ambiguous-exemption-draft-memo.txt",
+      "media_type": "text/plain",
+      "byte_size": 668,
+      "sha256": "ae4f5042b476492fb97d44706b6dda5e2ccf49c2bbb8035c5a5af57c8c5db3c8",
+      "provenance": {
+        "source_path": "synthetic://redstone-valley/records/v1/ambiguous-exemption-draft-memo.txt",
+        "connector_type": "fixture",
+        "connector_id": "townlight-redstone-valley-v1",
+        "authorship": "independent",
+        "license": "CC0-1.0"
+      },
+      "ground_truth": {
+        "expected_parse_outcome": "success_ambiguous",
+        "whole_document_exemption_allowed": false,
+        "passage_level_citation_required": true,
+        "human_review_required": true
+      }
+    },
+    {
+      "id": "rv-duplicate-001",
+      "scenario": "duplicate",
+      "path": "duplicate-ordinary-council-packet.txt",
+      "media_type": "text/plain",
+      "byte_size": 832,
+      "sha256": "09ececaa2bbfbee6d5a166b83f2376ca633fa6ca9d10ad7fed8ff362c1f1a882",
+      "provenance": {
+        "source_path": "synthetic://redstone-valley/records/v1/duplicate-ordinary-council-packet.txt",
+        "connector_type": "fixture",
+        "connector_id": "townlight-redstone-valley-v1",
+        "authorship": "independent",
+        "license": "CC0-1.0"
+      },
+      "ground_truth": {
+        "expected_parse_outcome": "duplicate",
+        "duplicates_case_id": "rv-ordinary-001",
+        "expected_duplicate_basis": "sha256",
+        "human_review_required": false
+      }
+    },
+    {
+      "id": "rv-notification-failure-001",
+      "scenario": "notification_failure",
+      "path": "notification-failure-event.json",
+      "media_type": "application/json",
+      "byte_size": 379,
+      "sha256": "781a79195698b8ed12292819751025b0de8d2b57af08b14d78d52389b5b95abb",
+      "provenance": {
+        "source_path": "synthetic://redstone-valley/records/v1/notification-failure-event.json",
+        "connector_type": "fixture",
+        "connector_id": "townlight-redstone-valley-v1",
+        "authorship": "independent",
+        "license": "CC0-1.0"
+      },
+      "ground_truth": {
+        "expected_parse_outcome": "success",
+        "expected_state": "failed",
+        "retry_allowed": true,
+        "publication_allowed": false,
+        "human_review_required": true
+      }
+    },
+    {
+      "id": "rv-recovery-001",
+      "scenario": "recovery",
+      "path": "recovery-checkpoint.json",
+      "media_type": "application/json",
+      "byte_size": 419,
+      "sha256": "120207b23b11516e694c12ca713bed7fe1b4433eb2efd36f2f790dd4d497958d",
+      "provenance": {
+        "source_path": "synthetic://redstone-valley/records/v1/recovery-checkpoint.json",
+        "connector_type": "fixture",
+        "connector_id": "townlight-redstone-valley-v1",
+        "authorship": "independent",
+        "license": "CC0-1.0"
+      },
+      "ground_truth": {
+        "expected_parse_outcome": "success",
+        "expected_resume_stage": "human_review",
+        "expected_last_durable_audit_sequence": 17,
+        "resume_requires_human_confirmation": true,
+        "human_review_required": true
+      }
+    }
+  ]
+}
