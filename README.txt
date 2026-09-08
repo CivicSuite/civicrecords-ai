@@ -76,14 +76,14 @@ For the CivicSuite starter-set package, run `python scripts/check_starter_set_in
 
 **Windows:**
 ```powershell
-git clone https://github.com/CivicSuite/civicrecords-ai.git
+git clone https://github.com/townlight/sunshine.git
 cd civicrecords-ai
 .\install.ps1
 ```
 
 **macOS / Linux** (script path; not lifecycle-certified — see "Supported Platforms" below)**:**
 ```bash
-git clone https://github.com/CivicSuite/civicrecords-ai.git
+git clone https://github.com/townlight/sunshine.git
 cd civicrecords-ai
 bash install.sh
 ```
@@ -100,7 +100,7 @@ bash install.sh
 
 CivicSunshine backend installs `civiccore` (the shared CivicSuite schema + migration runtime) as a dependency. The current release line is pinned to the published CivicCore v1.2.0 wheel so Records-AI consumes the shared document-ingestion pipeline from a release artifact. Records-specific Celery tasks, scheduler wiring, connector sync, and datasource routes remain local; parsing, chunking, local Ollama embeddings, and pgvector document/chunk writes come from `civiccore.ingest`. Earlier interim branches used a commit archive while CivicCore v1.2.0 was unreleased; v1.7.2 returned to the versioned release-asset dependency pattern, and v1.7.3 adds direct-pip wheel and sdist assets without changing runtime behavior.
 
-Migrations run in two layers: `civiccore` first (creates/updates the 16 shared tables), then this repo's Alembic chain on top. See [ADR-0003](https://github.com/CivicSuite/civicsuite/blob/main/docs/architecture/ADR-0003-civiccore-alembic-baseline-strategy.md) for the full gate contract.
+Migrations run in two layers: `civiccore` first (creates/updates the 16 shared tables), then this repo's Alembic chain on top. See [ADR-0003](https://github.com/townlight/townlight/blob/main/docs/architecture/ADR-0003-civiccore-alembic-baseline-strategy.md) for the full gate contract.
 
 ### Release provenance
 

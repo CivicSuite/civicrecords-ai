@@ -15,7 +15,7 @@ Thank you for your interest in contributing to CivicSunshine. This project helps
 
 ```bash
 # Clone the repository
-git clone https://github.com/CivicSuite/civicrecords-ai.git
+git clone https://github.com/townlight/sunshine.git
 cd civicrecords-ai
 
 # Option A: Use the installer (recommended)

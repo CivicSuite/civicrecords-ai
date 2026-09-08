@@ -44,7 +44,7 @@ CivicSunshine is an open-source, locally-hosted AI system built for American cit
 
 - **At-rest encryption for connector credentials (Tier 6 / ENG-001)** — `data_sources.connection_config` stored as a Fernet envelope (AES-128-CBC + HMAC-SHA256). Operator requirement: set `ENCRYPTION_KEY` in `.env` before restart (installer auto-generates on fresh installs).
 - **Install-time portal mode switch (T5D)** — `PORTAL_MODE` env var (`private` default, `public` opt-in). Public mode exposes exactly three surfaces: landing page, resident-registration, and authenticated records-request submission for `UserRole.PUBLIC`.
-- **Windows double-click installer (T5E, unsigned by design)** — `CivicSunshine-1.4.0-Setup.exe` + matching `.sha256` on the [v1.4.0 release page](https://github.com/CivicSuite/civicrecords-ai/releases/download/v1.4.0/CivicSunshine-1.4.0-Setup.exe). SmartScreen will show "Windows protected your PC — Unknown publisher" on first run; click **More info → Run anyway**, confirm UAC. macOS/Linux continue on the guided `install.sh` script.
+- **Windows double-click installer (T5E, unsigned by design)** — `CivicSunshine-1.4.0-Setup.exe` + matching `.sha256` on the [v1.4.0 release page](https://github.com/townlight/sunshine/releases/download/v1.4.0/CivicSunshine-1.4.0-Setup.exe). SmartScreen will show "Windows protected your PC — Unknown publisher" on first run; click **More info → Run anyway**, confirm UAC. macOS/Linux continue on the guided `install.sh` script.
 - **4-model Gemma 4 installer picker (T5C)** — default `gemma4:e4b`. `gemma4:26b` / `gemma4:31b` remain selectable but gated behind an explicit "stronger hardware required" acknowledgement against the locked 32 GB baseline.
 - **First-boot baseline seeding (T5B)** — auto-seeds 175 state-scoped exemption rules across 51 jurisdictions, 5 compliance templates, and 12 notification templates on first boot.
 - **Onboarding interview persistence (T5A)** — single-phase LLM-powered interview persists each answer onto `CityProfile`.
@@ -67,8 +67,8 @@ CivicSunshine is an open-source, locally-hosted AI system built for American cit
 **Quick links:**
 - [README](../README.md) — quick start and feature overview
 - [User Manual](civicrecords-ai-manual.pdf) — staff operations guide + IT reference + architecture
-- [Installation](https://github.com/CivicSuite/civicrecords-ai#install) — Windows-only currently; macOS support pending lifecycle certification (macOS and Linux operators may use the `install.sh` script path, which is not lifecycle-certified)
-- [v1.4.0 Windows installer](https://github.com/CivicSuite/civicrecords-ai/releases/download/v1.4.0/CivicSunshine-1.4.0-Setup.exe) — direct download
+- [Installation](https://github.com/townlight/sunshine#install) — Windows-only currently; macOS support pending lifecycle certification (macOS and Linux operators may use the `install.sh` script path, which is not lifecycle-certified)
+- [v1.4.0 Windows installer](https://github.com/townlight/sunshine/releases/download/v1.4.0/CivicSunshine-1.4.0-Setup.exe) — direct download
 - [CHANGELOG](../CHANGELOG.md) — full history of every release
 
 If you're a city clerk, records officer, IT administrator, or civic technologist — we're glad you're here. Ask anything, share what you're working on, and tell us what would make this tool more useful for your city.
@@ -94,14 +94,14 @@ If you're a city clerk, records officer, IT administrator, or civic technologist
 
 *Windows:*
 ```powershell
-git clone https://github.com/CivicSuite/civicrecords-ai.git
+git clone https://github.com/townlight/sunshine.git
 cd civicrecords-ai
 .\install.ps1
 ```
 
 *Linux / macOS* (script path; not lifecycle-certified — Windows-only currently, macOS support pending lifecycle certification)*:*
 ```bash
-git clone https://github.com/CivicSuite/civicrecords-ai.git
+git clone https://github.com/townlight/sunshine.git
 cd civicrecords-ai
 bash install.sh
 ```

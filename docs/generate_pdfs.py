@@ -226,7 +226,7 @@ def make_page_callback(doc_title, show_header=True):
         canvas.line(margin, 0.55 * inch, w - margin, 0.55 * inch)
         canvas.setFont("Helvetica", 8)
         canvas.setFillColor(colors.HexColor("#6b7280"))
-        canvas.drawString(margin, 0.38 * inch, "Apache License 2.0 — github.com/CivicSuite/civicrecords-ai")
+        canvas.drawString(margin, 0.38 * inch, "Apache License 2.0 — github.com/townlight/sunshine")
         canvas.drawRightString(w - margin, 0.38 * inch, "© 2026 CivicSunshine")
 
         canvas.restoreState()
@@ -746,7 +746,7 @@ def build_readme_full(out_path):
         styles["center_body"]
     ))
     story.append(sp(120))
-    story.append(P("github.com/CivicSuite/civicrecords-ai", styles["tagline"]))
+    story.append(P("github.com/townlight/sunshine", styles["tagline"]))
 
     story.append(PageBreak())
 
@@ -914,14 +914,14 @@ def build_readme_full(out_path):
     ], styles)
     story += section_header("Install (Windows)", styles, 2)
     story += code_block(
-        "git clone https://github.com/CivicSuite/civicrecords-ai.git\n"
+        "git clone https://github.com/townlight/sunshine.git\n"
         "cd civicrecords-ai\n"
         ".\\install.ps1",
         styles
     )
     story += section_header("Install (macOS / Linux)", styles, 2)
     story += code_block(
-        "git clone https://github.com/CivicSuite/civicrecords-ai.git\n"
+        "git clone https://github.com/townlight/sunshine.git\n"
         "cd civicrecords-ai\n"
         "bash install.sh",
         styles
@@ -1163,7 +1163,7 @@ def build_readme_full(out_path):
     story.append(sp(8))
     story.append(P(
         "For complete documentation, source code, and issue tracking, see:\n"
-        "github.com/CivicSuite/civicrecords-ai",
+        "github.com/townlight/sunshine",
         styles["center_body"]
     ))
 
@@ -1261,10 +1261,10 @@ def build_readme_short(out_path):
     story += section_header("Install", styles, 2)
     story += code_block(
         "# Windows\n"
-        "git clone https://github.com/CivicSuite/civicrecords-ai.git\n"
+        "git clone https://github.com/townlight/sunshine.git\n"
         ".\\install.ps1\n\n"
         "# macOS / Linux\n"
-        "git clone https://github.com/CivicSuite/civicrecords-ai.git\n"
+        "git clone https://github.com/townlight/sunshine.git\n"
         "bash install.sh",
         styles
     )
@@ -1316,11 +1316,11 @@ def build_readme_short(out_path):
     # Links
     story += section_header("Links & Documentation", styles, 1)
     links = [
-        ("Source Code",         "github.com/CivicSuite/civicrecords-ai"),
+        ("Source Code",         "github.com/townlight/sunshine"),
         ("Full Technical Ref",  "README-FULL.pdf (in this repository)"),
         ("User Manual",         "USER-MANUAL.md / USER-MANUAL.pdf"),
         ("Canonical Spec",      "docs/UNIFIED-SPEC.md"),
-        ("Issue Tracker",       "github.com/CivicSuite/civicrecords-ai/issues"),
+        ("Issue Tracker",       "github.com/townlight/sunshine/issues"),
         ("License",             "Apache License 2.0 — see LICENSE"),
         ("Installation",        "install.ps1 (Windows) / install.sh (macOS/Linux)"),
     ]

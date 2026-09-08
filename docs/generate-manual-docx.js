@@ -527,11 +527,11 @@ const doc = new Document({
         // --- 14. Installation ---
         h2("14. Installation"),
         h3("Windows"),
-        codeBlock("git clone https://github.com/CivicSuite/civicrecords-ai.git"),
+        codeBlock("git clone https://github.com/townlight/sunshine.git"),
         codeBlock("cd civicrecords-ai"),
         codeBlock(".\\install.ps1"),
         h3("Linux / macOS"),
-        codeBlock("git clone https://github.com/CivicSuite/civicrecords-ai.git"),
+        codeBlock("git clone https://github.com/townlight/sunshine.git"),
         codeBlock("cd civicrecords-ai"),
         codeBlock("bash install.sh"),
         h3("What the Installer Does"),
