@@ -1082,7 +1082,7 @@ def build_deployment(s):
     story.append(HRFlowable(width="100%", thickness=1, color=BLUE, spaceAfter=8))
     story.append(Paragraph(
         "CivicSunshine v1.0.0  ·  Apache License 2.0  ·  "
-        "https://github.com/CivicSuite/civicrecords-ai",
+        "https://github.com/townlight/sunshine",
         ParagraphStyle("FootNote", parent=s["Body"], fontSize=9,
                        textColor=GRAY, alignment=TA_CENTER)))
 

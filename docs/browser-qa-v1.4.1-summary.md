@@ -13,7 +13,7 @@ Target: `docs/index.html`
 
 - Current release badge shows `v1.4.1`.
 - Linux/macOS install script links point to `https://raw.githubusercontent.com/CivicSuite/civicrecords-ai/v1.4.1/install.sh`.
-- Windows installer links point to `https://github.com/CivicSuite/civicrecords-ai/releases/download/v1.4.1/CivicRecordsAI-1.4.1-Setup.exe`.
+- Windows installer links point to `https://github.com/townlight/sunshine/releases/download/v1.4.1/CivicRecordsAI-1.4.1-Setup.exe`.
 - Desktop and mobile screenshots render without obvious clipping or missing primary calls to action.
 
 ## Console

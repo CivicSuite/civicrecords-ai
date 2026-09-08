@@ -285,18 +285,18 @@ There are two supported install paths. Pick the one that matches your platform a
 2. Ensure Docker is running (you should see the Docker icon in your taskbar/menu bar, or `docker info` returns without error).
 3. Confirm system requirements: 8+ CPU cores, 32 GB RAM, 50 GB free disk.
 
-**Windows (double-click installer):** Download `CivicSunshine-<version>-Setup.exe` from the [GitHub Releases page](https://github.com/CivicSuite/civicrecords-ai/releases) for the tag you want, double-click it, acknowledge the SmartScreen "Unknown publisher" prompt (expected — see above), and follow the installer prompts. On first launch the installer automatically runs the full bootstrap (prereq check → model pull → first-boot seed).
+**Windows (double-click installer):** Download `CivicSunshine-<version>-Setup.exe` from the [GitHub Releases page](https://github.com/townlight/sunshine/releases) for the tag you want, double-click it, acknowledge the SmartScreen "Unknown publisher" prompt (expected — see above), and follow the installer prompts. On first launch the installer automatically runs the full bootstrap (prereq check → model pull → first-boot seed).
 
 **Windows (script path):**
 ```powershell
-git clone https://github.com/CivicSuite/civicrecords-ai.git
+git clone https://github.com/townlight/sunshine.git
 cd civicrecords-ai
 .\install.ps1
 ```
 
 **macOS / Linux** (script path; not lifecycle-certified — see B.1 System Requirements)**:**
 ```bash
-git clone https://github.com/CivicSuite/civicrecords-ai.git
+git clone https://github.com/townlight/sunshine.git
 cd civicrecords-ai
 bash install.sh
 ```
